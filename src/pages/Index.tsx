@@ -1,6 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
-import FeaturesBento from "@/components/FeaturesBento";
+import Features from "@/components/Features";
 import CTA from "@/components/CTA";
 
 const Index = () => {
@@ -8,7 +8,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <Hero />
-      <FeaturesBento />
+      <Features />
       <CTA />
     </div>
   );

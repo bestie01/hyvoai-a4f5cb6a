@@ -8,9 +8,10 @@ const Navigation = () => {
 
   const navItems = [
     { label: "Features", href: "#features" },
-    { label: "Resources", href: "#resources" },
-    { label: "Blog", href: "#blog" },
-    { label: "Pricing", href: "/pricing" }
+    { label: "Pricing", href: "/pricing" },
+    { label: "Download", href: "/download" },
+    { label: "Demo", href: "#demo" },
+    { label: "Support", href: "#support" }
   ];
 
   return (
@@ -43,10 +44,13 @@ const Navigation = () => {
             ))}
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:flex">
+          {/* CTA Buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            <Button variant="ghost" size="sm">
+              Sign In
+            </Button>
             <Button variant="hero" size="sm">
-              Try Hyvo Now
+              Start Free Trial
             </Button>
           </div>
 
@@ -76,8 +80,11 @@ const Navigation = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                <Button variant="ghost" size="sm" className="justify-start">
+                  Sign In
+                </Button>
                 <Button variant="hero" size="sm">
-                  Try Hyvo Now
+                  Start Free Trial
                 </Button>
               </div>
             </div>
