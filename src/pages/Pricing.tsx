@@ -7,21 +7,6 @@ import { Check } from "lucide-react";
 const Pricing = () => {
   const plans = [
     {
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      description: "Perfect for getting started",
-      features: [
-        "Basic AI assistance",
-        "Up to 10 queries per day",
-        "Community support",
-        "Basic templates"
-      ],
-      buttonText: "Get Started",
-      variant: "outline" as const,
-      popular: false
-    },
-    {
       name: "Pro",
       price: "$29",
       period: "per month",
@@ -37,25 +22,25 @@ const Pricing = () => {
       ],
       buttonText: "Start Pro Trial",
       variant: "hero" as const,
-      popular: true
+      popular: false
     },
     {
-      name: "Enterprise",
-      price: "Custom",
-      period: "contact us",
-      description: "For large organizations",
+      name: "Year One",
+      price: "$290",
+      period: "per year",
+      description: "Save 17% with annual billing",
       features: [
         "Everything in Pro",
-        "Dedicated support",
-        "Custom AI training",
-        "SSO integration",
-        "Advanced security",
-        "SLA guarantee",
-        "On-premise deployment"
+        "2 months free",
+        "Priority onboarding",
+        "Advanced analytics",
+        "Custom workflows",
+        "Dedicated account manager",
+        "Early access to new features"
       ],
-      buttonText: "Contact Sales",
+      buttonText: "Get Year One",
       variant: "secondary" as const,
-      popular: false
+      popular: true
     }
   ];
 
@@ -81,7 +66,7 @@ const Pricing = () => {
       {/* Pricing Cards */}
       <section className="pb-24 px-6">
         <div className="container mx-auto">
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {plans.map((plan) => (
               <Card 
                 key={plan.name} 
