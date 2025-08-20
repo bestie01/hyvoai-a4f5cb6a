@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Home, BarChart3, Users, Settings, PlayCircle, TrendingUp, DollarSign, Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +22,16 @@ const navItems = [
 
 export function DashboardSidebar() {
   const { state, toggleSidebar } = useSidebar();
+  const { toast } = useToast();
+  const [activeItem, setActiveItem] = useState('Dashboard');
+
+  const handleNavClick = (label) => {
+    setActiveItem(label);
+    toast({
+      title: `Navigating to ${label}`,
+      description: `Loading ${label.toLowerCase()} section...`,
+    });
+  };
   const collapsed = state === "collapsed";
 
   return (
@@ -48,17 +59,17 @@ export function DashboardSidebar() {
             <SidebarMenu className="space-y-2">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    asChild
+                   <SidebarMenuButton
                     className={`
                       flex items-center justify-between p-3 rounded-lg transition-all duration-200
-                      ${item.active 
+                      ${activeItem === item.label 
                         ? 'bg-gradient-primary text-white shadow-glow-primary' 
                         : 'text-white/70 hover:text-white hover:bg-white/10'
                       }
                     `}
+                    onClick={() => handleNavClick(item.label)}
                   >
-                    <div className="flex items-center w-full">
+                    <div className="flex items-center w-full cursor-pointer">
                       <div className="flex items-center gap-3 flex-1">
                         <item.icon className="w-5 h-5" />
                         {!collapsed && <span className="font-medium">{item.label}</span>}

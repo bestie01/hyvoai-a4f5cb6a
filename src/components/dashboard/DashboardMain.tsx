@@ -1,7 +1,9 @@
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Heart, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Play, Heart, TrendingUp, Users, DollarSign, Download, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
 
 const chartData = [
   { name: 'Jan', value: 400 },
@@ -18,6 +20,60 @@ const pieData = [
 ];
 
 export function DashboardMain() {
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [chartData, setChartData] = useState([
+    { name: 'Jan', value: 400 },
+    { name: 'Feb', value: 300 },
+    { name: 'Mar', value: 600 },
+    { name: 'Apr', value: 500 },
+    { name: 'May', value: 800 },
+  ]);
+
+  const handleRefreshData = async () => {
+    setIsRefreshing(true);
+    toast({
+      title: "Refreshing Data",
+      description: "Analytics data is being updated...",
+    });
+    
+    // Simulate API call
+    setTimeout(() => {
+      const newData = chartData.map(item => ({
+        ...item,
+        value: Math.floor(Math.random() * 1000) + 200
+      }));
+      setChartData(newData);
+      setIsRefreshing(false);
+      toast({
+        title: "Data Updated",
+        description: "Analytics data has been successfully refreshed.",
+      });
+    }, 2000);
+  };
+
+  const handleExportData = () => {
+    toast({
+      title: "Exporting Data",
+      description: "Analytics report is being generated...",
+    });
+    
+    // Simulate export
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: "Your analytics report has been downloaded.",
+      });
+    }, 1500);
+  };
+
+  const handleFavoriteChart = () => {
+    toast({
+      title: "Chart Favorited",
+      description: "This chart has been added to your favorites.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Main Chart */}
@@ -25,11 +81,22 @@ export function DashboardMain() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Analytics Overview</h2>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
-              <TrendingUp className="w-4 h-4" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white/60 hover:text-white hover:bg-white/10"
+              onClick={handleExportData}
+            >
+              <Download className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
-              <Play className="w-4 h-4" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white/60 hover:text-white hover:bg-white/10"
+              onClick={handleRefreshData}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
@@ -70,7 +137,12 @@ export function DashboardMain() {
         <Card className="p-6 bg-gradient-card border border-white/10 backdrop-blur-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Real Time</h3>
-            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white/60 hover:text-white hover:bg-white/10"
+              onClick={handleFavoriteChart}
+            >
               <Heart className="w-4 h-4" />
             </Button>
           </div>

@@ -1,15 +1,57 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Search, Bell, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function DashboardHeader() {
+  const { toast } = useToast();
+
+  const handleSearch = () => {
+    toast({
+      title: "Search Opening",
+      description: "Global search is now active...",
+    });
+  };
+
+  const handleNotifications = () => {
+    toast({
+      title: "Notifications",
+      description: "You have 3 new notifications",
+    });
+  };
+
+  const handleSettings = () => {
+    toast({
+      title: "Settings",
+      description: "Opening dashboard settings...",
+    });
+  };
+
+  const handleNavigation = (direction) => {
+    toast({
+      title: direction === 'back' ? "Going Back" : "Going Forward",
+      description: `Navigating ${direction}...`,
+    });
+  };
+
   return (
     <header className="h-16 border-b border-white/10 bg-black/20 backdrop-blur-xl flex items-center justify-between px-6">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => handleNavigation('back')}
+          >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => handleNavigation('forward')}
+          >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -34,13 +76,36 @@ export function DashboardHeader() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-white/60 hover:text-white hover:bg-white/10"
+            onClick={handleSearch}
+          >
             <Search className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
-            <Bell className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+          <div className="relative">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white/60 hover:text-white hover:bg-white/10"
+              onClick={handleNotifications}
+            >
+              <Bell className="w-4 h-4" />
+            </Button>
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs"
+            >
+              3
+            </Badge>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-white/60 hover:text-white hover:bg-white/10"
+            onClick={handleSettings}
+          >
             <Settings className="w-4 h-4" />
           </Button>
         </div>
