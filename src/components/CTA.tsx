@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Zap, Users, Trophy } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   { icon: Users, value: "10K+", label: "Active Streamers" },
@@ -9,6 +10,17 @@ const stats = [
 ];
 
 const CTA = () => {
+  const navigate = useNavigate();
+
+  const handleStartTrial = () => {
+    navigate('/download');
+  };
+
+  const handleBookDemo = () => {
+    // You can replace this with a contact form or demo booking page
+    window.open('mailto:demo@hyvo.ai?subject=Book a Demo&body=Hi, I would like to book a demo of Hyvo.ai.', '_blank');
+  };
+
   return (
     <section className="py-24 bg-gradient-to-br from-primary/10 via-background to-accent/10 relative overflow-hidden">
       {/* Background pattern */}
@@ -57,11 +69,11 @@ const CTA = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button variant="hero" size="lg" className="group text-lg px-8 py-4">
+              <Button variant="hero" size="lg" className="group text-lg px-8 py-4" onClick={handleStartTrial}>
                 Start Free Trial
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-4" onClick={handleBookDemo}>
                 Book a Demo
               </Button>
             </div>

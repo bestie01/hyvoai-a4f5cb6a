@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Download, Monitor, Smartphone, Shield, Zap, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const DownloadPage = () => {
+  const { toast } = useToast();
   const platforms = [
     {
       name: "Windows",
@@ -12,7 +14,7 @@ const DownloadPage = () => {
       version: "1.0.0",
       size: "120 MB",
       requirements: "Windows 10 or later",
-      downloadUrl: "#",
+      downloadUrl: "/downloads/hyvo-ai-windows-1.0.0.exe",
       primary: true
     },
     {
@@ -21,7 +23,7 @@ const DownloadPage = () => {
       version: "1.0.0", 
       size: "125 MB",
       requirements: "macOS 10.15 or later",
-      downloadUrl: "#",
+      downloadUrl: "/downloads/hyvo-ai-macos-1.0.0.dmg",
       primary: true
     },
     {
@@ -34,6 +36,24 @@ const DownloadPage = () => {
       primary: false
     }
   ];
+
+  const handleDownload = (platform: typeof platforms[0]) => {
+    if (platform.primary && platform.downloadUrl !== "#") {
+      // Show download started message
+      toast({
+        title: "Download Started",
+        description: `Downloading ${platform.name} version ${platform.version}...`,
+      });
+
+      // Create a temporary link element and trigger download
+      const link = document.createElement('a');
+      link.href = platform.downloadUrl;
+      link.download = platform.downloadUrl.split('/').pop() || `hyvo-ai-${platform.name.toLowerCase()}.exe`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   const features = [
     "Real-time stream monitoring",
@@ -104,6 +124,7 @@ const DownloadPage = () => {
                     className="w-full" 
                     variant={platform.primary ? "default" : "secondary"}
                     disabled={!platform.primary}
+                    onClick={() => handleDownload(platform)}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     {platform.primary ? "Download Now" : "Coming Soon"}
