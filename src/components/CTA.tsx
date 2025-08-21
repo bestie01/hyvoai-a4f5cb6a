@@ -4,9 +4,9 @@ import { ArrowRight, Zap, Users, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const stats = [
-  { icon: Users, value: "10K+", label: "Active Streamers" },
-  { icon: Zap, value: "50M+", label: "Clips Generated" },
-  { icon: Trophy, value: "300%", label: "Avg Growth Boost" }
+  { icon: Users, value: "10K+", label: "AI-Powered Creators" },
+  { icon: Zap, value: "50M+", label: "AI Operations Daily" },
+  { icon: Trophy, value: "300%", label: "AI-Driven Growth" }
 ];
 
 const CTA = () => {
@@ -51,21 +51,21 @@ const CTA = () => {
           {/* Main CTA */}
           <div className="space-y-8">
             <Badge variant="secondary" className="py-2 px-4">
-              Join Thousands of Successful Streamers
+              Experience Next-Gen AI Streaming Technology
             </Badge>
             
             <h2 className="text-4xl lg:text-6xl font-bold leading-tight">
               Ready to{" "}
               <span className="bg-gradient-primary bg-clip-text text-transparent">
-                transform
+                unlock AI
               </span>
               <br />
-              your streaming?
+              streaming power?
             </h2>
             
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Start your free trial today and discover how Hyvo.ai can help you 
-              grow your audience, create better content, and build a thriving community.
+              Start your free trial today and experience how advanced AI algorithms can revolutionize 
+              your content creation, automate growth strategies, and maximize audience engagement.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

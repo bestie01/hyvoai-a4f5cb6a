@@ -12,44 +12,44 @@ import {
 const features = [
   {
     icon: Calendar,
-    title: "Schedule Smarter",
-    description: "Plan streams at optimal times for maximum viewership with AI-driven insights.",
-    badge: "Scheduling",
+    title: "AI Scheduling Intelligence",
+    description: "Machine learning algorithms analyze viewer patterns to predict optimal streaming times and maximize audience reach.",
+    badge: "AI Scheduling",
     color: "text-primary"
   },
   {
     icon: MessageSquare,
-    title: "Engage in Real Time",
-    description: "Track chat activity, viewer trends, and audience sentiment live during streams.",
-    badge: "Analytics",
+    title: "AI Chat Analysis",
+    description: "Natural language processing monitors chat sentiment, detects trends, and provides real-time engagement insights.",
+    badge: "AI Analytics",
     color: "text-accent"
   },
   {
     icon: Scissors,
-    title: "Auto Highlights",
-    description: "AI detects exciting moments and automatically creates clips and shorts.",
-    badge: "AI Clips",
+    title: "Smart AI Highlights",
+    description: "Computer vision and audio analysis automatically identify peak moments and generate viral-ready clips.",
+    badge: "AI Video",
     color: "text-success"
   },
   {
     icon: Share2,
-    title: "Promote Everywhere",
-    description: "Share streams and highlights across platforms with optimized formats.",
-    badge: "Social",
+    title: "AI Content Distribution",
+    description: "Intelligent cross-platform posting with AI-optimized captions, hashtags, and timing for each social network.",
+    badge: "AI Social",
     color: "text-primary"
   },
   {
     icon: BarChart3,
-    title: "Growth Insights",
-    description: "Get data-driven recommendations on titles, thumbnails, and stream topics.",
-    badge: "Growth",
+    title: "Predictive AI Insights",
+    description: "Advanced analytics engine predicts content performance and recommends data-driven improvements.",
+    badge: "AI Prediction",
     color: "text-accent"
   },
   {
     icon: Palette,
-    title: "Custom Overlays",
-    description: "AI generates professional, branded stream visuals and alerts instantly.",
-    badge: "Design",
+    title: "AI Visual Generator",
+    description: "Generative AI creates custom overlays, thumbnails, and branded visuals tailored to your content style.",
+    badge: "AI Design",
     color: "text-success"
   }
 ];
@@ -60,17 +60,17 @@ const Features = () => {
       <div className="container mx-auto px-6">
         <div className="text-center space-y-6 mb-16">
           <Badge variant="secondary" className="py-2 px-4">
-            Powerful Features
+            AI-Powered Features
           </Badge>
           <h2 className="text-4xl lg:text-5xl font-bold">
-            Everything you need to{" "}
+            Advanced AI that{" "}
             <span className="bg-gradient-primary bg-clip-text text-transparent">
-              grow your stream
+              transforms streaming
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Hyvo.ai combines AI automation with creator-focused tools to help you 
-            attract viewers, keep them engaged, and build a thriving community.
+            Hyvo.ai leverages cutting-edge artificial intelligence, machine learning, and computer vision 
+            to automate every aspect of content creation and audience growth.
           </p>
         </div>
         

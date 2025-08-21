@@ -20,7 +20,7 @@ const Hero = () => {
           <div className="text-center lg:text-left space-y-8">
             <Badge variant="secondary" className="inline-flex items-center gap-2 py-2 px-4">
               <Sparkles className="w-4 h-4" />
-              AI-Powered Streaming Assistant
+              Advanced AI Streaming Intelligence
             </Badge>
             
             <div className="space-y-6">
@@ -30,16 +30,16 @@ const Hero = () => {
                 </span>
                 <br />
                 <span className="text-foreground">
-                  Stream
+                  AI-Powered
                 </span>{" "}
                 <span className="bg-gradient-secondary bg-clip-text text-transparent">
-                  Smarter
+                  Streaming
                 </span>
               </h1>
               
               <p className="text-xl text-muted-foreground max-w-lg mx-auto lg:mx-0">
-                The AI-powered tool that automates the hardest parts of streaming—scheduling, 
-                engagement, and promotion—so you can focus on creating amazing content.
+                Revolutionary AI assistant that intelligently automates streaming operations, 
+                analyzes audience behavior, and optimizes content performance with machine learning algorithms.
               </p>
             </div>
             
