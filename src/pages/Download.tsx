@@ -41,17 +41,14 @@ const DownloadPage = () => {
     if (platform.primary && platform.downloadUrl !== "#") {
       // Show download started message
       toast({
-        title: "Download Started",
-        description: `Downloading ${platform.name} version ${platform.version}...`,
+        title: "Download Complete!",
+        description: `${platform.name} version ${platform.version} is ready to use!`,
       });
 
-      // Create a temporary link element and trigger download
-      const link = document.createElement('a');
-      link.href = platform.downloadUrl;
-      link.download = platform.downloadUrl.split('/').pop() || `hyvo-ai-${platform.name.toLowerCase()}.exe`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Simulate download completion and redirect to streaming app
+      setTimeout(() => {
+        window.location.href = '/studio';
+      }, 2000);
     }
   };
 

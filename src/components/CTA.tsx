@@ -13,7 +13,7 @@ const CTA = () => {
   const navigate = useNavigate();
 
   const handleStartTrial = () => {
-    navigate('/download');
+    navigate('/studio');
   };
 
   const handleBookDemo = () => {

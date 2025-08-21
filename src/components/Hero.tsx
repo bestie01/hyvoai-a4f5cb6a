@@ -1,9 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Sparkles, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-dashboard.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleStartTrial = () => {
+    navigate('/studio');
+  };
+
+  const handleViewDemo = () => {
+    navigate('/studio');
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-hero overflow-hidden">
       {/* Background gradient overlay */}
@@ -44,13 +55,13 @@ const Hero = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button variant="hero" size="lg" className="group">
+              <Button variant="hero" size="lg" className="group" onClick={handleStartTrial}>
                 <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                Start Free Trial
+                Launch Studio
               </Button>
-              <Button variant="accent" size="lg">
+              <Button variant="accent" size="lg" onClick={handleViewDemo}>
                 <TrendingUp className="w-5 h-5" />
-                View Demo
+                Try Demo
               </Button>
             </div>
             
