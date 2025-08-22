@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Play, 
   Square, 
@@ -23,16 +26,24 @@ import {
   Filter,
   Palette,
   Zap,
-  Circle
+  Circle,
+  Twitch,
+  MicOff
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMicrophone } from "@/hooks/useMicrophone";
+import { useTwitchStream } from "@/hooks/useTwitchStream";
 
 const StreamingApp = () => {
   const { toast } = useToast();
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [viewers, setViewers] = useState(247);
   const [streamTime, setStreamTime] = useState("00:00:00");
+  const [twitchStreamKey, setTwitchStreamKey] = useState("");
+  const [streamTitle, setStreamTitle] = useState("Live Stream from Hyvo.ai");
+  const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
+  
+  // Use custom hooks
+  const microphone = useMicrophone();
+  const twitch = useTwitchStream();
   const [scenes] = useState([
     { id: 1, name: "Gaming Scene", active: true },
     { id: 2, name: "Just Chatting", active: false },
@@ -56,18 +67,8 @@ const StreamingApp = () => {
   ]);
 
   useEffect(() => {
-    // Simulate live viewer count changes
-    if (isStreaming) {
-      const interval = setInterval(() => {
-        setViewers(prev => prev + Math.floor(Math.random() * 3) - 1);
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [isStreaming]);
-
-  useEffect(() => {
-    // Simulate stream timer
-    if (isStreaming) {
+    // Stream timer
+    if (twitch.isStreaming) {
       const startTime = Date.now();
       const interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -77,23 +78,53 @@ const StreamingApp = () => {
         setStreamTime(`${hours}:${minutes}:${seconds}`);
       }, 1000);
       return () => clearInterval(interval);
+    } else {
+      setStreamTime("00:00:00");
     }
-  }, [isStreaming]);
+  }, [twitch.isStreaming]);
 
-  const handleStartStream = () => {
-    setIsStreaming(!isStreaming);
-    toast({
-      title: isStreaming ? "Stream Stopped" : "Stream Started",
-      description: isStreaming ? "Your stream has ended successfully" : "You're now live on Twitch!",
-    });
+  const handleConnectToTwitch = async () => {
+    if (!twitchStreamKey.trim()) {
+      toast({
+        title: "Missing Stream Key",
+        description: "Please enter your Twitch stream key",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const success = await twitch.connectToTwitch(twitchStreamKey, streamTitle);
+    if (success) {
+      setIsConnectDialogOpen(false);
+    }
   };
 
-  const handleStartRecording = () => {
-    setIsRecording(!isRecording);
-    toast({
-      title: isRecording ? "Recording Stopped" : "Recording Started",
-      description: isRecording ? "Recording saved to your videos folder" : "Now recording your stream",
-    });
+  const handleStartStream = async () => {
+    if (!twitch.isConnected) {
+      toast({
+        title: "Not Connected",
+        description: "Please connect to Twitch first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (twitch.isStreaming) {
+      await twitch.stopStream();
+    } else {
+      await twitch.startStream();
+    }
+  };
+
+  const handleMicrophoneToggle = async () => {
+    if (microphone.isRecording) {
+      microphone.stopRecording();
+    } else {
+      if (!microphone.isPermissionGranted) {
+        await microphone.requestPermission();
+      }
+      await microphone.startRecording();
+    }
   };
 
   return (
@@ -107,17 +138,17 @@ const StreamingApp = () => {
               <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Hyvo.ai Studio
               </h1>
-              <Badge variant={isStreaming ? "default" : "secondary"}>
-                {isStreaming ? "LIVE" : "OFFLINE"}
+              <Badge variant={twitch.isStreaming ? "default" : "secondary"}>
+                {twitch.isStreaming ? "LIVE" : twitch.isConnected ? "CONNECTED" : "OFFLINE"}
               </Badge>
             </div>
             
             <div className="flex items-center gap-4">
-              {isStreaming && (
+              {twitch.isStreaming && (
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Eye className="w-4 h-4" />
-                    <span>{viewers}</span>
+                    <span>{twitch.viewers}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>Live: {streamTime}</span>
@@ -126,22 +157,70 @@ const StreamingApp = () => {
               )}
               
               <div className="flex gap-2">
-                <Button
-                  variant={isStreaming ? "destructive" : "default"}
-                  onClick={handleStartStream}
-                  className="gap-2"
-                >
-                  {isStreaming ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  {isStreaming ? "Stop Stream" : "Start Stream"}
-                </Button>
+                {!twitch.isConnected ? (
+                  <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="gap-2">
+                        <Twitch className="w-4 h-4" />
+                        Connect to Twitch
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Connect to Twitch</DialogTitle>
+                        <DialogDescription>
+                          Enter your Twitch stream key to start broadcasting. You can find this in your Twitch Creator Dashboard.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="streamKey">Stream Key</Label>
+                          <Input
+                            id="streamKey"
+                            type="password"
+                            placeholder="Enter your Twitch stream key..."
+                            value={twitchStreamKey}
+                            onChange={(e) => setTwitchStreamKey(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="streamTitle">Stream Title</Label>
+                          <Input
+                            id="streamTitle"
+                            placeholder="Enter stream title..."
+                            value={streamTitle}
+                            onChange={(e) => setStreamTitle(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleConnectToTwitch}>
+                          Connect
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Button
+                    variant={twitch.isStreaming ? "destructive" : "default"}
+                    onClick={handleStartStream}
+                    className="gap-2"
+                  >
+                    {twitch.isStreaming ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {twitch.isStreaming ? "Stop Stream" : "Start Stream"}
+                  </Button>
+                )}
                 
                 <Button
-                  variant={isRecording ? "destructive" : "outline"}
-                  onClick={handleStartRecording}
+                  variant={microphone.isRecording ? "default" : "outline"}
+                  onClick={handleMicrophoneToggle}
                   className="gap-2"
                 >
-                  <Circle className="w-4 h-4" />
-                  {isRecording ? "Stop Recording" : "Start Recording"}
+                  {microphone.isRecording ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                  {microphone.isRecording ? "Mic On" : "Mic Off"}
                 </Button>
                 
                 <Button variant="outline" size="icon">
@@ -171,7 +250,7 @@ const StreamingApp = () => {
                     <div>
                       <p className="text-lg font-medium">Stream Preview</p>
                       <p className="text-sm text-muted-foreground">
-                        {isStreaming ? "Your stream is live!" : "Click 'Start Stream' to go live"}
+                        {twitch.isStreaming ? "Your stream is live!" : twitch.isConnected ? "Ready to stream - click 'Start Stream'" : "Connect to Twitch to begin streaming"}
                       </p>
                     </div>
                   </div>
@@ -192,9 +271,14 @@ const StreamingApp = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Microphone</span>
-                      <Switch defaultChecked />
+                      <Switch checked={microphone.isRecording} onCheckedChange={handleMicrophoneToggle} />
                     </div>
-                    <Slider defaultValue={[75]} max={100} step={1} />
+                    <div className="space-y-1">
+                      <Slider value={[microphone.audioLevel]} max={100} step={1} disabled />
+                      <div className="text-xs text-muted-foreground">
+                        Level: {Math.round(microphone.audioLevel)}%
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -328,7 +412,7 @@ const StreamingApp = () => {
             </Button>
           </div>
           <div className="text-center text-sm text-muted-foreground">
-            {isStreaming ? `${viewers} viewers watching` : "Start streaming to see chat"}
+            {twitch.isStreaming ? `${twitch.viewers} viewers watching` : "Start streaming to see chat"}
           </div>
         </div>
       </div>
