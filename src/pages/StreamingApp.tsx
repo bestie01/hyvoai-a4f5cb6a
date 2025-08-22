@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,8 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Play, 
   Square, 
@@ -28,22 +31,43 @@ import {
   Zap,
   Circle,
   Twitch,
-  MicOff
+  MicOff,
+  Youtube,
+  LogOut
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMicrophone } from "@/hooks/useMicrophone";
 import { useTwitchStream } from "@/hooks/useTwitchStream";
+import { useYouTubeStream } from "@/hooks/useYouTubeStream";
+import { useAuth } from "@/hooks/useAuth";
 
 const StreamingApp = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  
   const [streamTime, setStreamTime] = useState("00:00:00");
+  const [activeStream, setActiveStream] = useState<'twitch' | 'youtube' | null>(null);
+  
+  // Stream connection states
   const [twitchStreamKey, setTwitchStreamKey] = useState("");
+  const [youtubeStreamKey, setYoutubeStreamKey] = useState("");
   const [streamTitle, setStreamTitle] = useState("Live Stream from Hyvo.ai");
+  const [streamDescription, setStreamDescription] = useState("Streaming live with Hyvo.ai Studio");
+  const [privacy, setPrivacy] = useState<'public' | 'unlisted' | 'private'>('public');
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   
   // Use custom hooks
   const microphone = useMicrophone();
   const twitch = useTwitchStream();
+  const youtube = useYouTubeStream();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
   const [scenes] = useState([
     { id: 1, name: "Gaming Scene", active: true },
     { id: 2, name: "Just Chatting", active: false },
@@ -68,7 +92,8 @@ const StreamingApp = () => {
 
   useEffect(() => {
     // Stream timer
-    if (twitch.isStreaming) {
+    const isStreaming = twitch.isStreaming || youtube.isStreaming;
+    if (isStreaming) {
       const startTime = Date.now();
       const interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -81,39 +106,61 @@ const StreamingApp = () => {
     } else {
       setStreamTime("00:00:00");
     }
-  }, [twitch.isStreaming]);
+  }, [twitch.isStreaming, youtube.isStreaming]);
 
-  const handleConnectToTwitch = async () => {
-    if (!twitchStreamKey.trim()) {
+  const handleConnectToPlatform = async (platform: 'twitch' | 'youtube') => {
+    const streamKey = platform === 'twitch' ? twitchStreamKey : youtubeStreamKey;
+    
+    if (!streamKey.trim()) {
       toast({
         title: "Missing Stream Key",
-        description: "Please enter your Twitch stream key",
+        description: `Please enter your ${platform} stream key`,
         variant: "destructive",
       });
       return;
     }
 
-    const success = await twitch.connectToTwitch(twitchStreamKey, streamTitle);
+    let success = false;
+    if (platform === 'twitch') {
+      success = await twitch.connectToTwitch(streamKey, streamTitle);
+    } else {
+      success = await youtube.connectToYouTube(streamKey, streamTitle, streamDescription, privacy);
+    }
+    
     if (success) {
+      setActiveStream(platform);
       setIsConnectDialogOpen(false);
     }
   };
 
   const handleStartStream = async () => {
-    if (!twitch.isConnected) {
+    if (!twitch.isConnected && !youtube.isConnected) {
       toast({
         title: "Not Connected",
-        description: "Please connect to Twitch first",
+        description: "Please connect to a streaming platform first",
         variant: "destructive",
       });
       return;
     }
 
-    if (twitch.isStreaming) {
-      await twitch.stopStream();
-    } else {
-      await twitch.startStream();
+    if (activeStream === 'twitch') {
+      if (twitch.isStreaming) {
+        await twitch.stopStream();
+      } else {
+        await twitch.startStream();
+      }
+    } else if (activeStream === 'youtube') {
+      if (youtube.isStreaming) {
+        await youtube.stopStream();
+      } else {
+        await youtube.startStream();
+      }
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
   };
 
   const handleMicrophoneToggle = async () => {
@@ -138,17 +185,28 @@ const StreamingApp = () => {
               <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Hyvo.ai Studio
               </h1>
-              <Badge variant={twitch.isStreaming ? "default" : "secondary"}>
-                {twitch.isStreaming ? "LIVE" : twitch.isConnected ? "CONNECTED" : "OFFLINE"}
+              <Badge variant={
+                (twitch.isStreaming || youtube.isStreaming) ? "default" : 
+                (twitch.isConnected || youtube.isConnected) ? "secondary" : 
+                "outline"
+              }>
+                {(twitch.isStreaming || youtube.isStreaming) ? "LIVE" : 
+                 (twitch.isConnected || youtube.isConnected) ? `CONNECTED (${activeStream?.toUpperCase()})` : 
+                 "OFFLINE"}
               </Badge>
+              {user && (
+                <div className="text-sm text-muted-foreground">
+                  Welcome, {user.email}
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-4">
-              {twitch.isStreaming && (
+              {(twitch.isStreaming || youtube.isStreaming) && (
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Eye className="w-4 h-4" />
-                    <span>{twitch.viewers}</span>
+                    <span>{activeStream === 'twitch' ? twitch.viewers : youtube.viewers}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>Live: {streamTime}</span>
@@ -157,60 +215,120 @@ const StreamingApp = () => {
               )}
               
               <div className="flex gap-2">
-                {!twitch.isConnected ? (
+                {!twitch.isConnected && !youtube.isConnected ? (
                   <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="gap-2">
-                        <Twitch className="w-4 h-4" />
-                        Connect to Twitch
+                        <Zap className="w-4 h-4" />
+                        Connect Platform
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Connect to Twitch</DialogTitle>
+                        <DialogTitle>Connect Streaming Platform</DialogTitle>
                         <DialogDescription>
-                          Enter your Twitch stream key to start broadcasting. You can find this in your Twitch Creator Dashboard.
+                          Choose your streaming platform and enter your stream key to start broadcasting.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="streamKey">Stream Key</Label>
-                          <Input
-                            id="streamKey"
-                            type="password"
-                            placeholder="Enter your Twitch stream key..."
-                            value={twitchStreamKey}
-                            onChange={(e) => setTwitchStreamKey(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="streamTitle">Stream Title</Label>
-                          <Input
-                            id="streamTitle"
-                            placeholder="Enter stream title..."
-                            value={streamTitle}
-                            onChange={(e) => setStreamTitle(e.target.value)}
-                          />
-                        </div>
-                      </div>
+                      <Tabs defaultValue="twitch" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="twitch" className="gap-2">
+                            <Twitch className="w-4 h-4" />
+                            Twitch
+                          </TabsTrigger>
+                          <TabsTrigger value="youtube" className="gap-2">
+                            <Youtube className="w-4 h-4" />
+                            YouTube
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="twitch" className="space-y-4">
+                          <div>
+                            <Label htmlFor="twitchKey">Twitch Stream Key</Label>
+                            <Input
+                              id="twitchKey"
+                              type="password"
+                              placeholder="Enter your Twitch stream key..."
+                              value={twitchStreamKey}
+                              onChange={(e) => setTwitchStreamKey(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="streamTitle">Stream Title</Label>
+                            <Input
+                              id="streamTitle"
+                              placeholder="Enter stream title..."
+                              value={streamTitle}
+                              onChange={(e) => setStreamTitle(e.target.value)}
+                            />
+                          </div>
+                          <Button onClick={() => handleConnectToPlatform('twitch')} className="w-full">
+                            Connect to Twitch
+                          </Button>
+                        </TabsContent>
+                        
+                        <TabsContent value="youtube" className="space-y-4">
+                          <div>
+                            <Label htmlFor="youtubeKey">YouTube Stream Key</Label>
+                            <Input
+                              id="youtubeKey"
+                              type="password"
+                              placeholder="Enter your YouTube stream key..."
+                              value={youtubeStreamKey}
+                              onChange={(e) => setYoutubeStreamKey(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="youtubeTitle">Stream Title</Label>
+                            <Input
+                              id="youtubeTitle"
+                              placeholder="Enter stream title..."
+                              value={streamTitle}
+                              onChange={(e) => setStreamTitle(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="youtubeDesc">Description</Label>
+                            <Input
+                              id="youtubeDesc"
+                              placeholder="Stream description..."
+                              value={streamDescription}
+                              onChange={(e) => setStreamDescription(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="privacy">Privacy</Label>
+                            <Select value={privacy} onValueChange={(value: 'public' | 'unlisted' | 'private') => setPrivacy(value)}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="public">Public</SelectItem>
+                                <SelectItem value="unlisted">Unlisted</SelectItem>
+                                <SelectItem value="private">Private</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button onClick={() => handleConnectToPlatform('youtube')} className="w-full">
+                            Connect to YouTube
+                          </Button>
+                        </TabsContent>
+                      </Tabs>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
                           Cancel
-                        </Button>
-                        <Button onClick={handleConnectToTwitch}>
-                          Connect
                         </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 ) : (
                   <Button
-                    variant={twitch.isStreaming ? "destructive" : "default"}
+                    variant={(twitch.isStreaming || youtube.isStreaming) ? "destructive" : "default"}
                     onClick={handleStartStream}
                     className="gap-2"
                   >
-                    {twitch.isStreaming ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    {twitch.isStreaming ? "Stop Stream" : "Start Stream"}
+                    {(twitch.isStreaming || youtube.isStreaming) ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {(twitch.isStreaming || youtube.isStreaming) ? "Stop Stream" : "Start Stream"}
                   </Button>
                 )}
                 
@@ -225,6 +343,10 @@ const StreamingApp = () => {
                 
                 <Button variant="outline" size="icon">
                   <Settings className="w-4 h-4" />
+                </Button>
+                
+                <Button variant="outline" size="icon" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -250,7 +372,11 @@ const StreamingApp = () => {
                     <div>
                       <p className="text-lg font-medium">Stream Preview</p>
                       <p className="text-sm text-muted-foreground">
-                        {twitch.isStreaming ? "Your stream is live!" : twitch.isConnected ? "Ready to stream - click 'Start Stream'" : "Connect to Twitch to begin streaming"}
+                        {(twitch.isStreaming || youtube.isStreaming) ? 
+                          `Your ${activeStream} stream is live!` : 
+                          (twitch.isConnected || youtube.isConnected) ? 
+                            "Ready to stream - click 'Start Stream'" : 
+                            "Connect to a streaming platform to begin"}
                       </p>
                     </div>
                   </div>
@@ -412,7 +538,9 @@ const StreamingApp = () => {
             </Button>
           </div>
           <div className="text-center text-sm text-muted-foreground">
-            {twitch.isStreaming ? `${twitch.viewers} viewers watching` : "Start streaming to see chat"}
+            {(twitch.isStreaming || youtube.isStreaming) ? 
+              `${activeStream === 'twitch' ? twitch.viewers : youtube.viewers} viewers watching` : 
+              "Start streaming to see chat"}
           </div>
         </div>
       </div>

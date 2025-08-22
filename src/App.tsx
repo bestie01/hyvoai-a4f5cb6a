@@ -8,6 +8,7 @@ import Download from "./pages/Download";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import StreamingApp from "./pages/StreamingApp";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/studio" element={<StreamingApp />} />
+          <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
