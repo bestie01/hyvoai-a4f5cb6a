@@ -24,7 +24,8 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate("/studio");
+      const from = new URLSearchParams(window.location.search).get('from') || '/studio';
+      navigate(from, { replace: true });
     }
   }, [user, navigate]);
 

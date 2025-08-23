@@ -93,7 +93,11 @@ export const useAuth = (): UseAuthReturn => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'twitch',
       options: {
-        redirectTo: `${window.location.origin}/studio`
+        redirectTo: `${window.location.origin}/studio`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     });
 
