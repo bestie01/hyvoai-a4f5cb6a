@@ -9,6 +9,7 @@ interface UseAuthReturn {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithTwitch: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
 }
@@ -88,6 +89,25 @@ export const useAuth = (): UseAuthReturn => {
     return { error };
   }, [toast]);
 
+  const signInWithTwitch = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'twitch',
+      options: {
+        redirectTo: `${window.location.origin}/studio`
+      }
+    });
+
+    if (error) {
+      toast({
+        title: "Twitch Sign In Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+
+    return { error };
+  }, [toast]);
+
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -133,6 +153,7 @@ export const useAuth = (): UseAuthReturn => {
     loading,
     signUp,
     signIn,
+    signInWithTwitch,
     signOut,
     resetPassword,
   };
