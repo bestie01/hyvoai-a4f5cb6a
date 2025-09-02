@@ -41,6 +41,48 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_analytics: {
+        Row: {
+          created_at: string
+          duration: string
+          engagement_rate: number
+          id: string
+          messages: number
+          platform: string
+          quality: string
+          stream_id: string
+          timestamp: string
+          user_id: string
+          viewers: number
+        }
+        Insert: {
+          created_at?: string
+          duration: string
+          engagement_rate?: number
+          id?: string
+          messages?: number
+          platform: string
+          quality: string
+          stream_id: string
+          timestamp?: string
+          user_id: string
+          viewers?: number
+        }
+        Update: {
+          created_at?: string
+          duration?: string
+          engagement_rate?: number
+          id?: string
+          messages?: number
+          platform?: string
+          quality?: string
+          stream_id?: string
+          timestamp?: string
+          user_id?: string
+          viewers?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

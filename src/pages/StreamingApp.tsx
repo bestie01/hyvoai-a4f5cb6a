@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StreamAnalytics } from "@/components/StreamAnalytics";
 import { 
   Play, 
   Square, 
@@ -418,8 +419,16 @@ const StreamingApp = () => {
             </Card>
           </div>
 
-          {/* Right Panel - Scenes & Sources */}
+          {/* Right Panel - Analytics, Scenes & Sources */}
           <div className="w-80 border-l border-border p-4 space-y-4">
+            {/* Analytics */}
+            {(twitch.isStreaming || youtube.isStreaming) && (
+              <StreamAnalytics 
+                viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
+                streamTime={streamTime}
+                isStreaming={true}
+              />
+            )}
             {/* Scenes */}
             <Card>
               <CardHeader>

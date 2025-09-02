@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { Menu, X, User, Settings, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -63,6 +65,9 @@ const Navigation = () => {
 
           {/* CTA Buttons / User Menu */}
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
+            {user && <NotificationCenter />}
+            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -151,6 +156,11 @@ const Navigation = () => {
                 )
               ))}
               <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                <div className="flex items-center gap-3 mb-3">
+                  <ThemeToggle />
+                  {user && <NotificationCenter />}
+                </div>
+                
                 {user ? (
                   <>
                     <Button 

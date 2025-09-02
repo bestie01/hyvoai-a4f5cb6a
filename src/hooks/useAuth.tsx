@@ -10,6 +10,8 @@ interface UseAuthReturn {
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithTwitch: () => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
+  signInWithDiscord: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
 }
@@ -112,6 +114,40 @@ export const useAuth = (): UseAuthReturn => {
     return { error };
   }, [toast]);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    if (error) {
+      toast({
+        title: "Google Sign In Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    return { error };
+  }, [toast]);
+
+  const signInWithDiscord = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'discord',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    if (error) {
+      toast({
+        title: "Discord Sign In Failed", 
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+    return { error };
+  }, [toast]);
+
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -158,6 +194,8 @@ export const useAuth = (): UseAuthReturn => {
     signUp,
     signIn,
     signInWithTwitch,
+    signInWithGoogle,
+    signInWithDiscord,
     signOut,
     resetPassword,
   };
