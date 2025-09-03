@@ -3,8 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 
 const Pricing = () => {
+  const { createCheckout, loading, subscription, isPro, isYearOne } = useSubscription();
+  const { user } = useAuth();
+  
   const plans = [
     {
       name: "Pro",
@@ -103,8 +108,16 @@ const Pricing = () => {
                     variant={plan.variant} 
                     size="lg" 
                     className="w-full"
+                    onClick={() => {
+                      if (plan.name === "Pro") {
+                        createCheckout('pro');
+                      } else {
+                        createCheckout('yearone');
+                      }
+                    }}
+                    disabled={loading}
                   >
-                    {plan.buttonText}
+                    {loading ? "Processing..." : plan.buttonText}
                   </Button>
                 </CardContent>
               </Card>

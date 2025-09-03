@@ -6,14 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Mail, Calendar, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, User, Mail, Calendar, Settings, Crown, CreditCard, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { subscription, isPro, isYearOne, loading, checkSubscription, openCustomerPortal } = useSubscription();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -112,9 +115,79 @@ const Profile = () => {
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle className="text-2xl">{fullName || "User"}</CardTitle>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <CardTitle className="text-2xl">{fullName || "User"}</CardTitle>
+                {isPro && (
+                  <Badge variant="secondary" className="bg-gradient-primary text-white">
+                    <Crown className="w-3 h-3 mr-1" />
+                    {subscription.subscription_tier}
+                  </Badge>
+                )}
+              </div>
               <CardDescription className="text-base">{user.email}</CardDescription>
             </CardHeader>
+          </Card>
+
+          {/* Subscription Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Subscription
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={checkSubscription}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Manage your subscription and billing
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-medium flex items-center gap-2">
+                      Current Plan
+                      {isPro && (
+                        <Badge variant="secondary" className="bg-gradient-primary text-white">
+                          <Crown className="w-3 h-3 mr-1" />
+                          {subscription.subscription_tier}
+                        </Badge>
+                      )}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {isPro 
+                        ? `You have access to all Pro features`
+                        : "You're currently on the free plan"
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                {subscription.subscription_end && (
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {isYearOne ? 'Expires' : 'Renews'} on {new Date(subscription.subscription_end).toLocaleDateString()}
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  {isPro ? (
+                    <Button onClick={openCustomerPortal} disabled={loading}>
+                      {loading ? "Loading..." : "Manage Subscription"}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => navigate('/pricing')}>
+                      Upgrade to Pro
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
           </Card>
 
           {/* Account Information */}

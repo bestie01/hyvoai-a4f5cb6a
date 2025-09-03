@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Play, Heart, TrendingUp, Users, DollarSign, Download, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from 'react';
+import { ProFeatureGate } from "@/components/ProFeatureGate";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const chartData = [
   { name: 'Jan', value: 400 },
@@ -21,6 +23,7 @@ const pieData = [
 
 export function DashboardMain() {
   const { toast } = useToast();
+  const { isPro } = useSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [chartData, setChartData] = useState([
     { name: 'Jan', value: 400 },
@@ -226,18 +229,27 @@ export function DashboardMain() {
         </Card>
       </div>
 
-      {/* Growth Rate Card */}
-      <Card className="p-4 bg-gradient-card border border-white/10 backdrop-blur-xl w-fit">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
-            <TrendingUp className="w-6 h-6 text-white" />
+      {/* Growth Rate Card - Pro Feature */}
+      {isPro ? (
+        <Card className="p-4 bg-gradient-card border border-white/10 backdrop-blur-xl w-fit">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h4 className="text-white font-semibold">Growth Rate</h4>
+              <p className="text-white/60">+24% this week</p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-white font-semibold">Growth Rate</h4>
-            <p className="text-white/60">+24% this week</p>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      ) : (
+        <ProFeatureGate 
+          feature="Advanced Growth Analytics"
+          description="Track your growth rate, conversion metrics, and detailed performance insights."
+        >
+          <div></div>
+        </ProFeatureGate>
+      )}
     </div>
   );
 }
