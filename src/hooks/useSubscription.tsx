@@ -16,16 +16,18 @@ export const useSubscription = () => {
     subscription_end: null,
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const { user, session } = useAuth();
   const { toast } = useToast();
 
-  const checkSubscription = useCallback(async () => {
+  const checkSubscription = useCallback(async (showToast = false) => {
     if (!user || !session) {
       setSubscription({
         subscribed: false,
         subscription_tier: null,
         subscription_end: null,
       });
+      setInitialLoading(false);
       return;
     }
 
@@ -44,15 +46,29 @@ export const useSubscription = () => {
         subscription_tier: data.subscription_tier || null,
         subscription_end: data.subscription_end || null,
       });
+
+      if (showToast && data.subscribed) {
+        toast({
+          title: "Subscription Active",
+          description: `Your ${data.subscription_tier} plan is active!`,
+        });
+      }
     } catch (error) {
       console.error('Error checking subscription:', error);
-      toast({
-        title: "Error",
-        description: "Failed to check subscription status",
-        variant: "destructive",
-      });
+      if (showToast) {
+        toast({
+          title: "Error",
+          description: "Failed to check subscription status",
+          variant: "destructive",
+        });
+      }
+      // Retry logic for failed requests
+      setTimeout(() => {
+        checkSubscription(false);
+      }, 5000);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   }, [user, session, toast]);
 
@@ -63,7 +79,7 @@ export const useSubscription = () => {
         description: "Please sign in to subscribe",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -79,13 +95,21 @@ export const useSubscription = () => {
 
       // Open Stripe checkout in new tab
       window.open(data.url, '_blank');
+      
+      toast({
+        title: "Redirecting to checkout",
+        description: "Opening Stripe checkout in a new tab...",
+      });
+      
+      return true;
     } catch (error) {
       console.error('Error creating checkout:', error);
       toast({
         title: "Error",
-        description: "Failed to create checkout session",
+        description: "Failed to create checkout session. Please try again.",
         variant: "destructive",
       });
+      return false;
     } finally {
       setLoading(false);
     }
@@ -113,11 +137,16 @@ export const useSubscription = () => {
 
       // Open customer portal in new tab
       window.open(data.url, '_blank');
+      
+      toast({
+        title: "Redirecting to customer portal",
+        description: "Opening subscription management portal...",
+      });
     } catch (error) {
       console.error('Error opening customer portal:', error);
       toast({
         title: "Error",
-        description: "Failed to open customer portal",
+        description: "Failed to open customer portal. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -130,24 +159,31 @@ export const useSubscription = () => {
     checkSubscription();
   }, [checkSubscription]);
 
-  // Refresh subscription every 30 seconds
+  // Refresh subscription every 5 minutes instead of 30 seconds
   useEffect(() => {
     if (!user) return;
 
     const interval = setInterval(() => {
-      checkSubscription();
-    }, 30000);
+      checkSubscription(false);
+    }, 300000); // 5 minutes
 
     return () => clearInterval(interval);
   }, [user, checkSubscription]);
 
+  const refreshSubscription = () => {
+    checkSubscription(true);
+  };
+
   return {
     subscription,
     loading,
+    initialLoading,
     checkSubscription,
+    refreshSubscription,
     createCheckout,
     openCustomerPortal,
     isPro: subscription.subscribed && (subscription.subscription_tier === 'Pro' || subscription.subscription_tier === 'Year One'),
     isYearOne: subscription.subscribed && subscription.subscription_tier === 'Year One',
+    isPaid: subscription.subscribed,
   };
 };

@@ -1,17 +1,23 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, ArrowLeft, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Eye, EyeOff, ArrowLeft, Zap, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signUp, signIn, signInWithTwitch, signInWithGoogle, signInWithDiscord, resetPassword } = useAuth();
+  const { createCheckout } = useSubscription();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
@@ -20,14 +26,28 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  
+  // Get redirect info from location state
+  const redirectPath = location.state?.redirect || '/studio';
+  const planId = location.state?.plan;
 
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      const from = new URLSearchParams(window.location.search).get('from') || '/studio';
+      // If user is authenticated and there's a plan to subscribe to
+      if (planId) {
+        if (planId === "pro") {
+          createCheckout('pro');
+        } else if (planId === "yearone") {
+          createCheckout('yearone');
+        }
+        return;
+      }
+      // Otherwise redirect to the specified path
+      const from = new URLSearchParams(window.location.search).get('from') || redirectPath;
       navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectPath, planId, createCheckout]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,9 +93,31 @@ const Auth = () => {
             </h1>
           </div>
           <p className="text-muted-foreground">
-            {isResetMode ? "Reset your password" : "Access your streaming studio"}
+            {isResetMode ? "Reset your password" : 
+             planId ? "Sign in to subscribe" : "Access your streaming studio"}
           </p>
         </div>
+
+        {/* Plan Info */}
+        {planId && (
+          <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Crown className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-primary">
+                {planId === "pro" ? "Pro Monthly Plan" : "Year One Annual Plan"}
+              </h3>
+              <Badge variant="secondary" className="bg-primary/10">
+                {planId === "pro" ? "$29/month" : "$290/year"}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {planId === "pro" 
+                ? "Sign in to start your Pro subscription with advanced streaming features"
+                : "Sign in to get Year One annual plan with 17% savings and exclusive perks"
+              }
+            </p>
+          </div>
+        )}
 
         {/* Reset Password Form */}
         {isResetMode ? (

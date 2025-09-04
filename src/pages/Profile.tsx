@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { subscription, isPro, isYearOne, loading, checkSubscription, openCustomerPortal } = useSubscription();
+  const { subscription, isPro, isYearOne, loading, refreshSubscription, openCustomerPortal } = useSubscription();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -137,7 +137,7 @@ const Profile = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={checkSubscription}
+                  onClick={refreshSubscription}
                   disabled={loading}
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
