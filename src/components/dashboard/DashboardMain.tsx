@@ -1,11 +1,23 @@
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Heart, TrendingUp, Users, DollarSign, Download, RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from 'react';
-import { ProFeatureGate } from "@/components/ProFeatureGate";
-import { useSubscription } from "@/hooks/useSubscription";
+import { ProStreamAnalytics } from "./ProStreamAnalytics";
+import { RealtimeDashboard } from "./RealtimeDashboard";
+import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
+import { useEffect } from "react";
+import { 
+  TrendingUp, 
+  Users, 
+  Play, 
+  Calendar, 
+  Clock,
+  Activity,
+  BarChart3,
+  Target,
+  Zap,
+  Brain,
+  Sparkles
+} from "lucide-react";
 
 const chartData = [
   { name: 'Jan', value: 400 },
@@ -22,234 +34,187 @@ const pieData = [
 ];
 
 export function DashboardMain() {
-  const { toast } = useToast();
-  const { isPro } = useSubscription();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [chartData, setChartData] = useState([
-    { name: 'Jan', value: 400 },
-    { name: 'Feb', value: 300 },
-    { name: 'Mar', value: 600 },
-    { name: 'Apr', value: 500 },
-    { name: 'May', value: 800 },
-  ]);
+  const { getAnalytics, metrics, loading } = useRealtimeAnalytics();
 
-  const handleRefreshData = async () => {
-    setIsRefreshing(true);
-    toast({
-      title: "Refreshing Data",
-      description: "Analytics data is being updated...",
-    });
-    
-    // Simulate API call
-    setTimeout(() => {
-      const newData = chartData.map(item => ({
-        ...item,
-        value: Math.floor(Math.random() * 1000) + 200
-      }));
-      setChartData(newData);
-      setIsRefreshing(false);
-      toast({
-        title: "Data Updated",
-        description: "Analytics data has been successfully refreshed.",
-      });
-    }, 2000);
-  };
-
-  const handleExportData = () => {
-    toast({
-      title: "Exporting Data",
-      description: "Analytics report is being generated...",
-    });
-    
-    // Simulate export
-    setTimeout(() => {
-      toast({
-        title: "Export Complete",
-        description: "Your analytics report has been downloaded.",
-      });
-    }, 1500);
-  };
-
-  const handleFavoriteChart = () => {
-    toast({
-      title: "Chart Favorited",
-      description: "This chart has been added to your favorites.",
-    });
-  };
+  // Fetch analytics on component mount
+  useEffect(() => {
+    getAnalytics(7);
+  }, [getAnalytics]);
 
   return (
     <div className="space-y-6">
-      {/* Main Chart */}
-      <Card className="p-6 bg-gradient-card border border-white/10 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Analytics Overview</h2>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-white/60 hover:text-white hover:bg-white/10"
-              onClick={handleExportData}
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-white/60 hover:text-white hover:bg-white/10"
-              onClick={handleRefreshData}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <XAxis 
-                dataKey="name" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-              />
-              <YAxis 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-              />
-              <Bar 
-                dataKey="value" 
-                fill="url(#barGradient)" 
-                radius={[4, 4, 0, 0]}
-              />
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#06b6d4" />
-                </linearGradient>
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Real Time Stats */}
-        <Card className="p-6 bg-gradient-card border border-white/10 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Real Time</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-white/60 hover:text-white hover:bg-white/10"
-              onClick={handleFavoriteChart}
-            >
-              <Heart className="w-4 h-4" />
-            </Button>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gradient-primary/20 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-primary" />
-              </div>
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-card border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/60 text-sm">Revenue</p>
-                <p className="text-white font-semibold">$12,840</p>
+                <p className="text-sm text-muted-foreground">Total Streams</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "..." : metrics?.totalStreams || 0}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Play className="h-6 w-6 text-primary" />
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center">
-                <Users className="w-6 h-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-white/60 text-sm">Active Users</p>
-                <p className="text-white font-semibold">1,247</p>
-              </div>
-            </div>
-            
-            <div className="h-20">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#06b6d4" 
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          </CardContent>
         </Card>
 
-        {/* Device Stats */}
-        <Card className="p-6 bg-gradient-card border border-white/10 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Device Usage</h3>
-          </div>
-          
-          <div className="flex items-center justify-center h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="space-y-2 mt-4">
-            {pieData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="text-white/60 text-sm">{item.name}</span>
-                </div>
-                <span className="text-white text-sm font-medium">{item.value}%</span>
+        <Card className="bg-gradient-card border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Viewers</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "..." : metrics?.totalViewers.toLocaleString() || 0}
+                </p>
               </div>
-            ))}
-          </div>
+              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-accent" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Peak Viewers</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "..." : metrics?.peakViewers.toLocaleString() || 0}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-success" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Avg Engagement</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "..." : `${metrics?.avgEngagement.toFixed(1) || 0}%`}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-destructive/10 rounded-lg flex items-center justify-center">
+                <Activity className="h-6 w-6 text-destructive" />
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Growth Rate Card - Pro Feature */}
-      {isPro ? (
-        <Card className="p-4 bg-gradient-card border border-white/10 backdrop-blur-xl w-fit">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
+      {/* AI Features Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gradient-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Brain className="h-5 w-5 text-primary" />
+              AI Chat Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Sentiment Analysis</span>
+                <Badge variant="secondary">Active</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Toxicity Detection</span>
+                <Badge variant="secondary">Running</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Trend Tracking</span>
+                <Badge variant="secondary">Live</Badge>
+              </div>
             </div>
-            <div>
-              <h4 className="text-white font-semibold">Growth Rate</h4>
-              <p className="text-white/60">+24% this week</p>
-            </div>
-          </div>
+          </CardContent>
         </Card>
-      ) : (
-        <ProFeatureGate 
-          feature="Advanced Growth Analytics"
-          description="Track your growth rate, conversion metrics, and detailed performance insights."
-        >
-          <div></div>
-        </ProFeatureGate>
-      )}
+
+        <Card className="bg-gradient-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI Highlights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Auto Detection</span>
+                <Badge variant="secondary">Enabled</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Clip Generation</span>
+                <Badge variant="outline">Coming Soon</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Social Export</span>
+                <Badge variant="outline">Coming Soon</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Zap className="h-5 w-5 text-primary" />
+              Real-time Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Live Tracking</span>
+                <Badge variant="secondary">Active</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Data Sync</span>
+                <Badge variant="secondary">30s</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Alerts</span>
+                <Badge variant="secondary">Enabled</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pro Analytics */}
+      <ProStreamAnalytics />
+
+      {/* Stream Schedule */}
+      <Card className="bg-gradient-card border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Calendar className="h-5 w-5 text-primary" />
+            Upcoming Streams
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {["Gaming Session - Tonight 8 PM", "IRL Stream - Tomorrow 3 PM", "Collab Stream - Friday 7 PM"].map((stream, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span className="text-sm text-foreground">{stream}</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  Scheduled
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

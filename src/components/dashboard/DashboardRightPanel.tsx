@@ -1,236 +1,168 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, User, Palette, Code, Zap, Globe, Shield, Coffee, Star, MessageCircle, Settings, HelpCircle, Share2, FileDown } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from 'react';
-
-const designers = [
-  { name: "Alex Johnson", role: "UI Designer", avatar: "A", online: true },
-  { name: "Sarah Chen", role: "UX Designer", avatar: "S", online: false },
-  { name: "Mike Davis", role: "Frontend Dev", avatar: "M", online: true },
-  { name: "Emma Wilson", role: "Designer", avatar: "E", online: true },
-  { name: "David Kim", role: "Backend Dev", avatar: "D", online: false },
-  { name: "Lisa Brown", role: "Product Manager", avatar: "L", online: true },
-  { name: "Tom Garcia", role: "DevOps", avatar: "T", online: false },
-  { name: "Anna Martinez", role: "QA Engineer", avatar: "A", online: true },
-];
-
-const skills = [
-  { icon: Palette, name: "Design", level: 95 },
-  { icon: Code, name: "Development", level: 88 },
-  { icon: Zap, name: "Performance", level: 92 },
-  { icon: Globe, name: "SEO", level: 85 },
-  { icon: Shield, name: "Security", level: 90 },
-  { icon: Coffee, name: "Productivity", level: 96 },
-];
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { StreamAnalytics } from "@/components/StreamAnalytics";
+import { RealtimeDashboard } from "@/components/dashboard/RealtimeDashboard";
+import { AIChatAnalysis } from "@/components/ai/AIChatAnalysis";
+import { AIHighlights } from "@/components/ai/AIHighlights";
+import { 
+  MessageSquare, 
+  Users, 
+  Settings, 
+  Sparkles,
+  Brain,
+  Zap,
+  TrendingUp
+} from "lucide-react";
 
 export function DashboardRightPanel() {
-  const { toast } = useToast();
-  const [selectedDesigner, setSelectedDesigner] = useState(null);
+  // Mock data - in a real app, this would come from your state management
+  const isStreaming = true;
+  const viewers = 1247;
+  const streamTime = "2:34:12";
+  const platform = "twitch";
+  const streamId = "stream_" + Date.now();
 
-  const handleContactDesigner = (designer) => {
-    setSelectedDesigner(designer);
-    toast({
-      title: "Opening Chat",
-      description: `Starting conversation with ${designer.name}`,
-    });
-  };
+  const chatMessages = [
+    { username: "StreamFan123", message: "Great stream!", timestamp: "2:34:10" },
+    { username: "GamerPro", message: "How did you do that move?", timestamp: "2:34:08" },
+    { username: "ChatBot", message: "Welcome to the stream!", timestamp: "2:34:05" },
+    { username: "NewViewer", message: "First time watching, love it!", timestamp: "2:34:02" },
+    { username: "RegularViewer", message: "Been watching for months, keep it up!", timestamp: "2:33:58" },
+    { username: "ExcitedFan", message: "POGGERS! That was amazing!", timestamp: "2:33:55" },
+    { username: "CasualViewer", message: "What game is this?", timestamp: "2:33:50" },
+    { username: "SuperFan", message: "You're the best streamer ever!", timestamp: "2:33:45" },
+    { username: "GameExpert", message: "Try using the special combo here", timestamp: "2:33:40" },
+    { username: "LongTimeViewer", message: "I've been following since day one!", timestamp: "2:33:35" },
+  ];
 
-  const handleViewAllDesigners = () => {
-    toast({
-      title: "Loading Designers",
-      description: "Opening full team directory...",
-    });
-  };
-
-  const handleUpgradeSkills = () => {
-    toast({
-      title: "Upgrade Available",
-      description: "Redirecting to skill upgrade plans...",
-    });
-  };
-
-  const handleQuickAction = (action) => {
-    switch (action) {
-      case 'export':
-        toast({
-          title: "Exporting Data",
-          description: "Generating comprehensive report...",
-        });
-        break;
-      case 'share':
-        toast({
-          title: "Share Dashboard",
-          description: "Creating shareable link...",
-        });
-        break;
-      case 'settings':
-        toast({
-          title: "Opening Settings",
-          description: "Loading dashboard preferences...",
-        });
-        break;
-      case 'help':
-        toast({
-          title: "Help Center",
-          description: "Opening support documentation...",
-        });
-        break;
-    }
+  // Mock audio levels for AI highlight detection
+  const audioLevels = Array.from({ length: 120 }, () => Math.floor(Math.random() * 100));
+  
+  const streamData = {
+    id: streamId,
+    duration: streamTime,
+    viewers: viewers,
+    category: "Gaming"
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <Card className="p-4 bg-gradient-card border border-white/10 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Designers</h3>
-          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
-        </div>
-        
-        <div className="space-y-3">
-          {designers.map((designer, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
-                    <span className="text-white text-sm font-semibold">{designer.avatar}</span>
-                  </div>
-                  {designer.online && (
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">{designer.name}</p>
-                  <p className="text-white/60 text-xs">{designer.role}</p>
-                </div>
-              </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-white/60 hover:text-white hover:bg-white/10"
-                    onClick={() => handleContactDesigner(designer)}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-slate-900 border-white/10">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Contact {designer.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
-                        <span className="text-white font-semibold">{designer.avatar}</span>
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">{designer.name}</p>
-                        <p className="text-white/60">{designer.role}</p>
-                        <p className="text-sm text-accent">{designer.online ? 'Online' : 'Offline'}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button className="flex-1" onClick={() => toast({ title: "Message Sent", description: `Message sent to ${designer.name}` })}>
-                        Send Message
-                      </Button>
-                      <Button variant="outline" onClick={() => toast({ title: "Video Call", description: `Starting video call with ${designer.name}` })}>
-                        Video Call
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          ))}
-        </div>
-        
-        <Button 
-          className="w-full mt-4 bg-white/10 hover:bg-white/20 text-white border border-white/20"
-          onClick={handleViewAllDesigners}
-        >
-          View All Designers
-        </Button>
-      </Card>
+    <div className="h-full">
+      <ScrollArea className="h-[calc(100vh-2rem)]">
+        <div className="space-y-6 p-6">
+          {/* Real-time Dashboard */}
+          <RealtimeDashboard 
+            streamId={streamId}
+            platform={platform}
+            viewers={viewers}
+            duration={streamTime}
+            isStreaming={isStreaming}
+          />
 
-      <Card className="p-4 bg-gradient-card border border-white/10 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Skills</h3>
-          <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
-            <Star className="w-3 h-3 mr-1" />
-            Pro
-          </Badge>
-        </div>
-        
-        <div className="space-y-4">
-          {skills.map((skill, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <skill.icon className="w-4 h-4 text-accent" />
-                  <span className="text-white text-sm font-medium">{skill.name}</span>
-                </div>
-                <span className="text-white/60 text-sm">{skill.level}%</span>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-2">
-                <div 
-                  className="bg-gradient-primary h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${skill.level}%` }}
-                ></div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <Button 
-          className="w-full mt-4 bg-gradient-primary hover:opacity-80 text-white"
-          onClick={handleUpgradeSkills}
-        >
-          Upgrade Skills
-        </Button>
-      </Card>
+          {/* AI Chat Analysis */}
+          <AIChatAnalysis 
+            messages={chatMessages}
+            streamId={streamId}
+            platform={platform}
+            autoAnalyze={true}
+          />
 
-      <Card className="p-4 bg-gradient-card border border-white/10 backdrop-blur-xl">
-        <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            className="border-white/20 text-white hover:bg-white/10"
-            onClick={() => handleQuickAction('export')}
-          >
-            <FileDown className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button 
-            variant="outline" 
-            className="border-white/20 text-white hover:bg-white/10"
-            onClick={() => handleQuickAction('share')}
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            Share
-          </Button>
-          <Button 
-            variant="outline" 
-            className="border-white/20 text-white hover:bg-white/10"
-            onClick={() => handleQuickAction('settings')}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
-          <Button 
-            variant="outline" 
-            className="border-white/20 text-white hover:bg-white/10"
-            onClick={() => handleQuickAction('help')}
-          >
-            <HelpCircle className="w-4 h-4 mr-2" />
-            Help
-          </Button>
+          {/* AI Highlights */}
+          <AIHighlights 
+            streamData={streamData}
+            chatMessages={chatMessages}
+            audioLevels={audioLevels}
+          />
+
+          {/* Traditional Stream Analytics */}
+          <StreamAnalytics 
+            viewers={viewers}
+            streamTime={streamTime}
+            isStreaming={isStreaming}
+          />
+
+          {/* Scene Management */}
+          <Card className="bg-gradient-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Settings className="h-5 w-5 text-primary" />
+                Scenes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {["Main Scene", "BRB Screen", "Chat Only", "Full Screen"].map((scene, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 rounded bg-muted/20 hover:bg-muted/30 transition-colors">
+                    <span className="text-sm text-foreground">{scene}</span>
+                    <Button size="sm" variant={index === 0 ? "default" : "ghost"} className="h-6 px-2">
+                      {index === 0 ? "Active" : "Switch"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sources */}
+          <Card className="bg-gradient-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Zap className="h-5 w-5 text-primary" />
+                Sources
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {["Webcam", "Game Capture", "Overlay", "Chat Widget"].map((source, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 rounded bg-muted/20">
+                    <span className="text-sm text-foreground">{source}</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-success rounded-full"></div>
+                      <span className="text-xs text-muted-foreground">Active</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Features */}
+          <Card className="bg-gradient-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Brain className="h-5 w-5 text-primary" />
+                AI Features
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-accent" />
+                    <span className="text-sm text-foreground">Auto Highlights</span>
+                  </div>
+                  <Badge variant="secondary">Active</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-accent" />
+                    <span className="text-sm text-foreground">Chat Analysis</span>
+                  </div>
+                  <Badge variant="secondary">Running</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-accent" />
+                    <span className="text-sm text-foreground">Smart Scheduling</span>
+                  </div>
+                  <Badge variant="outline">Coming Soon</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </Card>
+      </ScrollArea>
     </div>
   );
 }

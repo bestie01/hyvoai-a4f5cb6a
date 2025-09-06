@@ -9,3 +9,12 @@ verify_jwt = true
 
 [functions.streaming-analytics]
 verify_jwt = false
+
+[functions.ai-chat-analysis]
+verify_jwt = true
+
+[functions.ai-highlight-generator]
+verify_jwt = true
+
+[functions.realtime-analytics]
+verify_jwt = true

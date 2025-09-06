@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_analysis: {
+        Row: {
+          analyzed_at: string
+          created_at: string
+          engagement_score: number | null
+          highlights: Json | null
+          id: string
+          message_count: number
+          moderation_flags: Json | null
+          platform: string
+          sentiment: string | null
+          stream_id: string
+          topics: Json | null
+          toxicity_score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          analyzed_at?: string
+          created_at?: string
+          engagement_score?: number | null
+          highlights?: Json | null
+          id?: string
+          message_count?: number
+          moderation_flags?: Json | null
+          platform: string
+          sentiment?: string | null
+          stream_id: string
+          topics?: Json | null
+          toxicity_score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          analyzed_at?: string
+          created_at?: string
+          engagement_score?: number | null
+          highlights?: Json | null
+          id?: string
+          message_count?: number
+          moderation_flags?: Json | null
+          platform?: string
+          sentiment?: string | null
+          stream_id?: string
+          topics?: Json | null
+          toxicity_score?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -80,6 +128,36 @@ export type Database = {
           timestamp?: string
           user_id?: string
           viewers?: number
+        }
+        Relationships: []
+      }
+      stream_highlights: {
+        Row: {
+          created_at: string
+          generated_at: string
+          highlights: Json
+          id: string
+          stream_id: string
+          summary: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          highlights?: Json
+          id?: string
+          stream_id: string
+          summary?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          highlights?: Json
+          id?: string
+          stream_id?: string
+          summary?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
