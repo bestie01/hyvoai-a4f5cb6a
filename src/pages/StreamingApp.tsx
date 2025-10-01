@@ -41,11 +41,18 @@ import { useMicrophone } from "@/hooks/useMicrophone";
 import { useTwitchStream } from "@/hooks/useTwitchStream";
 import { useYouTubeStream } from "@/hooks/useYouTubeStream";
 import { useAuth } from "@/hooks/useAuth";
+import { useHaptics } from "@/hooks/useHaptics";
+import { useStatusBar } from "@/hooks/useStatusBar";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { ImpactStyle, NotificationType } from '@capacitor/haptics';
 
 const StreamingApp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const haptics = useHaptics();
+  const statusBar = useStatusBar();
+  const notifications = usePushNotifications();
   
   const [streamTime, setStreamTime] = useState("00:00:00");
   const [activeStream, setActiveStream] = useState<'twitch' | 'youtube' | null>(null);
@@ -110,6 +117,7 @@ const StreamingApp = () => {
   }, [twitch.isStreaming, youtube.isStreaming]);
 
   const handleConnectToPlatform = async (platform: 'twitch' | 'youtube') => {
+    await haptics.impact(ImpactStyle.Medium);
     const streamKey = platform === 'twitch' ? twitchStreamKey : youtubeStreamKey;
     
     if (!streamKey.trim()) {
@@ -131,10 +139,17 @@ const StreamingApp = () => {
     if (success) {
       setActiveStream(platform);
       setIsConnectDialogOpen(false);
+      await haptics.notification(NotificationType.Success);
+      await notifications.sendLocalNotification(
+        'Connected!',
+        `Successfully connected to ${platform}`
+      );
     }
   };
 
   const handleStartStream = async () => {
+    await haptics.impact(ImpactStyle.Heavy);
+    
     if (!twitch.isConnected && !youtube.isConnected) {
       toast({
         title: "Not Connected",
@@ -147,14 +162,26 @@ const StreamingApp = () => {
     if (activeStream === 'twitch') {
       if (twitch.isStreaming) {
         await twitch.stopStream();
+        await haptics.notification(NotificationType.Warning);
       } else {
         await twitch.startStream();
+        await haptics.notification(NotificationType.Success);
+        await notifications.sendLocalNotification(
+          'Stream Started!',
+          'Your Twitch stream is now live!'
+        );
       }
     } else if (activeStream === 'youtube') {
       if (youtube.isStreaming) {
         await youtube.stopStream();
+        await haptics.notification(NotificationType.Warning);
       } else {
         await youtube.startStream();
+        await haptics.notification(NotificationType.Success);
+        await notifications.sendLocalNotification(
+          'Stream Started!',
+          'Your YouTube stream is now live!'
+        );
       }
     }
   };
@@ -165,6 +192,8 @@ const StreamingApp = () => {
   };
 
   const handleMicrophoneToggle = async () => {
+    await haptics.impact(ImpactStyle.Light);
+    
     if (microphone.isRecording) {
       microphone.stopRecording();
     } else {
