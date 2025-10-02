@@ -21,3 +21,9 @@ verify_jwt = true
 
 [functions.realtime-analytics]
 verify_jwt = true
+
+[functions.process-donation]
+verify_jwt = true
+
+[functions.discord-notify]
+verify_jwt = true

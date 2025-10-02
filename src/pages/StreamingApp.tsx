@@ -45,6 +45,7 @@ import { useHaptics } from "@/hooks/useHaptics";
 import { useStatusBar } from "@/hooks/useStatusBar";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { PollCreator } from "@/components/PollCreator";
 
 const StreamingApp = () => {
   const navigate = useNavigate();
@@ -540,47 +541,58 @@ const StreamingApp = () => {
         </div>
       </div>
 
-      {/* Chat Panel */}
+      {/* Chat & Polls Panel */}
       <div className="w-80 border-l border-border flex flex-col">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-semibold flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            Live Chat
-          </h3>
-        </div>
-        
-        <div className="flex-1 p-4 overflow-y-auto space-y-3">
-          {chatMessages.map((msg) => (
-            <div key={msg.id} className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className={`text-sm font-medium ${msg.mod ? 'text-green-500' : 'text-primary'}`}>
-                  {msg.user}
-                </span>
-                <span className="text-xs text-muted-foreground">{msg.timestamp}</span>
-              </div>
-              <p className="text-sm text-foreground">{msg.message}</p>
+        <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+          <div className="p-4 border-b border-border">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="chat" className="gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Chat
+              </TabsTrigger>
+              <TabsTrigger value="polls" className="gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Polls
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          <TabsContent value="chat" className="flex-1 flex flex-col m-0">
+            <div className="flex-1 p-4 overflow-y-auto space-y-3">
+              {chatMessages.map((msg) => (
+                <div key={msg.id} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${msg.mod ? 'text-green-500' : 'text-primary'}`}>
+                      {msg.user}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{msg.timestamp}</span>
+                  </div>
+                  <p className="text-sm text-foreground">{msg.message}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex gap-2 mb-3">
-            <Button size="sm" variant="outline">
-              <Heart className="w-4 h-4" />
-            </Button>
-            <Button size="sm" variant="outline">
-              <Share2 className="w-4 h-4" />
-            </Button>
-            <Button size="sm" variant="outline">
-              <BarChart3 className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="text-center text-sm text-muted-foreground">
-            {(twitch.isStreaming || youtube.isStreaming) ? 
-              `${activeStream === 'twitch' ? twitch.viewers : youtube.viewers} viewers watching` : 
-              "Start streaming to see chat"}
-          </div>
-        </div>
+            <div className="p-4 border-t border-border">
+              <div className="flex gap-2 mb-3">
+                <Button size="sm" variant="outline">
+                  <Heart className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline">
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                {(twitch.isStreaming || youtube.isStreaming) ? 
+                  `${activeStream === 'twitch' ? twitch.viewers : youtube.viewers} viewers watching` : 
+                  "Start streaming to see chat"}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="polls" className="flex-1 flex flex-col m-0 p-4 overflow-y-auto">
+            <PollCreator streamId={activeStream || 'demo-stream'} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

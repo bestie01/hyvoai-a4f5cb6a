@@ -62,6 +62,77 @@ export type Database = {
         }
         Relationships: []
       }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          donor_email: string | null
+          donor_name: string
+          id: string
+          message: string | null
+          stream_id: string | null
+          stripe_payment_intent: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          donor_email?: string | null
+          donor_name: string
+          id?: string
+          message?: string | null
+          stream_id?: string | null
+          stripe_payment_intent?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          donor_email?: string | null
+          donor_name?: string
+          id?: string
+          message?: string | null
+          stream_id?: string | null
+          stripe_payment_intent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          poll_id: string
+          selected_option: number
+          voter_identifier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          poll_id: string
+          selected_option: number
+          voter_identifier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          poll_id?: string
+          selected_option?: number
+          voter_identifier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "stream_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -131,6 +202,45 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_clips: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration: number | null
+          file_path: string
+          id: string
+          stream_id: string
+          thumbnail_url: string | null
+          title: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          file_path: string
+          id?: string
+          stream_id: string
+          thumbnail_url?: string | null
+          title: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          file_path?: string
+          id?: string
+          stream_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       stream_highlights: {
         Row: {
           created_at: string
@@ -158,6 +268,156 @@ export type Database = {
           stream_id?: string
           summary?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      stream_polls: {
+        Row: {
+          active: boolean
+          created_at: string
+          ends_at: string | null
+          id: string
+          options: Json
+          question: string
+          stream_id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          options?: Json
+          question: string
+          stream_id: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          options?: Json
+          question?: string
+          stream_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stream_schedules: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration: number
+          id: string
+          platform: string
+          scheduled_start_time: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          platform: string
+          scheduled_start_time: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          platform?: string
+          scheduled_start_time?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stream_settings: {
+        Row: {
+          bitrate: number | null
+          created_at: string
+          fps: number | null
+          id: string
+          notification_email: boolean | null
+          notification_push: boolean | null
+          resolution: string | null
+          twitch_api_key: string | null
+          updated_at: string
+          user_id: string
+          youtube_api_key: string | null
+        }
+        Insert: {
+          bitrate?: number | null
+          created_at?: string
+          fps?: number | null
+          id?: string
+          notification_email?: boolean | null
+          notification_push?: boolean | null
+          resolution?: string | null
+          twitch_api_key?: string | null
+          updated_at?: string
+          user_id: string
+          youtube_api_key?: string | null
+        }
+        Update: {
+          bitrate?: number | null
+          created_at?: string
+          fps?: number | null
+          id?: string
+          notification_email?: boolean | null
+          notification_push?: boolean | null
+          resolution?: string | null
+          twitch_api_key?: string | null
+          updated_at?: string
+          user_id?: string
+          youtube_api_key?: string | null
+        }
+        Relationships: []
+      }
+      stream_vods: {
+        Row: {
+          created_at: string
+          duration: number | null
+          file_path: string
+          id: string
+          stream_id: string
+          thumbnail_url: string | null
+          title: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          file_path: string
+          id?: string
+          stream_id: string
+          thumbnail_url?: string | null
+          title: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          file_path?: string
+          id?: string
+          stream_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }
@@ -194,6 +454,42 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      viewer_engagement: {
+        Row: {
+          created_at: string
+          id: string
+          message_count: number | null
+          points: number | null
+          stream_id: string
+          updated_at: string
+          user_id: string
+          viewer_identifier: string
+          watch_time: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_count?: number | null
+          points?: number | null
+          stream_id: string
+          updated_at?: string
+          user_id: string
+          viewer_identifier: string
+          watch_time?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_count?: number | null
+          points?: number | null
+          stream_id?: string
+          updated_at?: string
+          user_id?: string
+          viewer_identifier?: string
+          watch_time?: number | null
         }
         Relationships: []
       }

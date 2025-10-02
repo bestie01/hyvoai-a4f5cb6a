@@ -14,6 +14,8 @@ import Profile from "./pages/Profile";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
 import NativeFeaturesDemo from "./pages/NativeFeaturesDemo";
+import Settings from "./pages/Settings";
+import Schedule from "./pages/Schedule";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/schedule" element={<Schedule />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
