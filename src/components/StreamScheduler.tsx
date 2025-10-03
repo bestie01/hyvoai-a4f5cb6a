@@ -6,9 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStreamSchedule } from '@/hooks/useStreamSchedule';
 import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { AITitleGenerator } from '@/components/ai/AITitleGenerator';
+import { AIThumbnailGenerator } from '@/components/ai/AIThumbnailGenerator';
 
 export const StreamScheduler = () => {
   const { schedules, loading, createSchedule, deleteSchedule } = useStreamSchedule();
@@ -56,6 +59,13 @@ export const StreamScheduler = () => {
             <DialogHeader>
               <DialogTitle>Schedule a New Stream</DialogTitle>
             </DialogHeader>
+            <Tabs defaultValue="manual" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="manual">Manual</TabsTrigger>
+                <TabsTrigger value="ai-title">🤖 AI Title</TabsTrigger>
+                <TabsTrigger value="ai-thumbnail">🎨 AI Thumbnail</TabsTrigger>
+              </TabsList>
+              <TabsContent value="manual" className="space-y-4 mt-4">
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Stream Title</Label>
@@ -129,6 +139,23 @@ export const StreamScheduler = () => {
             <Button onClick={handleCreate} disabled={!selectedDate || !title}>
               Create Schedule
             </Button>
+              </TabsContent>
+              <TabsContent value="ai-title" className="mt-4">
+                <AITitleGenerator 
+                  defaultGame={platform}
+                  onSelectTitle={(t, d) => {
+                    setTitle(t);
+                    setDescription(d);
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value="ai-thumbnail" className="mt-4">
+                <AIThumbnailGenerator 
+                  defaultTitle={title}
+                  defaultGame={platform}
+                />
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>

@@ -27,3 +27,18 @@ verify_jwt = true
 
 [functions.discord-notify]
 verify_jwt = true
+
+[functions.ai-title-generator]
+verify_jwt = true
+
+[functions.ai-thumbnail-generator]
+verify_jwt = true
+
+[functions.ai-chat-moderator]
+verify_jwt = true
+
+[functions.ai-predictive-analytics]
+verify_jwt = true
+
+[functions.ai-viewer-qa]
+verify_jwt = true

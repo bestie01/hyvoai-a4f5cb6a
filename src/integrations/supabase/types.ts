@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_generated_content: {
+        Row: {
+          content_data: Json
+          content_type: string
+          created_at: string
+          id: string
+          stream_id: string | null
+          used: boolean | null
+          user_id: string
+        }
+        Insert: {
+          content_data: Json
+          content_type: string
+          created_at?: string
+          id?: string
+          stream_id?: string | null
+          used?: boolean | null
+          user_id: string
+        }
+        Update: {
+          content_data?: Json
+          content_type?: string
+          created_at?: string
+          id?: string
+          stream_id?: string | null
+          used?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_predictions: {
+        Row: {
+          accuracy_score: number | null
+          actual_outcome: Json | null
+          confidence_score: number | null
+          created_at: string
+          id: string
+          prediction_data: Json
+          prediction_type: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          accuracy_score?: number | null
+          actual_outcome?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          prediction_data: Json
+          prediction_type: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          accuracy_score?: number | null
+          actual_outcome?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          prediction_data?: Json
+          prediction_type?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       chat_analysis: {
         Row: {
           analyzed_at: string
@@ -59,6 +125,42 @@ export type Database = {
           topics?: Json | null
           toxicity_score?: number | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      chat_moderation_actions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          message: string
+          reason: string | null
+          stream_id: string
+          toxicity_score: number
+          user_id: string
+          username: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          message: string
+          reason?: string | null
+          stream_id: string
+          toxicity_score: number
+          user_id: string
+          username: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          message?: string
+          reason?: string | null
+          stream_id?: string
+          toxicity_score?: number
+          user_id?: string
+          username?: string
         }
         Relationships: []
       }
@@ -345,6 +447,7 @@ export type Database = {
       }
       stream_settings: {
         Row: {
+          background_removed: boolean | null
           bitrate: number | null
           created_at: string
           fps: number | null
@@ -358,6 +461,7 @@ export type Database = {
           youtube_api_key: string | null
         }
         Insert: {
+          background_removed?: boolean | null
           bitrate?: number | null
           created_at?: string
           fps?: number | null
@@ -371,6 +475,7 @@ export type Database = {
           youtube_api_key?: string | null
         }
         Update: {
+          background_removed?: boolean | null
           bitrate?: number | null
           created_at?: string
           fps?: number | null
@@ -490,6 +595,39 @@ export type Database = {
           user_id?: string
           viewer_identifier?: string
           watch_time?: number | null
+        }
+        Relationships: []
+      }
+      viewer_qa_knowledge: {
+        Row: {
+          answer: string
+          auto_respond: boolean | null
+          created_at: string
+          id: string
+          question: string
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          auto_respond?: boolean | null
+          created_at?: string
+          id?: string
+          question: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          auto_respond?: boolean | null
+          created_at?: string
+          id?: string
+          question?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
         }
         Relationships: []
       }
