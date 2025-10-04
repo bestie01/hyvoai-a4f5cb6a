@@ -42,3 +42,12 @@ verify_jwt = true
 
 [functions.ai-viewer-qa]
 verify_jwt = true
+
+[functions.ai-voice-assistant]
+verify_jwt = true
+
+[functions.ai-caption-generator]
+verify_jwt = true
+
+[functions.ai-game-coach]
+verify_jwt = true

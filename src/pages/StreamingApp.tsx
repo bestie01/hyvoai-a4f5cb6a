@@ -46,6 +46,12 @@ import { useStatusBar } from "@/hooks/useStatusBar";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { PollCreator } from "@/components/PollCreator";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { AIChatAnalysis } from "@/components/ai/AIChatAnalysis";
+import { AIHighlights } from "@/components/ai/AIHighlights";
+import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant";
+import { AICaptionOverlay } from "@/components/ai/AICaptionOverlay";
+import { AIGameCoach } from "@/components/ai/AIGameCoach";
 
 const StreamingApp = () => {
   const navigate = useNavigate();
@@ -545,10 +551,14 @@ const StreamingApp = () => {
       <div className="w-80 border-l border-border flex flex-col">
         <Tabs defaultValue="chat" className="flex-1 flex flex-col">
           <div className="p-4 border-b border-border">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="chat" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Chat
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="gap-2">
+                <Zap className="w-4 h-4" />
+                AI
               </TabsTrigger>
               <TabsTrigger value="polls" className="gap-2">
                 <BarChart3 className="w-4 h-4" />
@@ -587,6 +597,57 @@ const StreamingApp = () => {
                   "Start streaming to see chat"}
               </div>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="ai" className="flex-1 flex flex-col m-0 overflow-y-auto">
+            <Tabs defaultValue="insights" className="flex-1 flex flex-col">
+              <div className="px-4 pt-4">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="insights">Insights</TabsTrigger>
+                  <TabsTrigger value="voice">Voice</TabsTrigger>
+                  <TabsTrigger value="captions">Captions</TabsTrigger>
+                  <TabsTrigger value="coach">Coach</TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <TabsContent value="insights" className="flex-1 p-4 space-y-4 overflow-y-auto">
+                <AIChatAnalysis 
+                  messages={chatMessages.map(msg => ({ 
+                    username: msg.user, 
+                    message: msg.message, 
+                    timestamp: msg.timestamp 
+                  }))} 
+                  streamId={activeStream || 'demo-stream'}
+                  platform={activeStream || 'twitch'}
+                />
+                <AIHighlights 
+                  streamData={{
+                    id: activeStream || 'demo-stream',
+                    duration: streamTime,
+                    viewers: activeStream === 'twitch' ? twitch.viewers : youtube.viewers,
+                    category: 'Gaming'
+                  }}
+                  chatMessages={chatMessages.map(msg => ({ 
+                    username: msg.user, 
+                    message: msg.message, 
+                    timestamp: msg.timestamp 
+                  }))}
+                  audioLevels={[]}
+                />
+              </TabsContent>
+              
+              <TabsContent value="voice" className="flex-1 p-4 overflow-y-auto">
+                <AIVoiceAssistant />
+              </TabsContent>
+              
+              <TabsContent value="captions" className="flex-1 p-4 overflow-y-auto">
+                <AICaptionOverlay />
+              </TabsContent>
+              
+              <TabsContent value="coach" className="flex-1 p-4 overflow-y-auto">
+                <AIGameCoach />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="polls" className="flex-1 flex flex-col m-0 p-4 overflow-y-auto">
