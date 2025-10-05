@@ -80,6 +80,36 @@ export type Database = {
         }
         Relationships: []
       }
+      banned_words: {
+        Row: {
+          action: string | null
+          created_at: string
+          id: string
+          is_regex: boolean | null
+          timeout_duration: number | null
+          user_id: string
+          word: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          id?: string
+          is_regex?: boolean | null
+          timeout_duration?: number | null
+          user_id: string
+          word: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          id?: string
+          is_regex?: boolean | null
+          timeout_duration?: number | null
+          user_id?: string
+          word?: string
+        }
+        Relationships: []
+      }
       chat_analysis: {
         Row: {
           analyzed_at: string
@@ -128,6 +158,45 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_commands: {
+        Row: {
+          command: string
+          cooldown: number | null
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          permission_level: string | null
+          response: string
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          command: string
+          cooldown?: number | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          permission_level?: string | null
+          response: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          command?: string
+          cooldown?: number | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          permission_level?: string | null
+          response?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_moderation_actions: {
         Row: {
           action: string
@@ -161,6 +230,51 @@ export type Database = {
           toxicity_score?: number
           user_id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      community_events: {
+        Row: {
+          created_at: string
+          current_participants: number | null
+          description: string | null
+          end_time: string | null
+          event_type: string
+          id: string
+          is_public: boolean | null
+          max_participants: number | null
+          start_time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string | null
+          end_time?: string | null
+          event_type: string
+          id?: string
+          is_public?: boolean | null
+          max_participants?: number | null
+          start_time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string | null
+          end_time?: string | null
+          event_type?: string
+          id?: string
+          is_public?: boolean | null
+          max_participants?: number | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -199,6 +313,81 @@ export type Database = {
           message?: string | null
           stream_id?: string | null
           stripe_payment_intent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fan_content: {
+        Row: {
+          content_type: string
+          content_url: string
+          created_at: string
+          description: string | null
+          fan_username: string
+          id: string
+          is_featured: boolean | null
+          likes_count: number | null
+          streamer_id: string
+        }
+        Insert: {
+          content_type: string
+          content_url: string
+          created_at?: string
+          description?: string | null
+          fan_username: string
+          id?: string
+          is_featured?: boolean | null
+          likes_count?: number | null
+          streamer_id: string
+        }
+        Update: {
+          content_type?: string
+          content_url?: string
+          created_at?: string
+          description?: string | null
+          fan_username?: string
+          id?: string
+          is_featured?: boolean | null
+          likes_count?: number | null
+          streamer_id?: string
+        }
+        Relationships: []
+      }
+      platform_streaming_configs: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          platform: string
+          rtmp_url: string
+          stream_description: string | null
+          stream_key: string
+          stream_title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          platform: string
+          rtmp_url: string
+          stream_description?: string | null
+          stream_key: string
+          stream_title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          platform?: string
+          rtmp_url?: string
+          stream_description?: string | null
+          stream_key?: string
+          stream_title?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -259,6 +448,123 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_id: string
+          reward_amount: number | null
+          reward_claimed: boolean | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_id: string
+          reward_amount?: number | null
+          reward_claimed?: boolean | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_id?: string
+          reward_amount?: number | null
+          reward_claimed?: boolean | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      scheduled_posts: {
+        Row: {
+          content: string
+          created_at: string
+          error_message: string | null
+          id: string
+          media_urls: string[] | null
+          platform: string
+          posted_at: string | null
+          scheduled_time: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          media_urls?: string[] | null
+          platform: string
+          posted_at?: string | null
+          scheduled_time: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          media_urls?: string[] | null
+          platform?: string
+          posted_at?: string | null
+          scheduled_time?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      social_connections: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          platform: string
+          platform_user_id: string | null
+          platform_username: string | null
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          platform: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          platform?: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -343,6 +649,48 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_health_metrics: {
+        Row: {
+          bitrate: number | null
+          connection_quality: string | null
+          cpu_usage: number | null
+          dropped_frames: number | null
+          fps: number | null
+          id: string
+          memory_usage: number | null
+          network_latency: number | null
+          stream_id: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          bitrate?: number | null
+          connection_quality?: string | null
+          cpu_usage?: number | null
+          dropped_frames?: number | null
+          fps?: number | null
+          id?: string
+          memory_usage?: number | null
+          network_latency?: number | null
+          stream_id: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          bitrate?: number | null
+          connection_quality?: string | null
+          cpu_usage?: number | null
+          dropped_frames?: number | null
+          fps?: number | null
+          id?: string
+          memory_usage?: number | null
+          network_latency?: number | null
+          stream_id?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stream_highlights: {
         Row: {
           created_at: string
@@ -402,6 +750,42 @@ export type Database = {
           options?: Json
           question?: string
           stream_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stream_scenes: {
+        Row: {
+          config: Json
+          created_at: string
+          hotkey: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          hotkey?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          hotkey?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          thumbnail_url?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -628,6 +1012,36 @@ export type Database = {
           updated_at?: string
           usage_count?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      vip_users: {
+        Row: {
+          expires_at: string | null
+          granted_at: string
+          id: string
+          notes: string | null
+          user_id: string
+          vip_platform: string
+          vip_username: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          notes?: string | null
+          user_id: string
+          vip_platform: string
+          vip_username: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+          vip_platform?: string
+          vip_username?: string
         }
         Relationships: []
       }

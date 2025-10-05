@@ -19,10 +19,10 @@ const Navigation = () => {
   const navItems = [
     { label: "Features", href: "#features" },
     { label: "Dashboard", href: "/dashboard" },
+    { label: "Growth", href: "/growth" },
+    { label: "Community", href: "/community" },
     { label: "Pricing", href: "/pricing" },
     { label: "Download", href: "/download" },
-    { label: "Demo", href: "#demo" },
-    { label: "Support", href: "#support" }
   ];
 
   return (

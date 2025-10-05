@@ -51,3 +51,12 @@ verify_jwt = true
 
 [functions.ai-game-coach]
 verify_jwt = true
+
+[functions.twitter-post]
+verify_jwt = true
+
+[functions.discord-webhook]
+verify_jwt = true
+
+[functions.multi-stream-relay]
+verify_jwt = true

@@ -16,6 +16,8 @@ import NotFound from "./pages/NotFound";
 import NativeFeaturesDemo from "./pages/NativeFeaturesDemo";
 import Settings from "./pages/Settings";
 import Schedule from "./pages/Schedule";
+import Growth from "./pages/Growth";
+import Community from "./pages/Community";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/subscription-success" element={<SubscriptionSuccess />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/schedule" element={<Schedule />} />
+          <Route path="/growth" element={<Growth />} />
+          <Route path="/community" element={<Community />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
