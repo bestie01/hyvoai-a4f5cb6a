@@ -38,6 +38,17 @@ const Hero = () => {
             </Badge>
             
             <div className="space-y-6">
+              {/* Logo */}
+              <div className="flex items-center gap-4 justify-center lg:justify-start mb-4">
+                <div className="w-20 h-20 flex items-center justify-center bg-gradient-primary rounded-2xl p-4 shadow-glow-primary animate-pulse-glow">
+                  <img 
+                    src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" 
+                    alt="Hyvo.ai Logo" 
+                    className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0" 
+                  />
+                </div>
+              </div>
+              
               <h1 className="text-5xl lg:text-7xl font-display font-bold leading-tight tracking-tight">
                 <span className="text-gradient-primary">
                   Hyvo.ai

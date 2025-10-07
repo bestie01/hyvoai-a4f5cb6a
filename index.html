@@ -20,6 +20,15 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Prevent flash of unstyled content with theme -->
+    <script>
+      (function() {
+        const theme = localStorage.getItem('hyvo-ui-theme') || 'dark';
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.classList.add(theme === 'system' ? systemTheme : theme);
+      })();
+    </script>
   </head>
 
   <body>

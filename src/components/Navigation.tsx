@@ -30,16 +30,22 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" alt="Hyvo.ai Logo" className="w-8 h-8" />
+          <Link to="/" className="flex items-center gap-3 hover-scale group">
+            <div className="w-12 h-12 flex items-center justify-center bg-gradient-primary rounded-xl p-2 shadow-glow-primary group-hover:shadow-glow-primary-strong transition-all duration-300">
+              <img 
+                src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" 
+                alt="Hyvo.ai Logo" 
+                className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0" 
+              />
             </div>
-            <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Hyvo.ai
-            </span>
-            <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-              Beta
-            </Badge>
+            <div className="flex flex-col">
+              <span className="text-2xl font-display font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Hyvo.ai
+              </span>
+              <Badge variant="secondary" className="text-[10px] w-fit bg-gradient-primary/20 text-primary border-0">
+                AI-Powered
+              </Badge>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
