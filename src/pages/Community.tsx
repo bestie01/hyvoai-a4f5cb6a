@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -114,7 +115,11 @@ const Community = () => {
           </TabsList>
 
           <TabsContent value="events" className="space-y-6">
-            <div className="flex justify-end">
+            <ProFeatureGate 
+              feature="Community Event Management"
+              description="Create and manage community events, tournaments, and watch parties with Pro."
+            >
+              <div className="flex justify-end">
               <Dialog open={newEventOpen} onOpenChange={setNewEventOpen}>
                 <DialogTrigger asChild>
                   <Button className="btn-glow">
@@ -220,9 +225,14 @@ const Community = () => {
                 </CardContent>
               </Card>
             )}
+            </ProFeatureGate>
           </TabsContent>
 
           <TabsContent value="fan-content" className="space-y-6">
+            <ProFeatureGate 
+              feature="Fan Content Management"
+              description="Showcase and manage fan art, clips, and user-generated content with Pro."
+            >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {fanContent.map((content) => (
                 <Card key={content.id} className="card-elevated hover-lift overflow-hidden">
@@ -269,6 +279,7 @@ const Community = () => {
                 </CardContent>
               </Card>
             )}
+            </ProFeatureGate>
           </TabsContent>
         </Tabs>
       </div>

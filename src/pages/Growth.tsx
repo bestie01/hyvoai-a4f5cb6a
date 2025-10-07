@@ -11,6 +11,7 @@ import { useSocialPosts } from "@/hooks/useSocialPosts";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -112,7 +113,11 @@ const Growth = () => {
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <ProFeatureGate 
+              feature="Advanced Analytics Dashboard"
+              description="Get detailed insights into your streaming performance, growth trends, and audience analytics."
+            >
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="card-elevated">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Total Viewers</CardTitle>
@@ -230,10 +235,15 @@ const Growth = () => {
                 </CardContent>
               </Card>
             </div>
+            </ProFeatureGate>
           </TabsContent>
 
           <TabsContent value="social" className="space-y-6">
-            <Card className="card-elevated">
+            <ProFeatureGate 
+              feature="Social Media Automation"
+              description="Automatically post stream highlights and updates to Twitter, Discord, and more."
+            >
+              <Card className="card-elevated">
               <CardHeader>
                 <CardTitle>Post to Social Media</CardTitle>
                 <CardDescription>Share updates across your platforms</CardDescription>
@@ -292,6 +302,7 @@ const Growth = () => {
                 </Button>
               </CardContent>
             </Card>
+            </ProFeatureGate>
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-6">

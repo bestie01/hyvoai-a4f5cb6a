@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useMultiStream } from "@/hooks/useMultiStream";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
 
 const PLATFORMS = [
   { value: 'twitch', label: 'Twitch', rtmpDefault: 'rtmp://live.twitch.tv/app/' },
@@ -47,7 +48,11 @@ export function MultiStreamConfig() {
   const enabledCount = configs.filter(c => c.isEnabled).length;
 
   return (
-    <Card className="card-elevated">
+    <ProFeatureGate 
+      feature="Multi-Platform Streaming"
+      description="Stream to multiple platforms simultaneously with Pro. Reach your audience wherever they are."
+    >
+      <Card className="card-elevated">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -176,5 +181,6 @@ export function MultiStreamConfig() {
         )}
       </CardContent>
     </Card>
+    </ProFeatureGate>
   );
 }

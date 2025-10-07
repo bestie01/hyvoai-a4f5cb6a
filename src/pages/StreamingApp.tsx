@@ -52,6 +52,7 @@ import { AIHighlights } from "@/components/ai/AIHighlights";
 import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant";
 import { AICaptionOverlay } from "@/components/ai/AICaptionOverlay";
 import { AIGameCoach } from "@/components/ai/AIGameCoach";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
 
 const StreamingApp = () => {
   const navigate = useNavigate();
@@ -600,17 +601,22 @@ const StreamingApp = () => {
           </TabsContent>
           
           <TabsContent value="ai" className="flex-1 flex flex-col m-0 overflow-y-auto">
-            <Tabs defaultValue="insights" className="flex-1 flex flex-col">
-              <div className="px-4 pt-4">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="insights">Insights</TabsTrigger>
-                  <TabsTrigger value="voice">Voice</TabsTrigger>
-                  <TabsTrigger value="captions">Captions</TabsTrigger>
-                  <TabsTrigger value="coach">Coach</TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="insights" className="flex-1 p-4 space-y-4 overflow-y-auto">
+            <ProFeatureGate 
+              feature="AI-Powered Tools"
+              description="Unlock AI chat analysis, highlights, voice assistant, live captions, and game coaching with Pro."
+              showUpgrade={true}
+            >
+              <Tabs defaultValue="insights" className="flex-1 flex flex-col">
+                <div className="px-4 pt-4">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="insights">Insights</TabsTrigger>
+                    <TabsTrigger value="voice">Voice</TabsTrigger>
+                    <TabsTrigger value="captions">Captions</TabsTrigger>
+                    <TabsTrigger value="coach">Coach</TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="insights" className="flex-1 p-4 space-y-4 overflow-y-auto">
                 <AIChatAnalysis 
                   messages={chatMessages.map(msg => ({ 
                     username: msg.user, 
@@ -647,7 +653,8 @@ const StreamingApp = () => {
               <TabsContent value="coach" className="flex-1 p-4 overflow-y-auto">
                 <AIGameCoach />
               </TabsContent>
-            </Tabs>
+              </Tabs>
+            </ProFeatureGate>
           </TabsContent>
 
           <TabsContent value="polls" className="flex-1 flex flex-col m-0 p-4 overflow-y-auto">

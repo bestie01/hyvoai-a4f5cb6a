@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
 
 interface Scene {
   id: string;
@@ -145,7 +146,11 @@ export function SceneManager() {
   };
 
   return (
-    <Card className="card-elevated">
+    <ProFeatureGate 
+      feature="Advanced Scene Management"
+      description="Create unlimited custom scenes with transitions and hotkeys. Free users are limited to 3 scenes."
+    >
+      <Card className="card-elevated">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -240,5 +245,6 @@ export function SceneManager() {
         )}
       </CardContent>
     </Card>
+    </ProFeatureGate>
   );
 }
