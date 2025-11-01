@@ -44,8 +44,9 @@ export const useTwitchStream = (): UseTwitchStreamReturn => {
       }
 
       // Call our edge function to validate and setup Twitch connection
-      const { data, error } = await supabase.functions.invoke('twitch-connect', {
+      const { data, error } = await supabase.functions.invoke('twitch-stream', {
         body: { 
+          action: 'connect',
           streamKey: streamKey,
           title: title,
           category: category
@@ -198,9 +199,9 @@ export const useTwitchStream = (): UseTwitchStreamReturn => {
     if (!isConnected || !streamData) return false;
 
     try {
-      const { data, error } = await supabase.functions.invoke('twitch-update', {
+      const { data, error} = await supabase.functions.invoke('twitch-stream', {
         body: { 
-          streamKey: streamData.streamKey,
+          action: 'update',
           title: title,
           category: category
         }

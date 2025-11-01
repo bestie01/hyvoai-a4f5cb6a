@@ -283,7 +283,7 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
-          donor_email: string | null
+          donor_email: string
           donor_name: string
           id: string
           message: string | null
@@ -295,7 +295,7 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
-          donor_email?: string | null
+          donor_email: string
           donor_name: string
           id?: string
           message?: string | null
@@ -307,7 +307,7 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
-          donor_email?: string | null
+          donor_email?: string
           donor_name?: string
           id?: string
           message?: string | null
@@ -907,6 +907,33 @@ export type Database = {
           title?: string
           user_id?: string
           view_count?: number | null
+        }
+        Relationships: []
+      }
+      streams: {
+        Row: {
+          created_at: string
+          id: number
+          is_live: boolean | null
+          livepeer_id: string | null
+          playback_url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_live?: boolean | null
+          livepeer_id?: string | null
+          playback_url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_live?: boolean | null
+          livepeer_id?: string | null
+          playback_url?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

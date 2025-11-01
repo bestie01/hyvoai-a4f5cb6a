@@ -11,7 +11,13 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.streaming-analytics]
-verify_jwt = false
+verify_jwt = true
+
+[functions.twitch-stream]
+verify_jwt = true
+
+[functions.youtube-stream]
+verify_jwt = true
 
 [functions.ai-chat-analysis]
 verify_jwt = true

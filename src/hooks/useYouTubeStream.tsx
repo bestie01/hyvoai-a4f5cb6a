@@ -46,8 +46,9 @@ export const useYouTubeStream = (): UseYouTubeStreamReturn => {
       }
 
       // Call our edge function to validate and setup YouTube connection
-      const { data, error } = await supabase.functions.invoke('youtube-connect', {
+      const { data, error } = await supabase.functions.invoke('youtube-stream', {
         body: { 
+          action: 'connect',
           streamKey: streamKey,
           title: title,
           description: description,
@@ -203,9 +204,9 @@ export const useYouTubeStream = (): UseYouTubeStreamReturn => {
     if (!isConnected || !streamData) return false;
 
     try {
-      const { data, error } = await supabase.functions.invoke('youtube-update', {
+      const { data, error } = await supabase.functions.invoke('youtube-stream', {
         body: { 
-          streamKey: streamData.streamKey,
+          action: 'update',
           title: title,
           description: description,
           privacy: privacy

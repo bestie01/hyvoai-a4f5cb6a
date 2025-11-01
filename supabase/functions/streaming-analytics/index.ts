@@ -24,14 +24,34 @@ serve(async (req) => {
   }
 
   try {
+    // Get JWT token from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (req.method === 'POST') {
       const { stream_id, platform, viewers, duration, messages, engagement_rate, quality } = await req.json();
 
-      // Store analytics data
+      // Store analytics data with authenticated user ID
       const { data, error } = await supabase
         .from('stream_analytics')
         .insert({
@@ -43,7 +63,7 @@ serve(async (req) => {
           engagement_rate,
           quality,
           timestamp: new Date().toISOString(),
-          user_id: req.headers.get('user-id'), // Pass user ID from auth
+          user_id: user.id, // Use authenticated user ID
         });
 
       if (error) {
@@ -61,25 +81,17 @@ serve(async (req) => {
 
     if (req.method === 'GET') {
       const url = new URL(req.url);
-      const userId = url.searchParams.get('user_id');
       const platform = url.searchParams.get('platform');
       const days = parseInt(url.searchParams.get('days') || '7');
 
-      if (!userId) {
-        return new Response(JSON.stringify({ error: 'User ID required' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Get analytics data for the last N days
+      // Get analytics data for the last N days for authenticated user only
       const sinceDate = new Date();
       sinceDate.setDate(sinceDate.getDate() - days);
 
       let query = supabase
         .from('stream_analytics')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id) // Use authenticated user ID only
         .gte('timestamp', sinceDate.toISOString())
         .order('timestamp', { ascending: false });
 
