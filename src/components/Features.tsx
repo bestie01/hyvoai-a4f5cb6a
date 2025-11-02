@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { Card3D } from "@/components/animations/Card3D";
+import { ScrollReveal } from "@/components/animations/ScrollReveal";
 
 const features = [
   {
@@ -83,24 +85,13 @@ const Features = () => {
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <motion.div
+            <ScrollReveal
               key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ 
-                duration: 0.5, 
-                delay: index * 0.1,
-                ease: [0.22, 1, 0.36, 1]
-              }}
+              direction={index % 2 === 0 ? "left" : "right"}
+              delay={index * 0.1}
             >
-              <motion.div
-                whileHover={{ 
-                  y: -8,
-                  transition: { duration: 0.3 }
-                }}
-              >
-                <Card className="card-elevated group h-full">
+              <Card3D>
+                <Card className="card-elevated group h-full backdrop-blur-sm">
                 <div className="p-8 space-y-6">
                   <div className="flex items-center justify-between">
                     <motion.div 
@@ -128,12 +119,11 @@ const Features = () => {
                   </div>
                 </div>
                 
-                {/* Enhanced hover effects */}
-                <div className="absolute inset-0 bg-gradient-primary rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
-                <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow-primary pointer-events-none" />
-              </Card>
-            </motion.div>
-          </motion.div>
+                  <div className="absolute inset-0 bg-gradient-primary rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow-primary pointer-events-none" />
+                </Card>
+              </Card3D>
+            </ScrollReveal>
           ))}
         </div>
       </div>

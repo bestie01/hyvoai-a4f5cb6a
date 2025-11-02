@@ -6,6 +6,7 @@ import heroImage from "@/assets/hero-dashboard.jpg";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SlideIn } from "@/components/animations/SlideIn";
 import { MagneticButton } from "@/components/animations/MagneticButton";
+import { RippleEffect } from "@/components/effects/RippleEffect";
 import { motion } from "framer-motion";
 
 const Hero = () => {
@@ -145,7 +146,8 @@ const Hero = () => {
           
           {/* Right column - Dashboard preview */}
           <FadeIn delay={0.3} className="relative">
-            <div className="relative overflow-hidden rounded-2xl glass hover-lift">
+            <RippleEffect>
+              <div className="relative overflow-hidden rounded-2xl glass hover-lift transition-all duration-500 hover:shadow-glow-primary-strong">
               <img
                 src={heroImage}
                 alt="Hyvo.ai Dashboard Preview - AI-powered streaming analytics"
@@ -179,6 +181,7 @@ const Hero = () => {
                 </div>
               </SlideIn>
             </div>
+          </RippleEffect>
             
             {/* Enhanced glow effect */}
             <div className="absolute -inset-6 bg-gradient-primary rounded-3xl opacity-20 blur-3xl animate-pulse-glow -z-10" />
