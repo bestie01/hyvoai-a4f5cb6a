@@ -9,6 +9,8 @@ import {
   Palette,
   Sparkles 
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { FadeIn } from "@/components/animations/FadeIn";
 
 const features = [
   {
@@ -62,7 +64,7 @@ const Features = () => {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(240_5%_16%)_1px,transparent_1px),linear-gradient(to_bottom,hsl(240_5%_16%)_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20" />
       
       <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center space-y-6 mb-20 animate-fade-in-up">
+        <FadeIn className="text-center space-y-6 mb-20">
           <Badge variant="secondary" className="py-2 px-4 glass inline-flex items-center gap-2">
             <Sparkles className="w-4 h-4 animate-pulse" />
             AI-Powered Features
@@ -77,39 +79,61 @@ const Features = () => {
             Hyvo.ai leverages cutting-edge artificial intelligence, machine learning, and computer vision 
             to automate every aspect of content creation and audience growth.
           </p>
-        </div>
+        </FadeIn>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <Card 
-              key={index} 
-              className="card-elevated hover-lift group animate-fade-in-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ 
+                duration: 0.5, 
+                delay: index * 0.1,
+                ease: [0.22, 1, 0.36, 1]
+              }}
             >
-              <div className="p-8 space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-glow-primary">
-                    <feature.icon className="w-7 h-7 text-primary-foreground" />
+              <motion.div
+                whileHover={{ 
+                  y: -8,
+                  transition: { duration: 0.3 }
+                }}
+              >
+                <Card className="card-elevated group h-full">
+                <div className="p-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <motion.div 
+                      className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow-primary"
+                      whileHover={{ 
+                        scale: 1.1, 
+                        rotate: 3,
+                        transition: { duration: 0.3 }
+                      }}
+                    >
+                      <feature.icon className="w-7 h-7 text-primary-foreground" />
+                    </motion.div>
+                    <Badge variant="secondary" className="text-xs font-semibold glass">
+                      {feature.badge}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="text-xs font-semibold glass">
-                    {feature.badge}
-                  </Badge>
+                  
+                  <div className="space-y-3">
+                    <h3 className="text-xl font-display font-bold text-foreground group-hover:text-primary transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed text-sm">
+                      {feature.description}
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="space-y-3">
-                  <h3 className="text-xl font-display font-bold text-foreground group-hover:text-primary transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Enhanced hover effects */}
-              <div className="absolute inset-0 bg-gradient-primary rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
-              <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow-primary pointer-events-none" />
-            </Card>
+                {/* Enhanced hover effects */}
+                <div className="absolute inset-0 bg-gradient-primary rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
+                <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow-primary pointer-events-none" />
+              </Card>
+            </motion.div>
+          </motion.div>
           ))}
         </div>
       </div>

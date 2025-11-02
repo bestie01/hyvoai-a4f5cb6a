@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Activity, Users, MessageSquare, TrendingUp, Eye, Clock } from "lucide-react";
 import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
+import { LiveBadge } from "@/components/animations/LiveBadge";
+import { CountUp } from "@/components/animations/CountUp";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import { motion } from "framer-motion";
 
 interface RealtimeDashboardProps {
   streamId?: string;
@@ -51,46 +55,55 @@ export function RealtimeDashboard({
     <div className="space-y-4">
       {/* Live Status */}
       {isStreaming && (
-        <Card className="bg-gradient-card border-border/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                LIVE
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {platform}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span className="text-lg font-bold text-foreground">{viewers}</span>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="bg-gradient-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <LiveBadge viewers={viewers} />
+                <Badge variant="secondary" className="text-xs">
+                  {platform}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="text-lg font-bold text-foreground">
+                      <CountUp value={viewers} />
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Current Viewers</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Current Viewers</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Clock className="h-4 w-4 text-accent" />
-                  <span className="text-lg font-bold text-foreground">{duration}</span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Clock className="h-4 w-4 text-accent" />
+                    <span className="text-lg font-bold text-foreground">{duration}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Stream Time</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Stream Time</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Activity className="h-4 w-4 text-success" />
-                  <span className="text-lg font-bold text-foreground">
-                    {realtimeMetrics?.currentEngagement.toFixed(1) || "0.0"}%
-                  </span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Activity className="h-4 w-4 text-success" />
+                    <span className="text-lg font-bold text-foreground">
+                      <CountUp 
+                        value={realtimeMetrics?.currentEngagement || 0} 
+                        decimals={1}
+                        suffix="%"
+                      />
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Engagement</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Engagement</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Analytics Overview */}
@@ -109,12 +122,7 @@ export function RealtimeDashboard({
         <CardContent>
           {loading ? (
             <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-4 bg-muted rounded mb-2"></div>
-                  <div className="h-2 bg-muted/50 rounded"></div>
-                </div>
-              ))}
+              <LoadingSkeleton className="h-4 mb-2" count={4} />
             </div>
           ) : metrics ? (
             <div className="space-y-4">
@@ -122,13 +130,17 @@ export function RealtimeDashboard({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Total Streams</span>
-                    <span className="text-sm font-medium text-foreground">{metrics.totalStreams}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      <CountUp value={metrics.totalStreams} />
+                    </span>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Peak Viewers</span>
-                    <span className="text-sm font-medium text-foreground">{metrics.peakViewers}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      <CountUp value={metrics.peakViewers} />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -136,7 +148,9 @@ export function RealtimeDashboard({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Average Viewers</span>
-                  <span className="text-sm font-medium text-foreground">{metrics.avgViewers}</span>
+                  <span className="text-sm font-medium text-foreground">
+                    <CountUp value={metrics.avgViewers} />
+                  </span>
                 </div>
                 <Progress value={(metrics.avgViewers / metrics.peakViewers) * 100 || 0} className="h-2" />
               </div>
