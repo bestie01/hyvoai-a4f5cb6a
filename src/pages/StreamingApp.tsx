@@ -12,6 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StreamAnalytics } from "@/components/StreamAnalytics";
+import { StreamPreview } from "@/components/streaming/StreamPreview";
+import { ProfessionalAudioMixer } from "@/components/streaming/ProfessionalAudioMixer";
+import { SceneTransitions } from "@/components/streaming/SceneTransitions";
+import { SourceManager } from "@/components/streaming/SourceManager";
+import { useWebRTCStream } from "@/hooks/useWebRTCStream";
+import { StreamHealthMonitor } from "@/components/StreamHealthMonitor";
 import { 
   Play, 
   Square, 
@@ -77,6 +83,12 @@ const StreamingApp = () => {
   const microphone = useMicrophone();
   const twitch = useTwitchStream();
   const youtube = useYouTubeStream();
+  const webrtc = useWebRTCStream();
+  
+  const [captureStats, setCaptureStats] = useState({
+    resolution: { width: 1920, height: 1080 },
+    fps: 30
+  });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -392,131 +404,47 @@ const StreamingApp = () => {
         </div>
 
         {/* Main Studio Layout */}
-        <div className="flex-1 flex">
-          {/* Preview & Sources */}
-          <div className="flex-1 flex flex-col p-4 gap-4">
-            {/* Stream Preview */}
-            <Card className="flex-1">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Monitor className="w-5 h-5" />
-                  Stream Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center border border-border">
-                  <div className="text-center space-y-4">
-                    <Camera className="w-16 h-16 mx-auto text-muted-foreground" />
-                    <div>
-                      <p className="text-lg font-medium">Stream Preview</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(twitch.isStreaming || youtube.isStreaming) ? 
-                          `Your ${activeStream} stream is live!` : 
-                          (twitch.isConnected || youtube.isConnected) ? 
-                            "Ready to stream - click 'Start Stream'" : 
-                            "Connect to a streaming platform to begin"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Audio Mixer */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="w-5 h-5" />
-                  Audio Mixer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Microphone</span>
-                      <Switch checked={microphone.isRecording} onCheckedChange={handleMicrophoneToggle} />
-                    </div>
-                    <div className="space-y-1">
-                      <Slider value={[microphone.audioLevel]} max={100} step={1} disabled />
-                      <div className="text-xs text-muted-foreground">
-                        Level: {Math.round(microphone.audioLevel)}%
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Desktop Audio</span>
-                      <Switch defaultChecked />
-                    </div>
-                    <Slider defaultValue={[60]} max={100} step={1} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex-1 flex gap-4 p-4">
+          {/* Left Panel - Scenes & Sources */}
+          <div className="w-80 space-y-4">
+            <SceneTransitions />
+            <SourceManager onAddSource={(type) => {
+              if (type === 'camera') {
+                webrtc.startCapture('camera');
+              } else if (type === 'display') {
+                webrtc.startCapture('screen');
+              }
+            }} />
           </div>
 
-          {/* Right Panel - Analytics, Scenes & Sources */}
-          <div className="w-80 border-l border-border p-4 space-y-4">
-            {/* Analytics */}
+          {/* Center - Preview & Audio */}
+          <div className="flex-1 space-y-4">
+            {/* Stream Preview */}
+            <StreamPreview
+              isLive={twitch.isStreaming || youtube.isStreaming}
+              viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
+              streamRef={webrtc.streamRef}
+              resolution={captureStats.resolution}
+              fps={captureStats.fps}
+            />
+            
+            {/* Audio Mixer */}
+            <ProfessionalAudioMixer />
+          </div>
+
+          {/* Right Panel - Analytics & Health */}
+          <div className="w-96 space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
+            {/* Stream Health Monitor */}
+            <StreamHealthMonitor />
+            
+            {/* Stream Analytics */}
             {(twitch.isStreaming || youtube.isStreaming) && (
-              <StreamAnalytics 
+              <StreamAnalytics
                 viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
                 streamTime={streamTime}
-                isStreaming={true}
+                isStreaming={twitch.isStreaming || youtube.isStreaming}
               />
             )}
-            {/* Scenes */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="w-5 h-5" />
-                  Scenes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {scenes.map((scene) => (
-                  <Button
-                    key={scene.id}
-                    variant={scene.active ? "default" : "outline"}
-                    className="w-full justify-start"
-                    size="sm"
-                  >
-                    {scene.name}
-                  </Button>
-                ))}
-                <Button variant="outline" size="sm" className="w-full">
-                  + Add Scene
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Sources */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Filter className="w-5 h-5" />
-                  Sources
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {sources.map((source) => (
-                  <div key={source.id} className="flex items-center justify-between p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      {source.type === 'display' && <Monitor className="w-4 h-4" />}
-                      {source.type === 'camera' && <Camera className="w-4 h-4" />}
-                      {source.type === 'audio' && <Mic className="w-4 h-4" />}
-                      {source.type === 'overlay' && <Palette className="w-4 h-4" />}
-                      <span className="text-sm">{source.name}</span>
-                    </div>
-                    <Switch checked={source.enabled} />
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" className="w-full">
-                  + Add Source
-                </Button>
-              </CardContent>
-            </Card>
 
             {/* AI Features */}
             <Card>
