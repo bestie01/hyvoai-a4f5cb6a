@@ -1,0 +1,8 @@
+# Desktop Installers Directory
+
+Place your built installers here:
+- Windows: Hyvo-Stream-Studio-Setup-1.0.0.exe
+- macOS: Hyvo-Stream-Studio-1.0.0.dmg
+- Linux: Hyvo-Stream-Studio-1.0.0.AppImage
+
+After building with electron-builder, copy files from electron/dist/ to this directory.

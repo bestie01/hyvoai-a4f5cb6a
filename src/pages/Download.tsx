@@ -13,8 +13,8 @@ const DownloadPage = () => {
       icon: Monitor,
       version: "1.0.0",
       size: "120 MB",
-      requirements: "Windows 10 or later",
-      downloadUrl: "/downloads/hyvo-ai-windows-1.0.0.exe",
+      requirements: "Windows 10/11 (64-bit)",
+      downloadUrl: "/downloads/Hyvo-Stream-Studio-Setup-1.0.0.exe",
       primary: true
     },
     {
@@ -22,8 +22,8 @@ const DownloadPage = () => {
       icon: Monitor,
       version: "1.0.0", 
       size: "125 MB",
-      requirements: "macOS 10.15 or later",
-      downloadUrl: "/downloads/hyvo-ai-macos-1.0.0.dmg",
+      requirements: "macOS 11.0 or later",
+      downloadUrl: "/downloads/Hyvo-Stream-Studio-1.0.0.dmg",
       primary: true
     },
     {
@@ -39,16 +39,29 @@ const DownloadPage = () => {
 
   const handleDownload = (platform: typeof platforms[0]) => {
     if (platform.primary && platform.downloadUrl !== "#") {
-      // Show download started message
       toast({
-        title: "Download Complete!",
-        description: `${platform.name} version ${platform.version} is ready to use!`,
+        title: "Download Starting",
+        description: `Preparing Hyvo Stream Studio installer for ${platform.name}`,
       });
-
-      // Simulate download completion and redirect to streaming app
+      
+      // Create temporary download link
+      const link = document.createElement('a');
+      link.href = platform.downloadUrl;
+      link.download = platform.downloadUrl.split('/').pop() || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Show success message and redirect to studio
       setTimeout(() => {
-        window.location.href = '/studio';
-      }, 2000);
+        toast({
+          title: "Download Complete!",
+          description: "Check your downloads folder and run the installer",
+        });
+        setTimeout(() => {
+          window.location.href = '/studio';
+        }, 2000);
+      }, 1000);
     }
   };
 
@@ -73,7 +86,7 @@ const DownloadPage = () => {
               <Download className="w-6 h-6 text-primary-foreground" />
             </div>
             <h1 className="text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Download Hyvo.ai
+              Download Hyvo Stream Studio
             </h1>
           </div>
           
@@ -187,7 +200,7 @@ const DownloadPage = () => {
                 </div>
                 <div className="flex gap-3">
                   <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center">4</Badge>
-                  <span>Launch Hyvo.ai from desktop</span>
+                  <span>Launch Hyvo Stream Studio from desktop</span>
                 </div>
               </CardContent>
             </Card>
@@ -210,7 +223,7 @@ const DownloadPage = () => {
                 </div>
                 <div className="flex gap-3">
                   <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center">3</Badge>
-                  <span>Drag Hyvo.ai to Applications</span>
+                  <span>Drag Hyvo Stream Studio to Applications</span>
                 </div>
                 <div className="flex gap-3">
                   <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center">4</Badge>

@@ -1,12 +1,14 @@
-# Desktop App Build Guide for Hyvo.ai
+# Desktop App Build Guide for Hyvo Stream Studio
 
-This guide explains how to build Hyvo.ai as a desktop application using Electron via Capacitor.
+This guide explains how to build Hyvo Stream Studio as a desktop application using Electron via Capacitor.
 
 ## Prerequisites
 
 - Node.js (v18 or higher)
 - Git
 - NPM or Yarn
+- For macOS builds: Xcode Command Line Tools
+- For Windows builds: Windows Build Tools (optional, improves compatibility)
 
 ## Quick Start
 
@@ -18,59 +20,126 @@ cd hyvo-stream-assist
 npm install
 ```
 
-### 2. Build Web Assets
+### 2. Add Electron Platform (First Time Only)
+
+```bash
+npx cap add electron
+```
+
+### 3. Build Web Assets
 
 ```bash
 npm run build
 ```
 
-### 3. Sync Electron Platform
+### 4. Sync to Electron
 
 ```bash
 npx cap sync electron
 ```
 
-### 4. Run Desktop App
+### 5. Run Desktop App in Development
 
 ```bash
 npx cap open electron
 ```
 
-This will open the Electron project in your default editor. You can then run the app from there or use:
+This opens the Electron project. Then run:
 
 ```bash
 cd electron
+npm install
 npm start
 ```
 
-## Building for Production
+## Building Production Installers
 
-### Windows
+### Setup Electron Builder (First Time)
 
-```bash
-cd electron
-npm run electron:build-windows
-```
-
-This creates an executable in `electron/dist/`.
-
-### macOS
+Navigate to the electron directory and ensure electron-builder is installed:
 
 ```bash
 cd electron
-npm run electron:build-mac
+npm install --save-dev electron-builder
 ```
 
-This creates a `.app` bundle in `electron/dist/`.
+### Configure electron/package.json
 
-### Linux
+Add these build scripts to `electron/package.json`:
+
+```json
+{
+  "scripts": {
+    "build:win": "electron-builder --windows",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "app.lovable.016291d698de4ca99131b756a44a0c02",
+    "productName": "Hyvo Stream Studio",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app/**/*",
+      "capacitor.config.json"
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "app/icons/appIcon.png"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.video",
+      "icon": "app/icons/appIcon.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Video",
+      "icon": "app/icons/appIcon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
+```
+
+### Windows Installer
 
 ```bash
 cd electron
-npm run electron:build-linux
+npm run build:win
 ```
 
-This creates an AppImage in `electron/dist/`.
+**Output:** 
+- `electron/dist/Hyvo Stream Studio Setup.exe` (Installer)
+- `electron/dist/Hyvo Stream Studio.exe` (Portable)
+
+### macOS Installer
+
+```bash
+cd electron
+npm run build:mac
+```
+
+**Output:**
+- `electron/dist/Hyvo Stream Studio.dmg`
+- `electron/dist/Hyvo Stream Studio-mac.zip`
+
+### Linux Installer
+
+```bash
+cd electron
+npm run build:linux
+```
+
+**Output:**
+- `electron/dist/Hyvo Stream Studio.AppImage`
+- `electron/dist/hyvo-stream-studio_1.0.0_amd64.deb`
 
 ## Configuration
 

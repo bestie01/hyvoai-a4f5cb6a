@@ -2,13 +2,26 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.016291d698de4ca99131b756a44a0c02',
-  appName: 'hyvo-stream-assist',
+  appName: 'Hyvo Stream Studio',
   webDir: 'dist',
-  server: {
-    url: 'https://016291d6-98de-4ca9-9131-b756a44a0c02.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
-  bundledWebRuntime: false
+  bundledWebRuntime: false,
+  electron: {
+    hiddenInset: false,
+    tabbingIdentifier: 'com.hyvo.stream',
+    windowOptions: {
+      width: 1600,
+      height: 900,
+      minWidth: 1200,
+      minHeight: 700,
+      titleBarStyle: 'default',
+      backgroundColor: '#0A0A0F',
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true
+      }
+    }
+  }
 };
 
 export default config;
