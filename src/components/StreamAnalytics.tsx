@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
 import {
   BarChart3,
   Users,
@@ -25,12 +26,22 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
   const [totalMessages, setTotalMessages] = useState(0);
   const [engagementRate, setEngagementRate] = useState(0);
   const [streamQuality, setStreamQuality] = useState<'Good' | 'Fair' | 'Poor'>('Good');
+  const { metrics, loading } = useRealtimeAnalytics();
 
+  // Update peak viewers from real data
   useEffect(() => {
     if (viewers > peakViewers) {
       setPeakViewers(viewers);
     }
   }, [viewers, peakViewers]);
+
+  // Use real metrics when available
+  useEffect(() => {
+    if (metrics) {
+      setPeakViewers(Math.max(peakViewers, metrics.peakViewers || 0));
+      setEngagementRate(metrics.avgEngagement || engagementRate);
+    }
+  }, [metrics, peakViewers, engagementRate]);
 
   useEffect(() => {
     if (isStreaming) {

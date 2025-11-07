@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Zap, Users, Trophy } from "lucide-react";
+import { ArrowRight, Zap, Users, Trophy, Radio } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { ParallaxSection } from "@/components/animations/ParallaxSection";
 import { CountUp } from "@/components/animations/CountUp";
@@ -15,6 +16,7 @@ const stats = [
 
 const CTA = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleStartTrial = () => {
     navigate('/studio');
@@ -82,14 +84,25 @@ const CTA = () => {
             
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <MagneticButton>
-                  <Button variant="hero" size="lg" className="group text-lg px-8 py-4" onClick={handleStartTrial}>
-                    Start Free Trial
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    className="group text-lg px-8 py-4" 
+                    onClick={() => user ? navigate('/studio') : navigate('/auth')}
+                  >
+                    <Radio className="w-5 h-5 mr-2 animate-pulse" />
+                    {user ? 'Go to Studio' : 'Start Free Trial'}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </MagneticButton>
                 <MagneticButton>
-                  <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass" onClick={handleBookDemo}>
-                    Book a Demo
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="text-lg px-8 py-4 glass" 
+                    onClick={() => navigate('/pricing')}
+                  >
+                    View Pricing
                   </Button>
                 </MagneticButton>
               </div>

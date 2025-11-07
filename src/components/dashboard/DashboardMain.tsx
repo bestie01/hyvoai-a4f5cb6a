@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ProStreamAnalytics } from "./ProStreamAnalytics";
 import { RealtimeDashboard } from "./RealtimeDashboard";
 import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
+import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { 
   TrendingUp, 
@@ -16,8 +17,10 @@ import {
   Target,
   Zap,
   Brain,
-  Sparkles
+  Sparkles,
+  Radio
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const chartData = [
   { name: 'Jan', value: 400 },
@@ -34,6 +37,7 @@ const pieData = [
 ];
 
 export function DashboardMain() {
+  const navigate = useNavigate();
   const { getAnalytics, metrics, loading } = useRealtimeAnalytics();
 
   // Fetch analytics on component mount
@@ -42,7 +46,29 @@ export function DashboardMain() {
   }, [getAnalytics]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-white">Welcome back!</h2>
+          <p className="text-muted-foreground">
+            Here's what's happening with your streams today.
+          </p>
+        </div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button 
+            size="lg" 
+            className="gap-2 bg-gradient-primary hover:opacity-90 shadow-glow-primary"
+            onClick={() => navigate('/studio')}
+          >
+            <Radio className="w-5 h-5 animate-pulse" />
+            Go Live Now
+            <Sparkles className="w-5 h-5" />
+          </Button>
+        </motion.div>
+      </div>
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-card border-border/50">

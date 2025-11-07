@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Home, BarChart3, Users, Settings, PlayCircle, TrendingUp, DollarSign, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, BarChart3, Users, Settings, PlayCircle, TrendingUp, DollarSign, Clock, Radio } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -14,19 +15,22 @@ import {
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { icon: Home, label: "Dashboard", count: 16, active: true },
-  { icon: BarChart3, label: "Analytics", count: 28 },
-  { icon: Users, label: "Users", count: 52 },
-  { icon: PlayCircle, label: "Content", count: 31 },
+  { icon: Home, label: "Overview", path: "/dashboard", count: 16, active: true },
+  { icon: Radio, label: "Studio", path: "/studio", count: 0 },
+  { icon: BarChart3, label: "Analytics", path: "/dashboard", count: 28 },
+  { icon: Users, label: "Community", path: "/community", count: 52 },
+  { icon: PlayCircle, label: "Content", path: "/growth", count: 31 },
 ];
 
 export function DashboardSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { toast } = useToast();
-  const [activeItem, setActiveItem] = useState('Dashboard');
+  const navigate = useNavigate();
+  const [activeItem, setActiveItem] = useState('Overview');
 
-  const handleNavClick = (label) => {
+  const handleNavClick = (label: string, path: string) => {
     setActiveItem(label);
+    navigate(path);
     toast({
       title: `Navigating to ${label}`,
       description: `Loading ${label.toLowerCase()} section...`,
@@ -67,14 +71,14 @@ export function DashboardSidebar() {
                         : 'text-white/70 hover:text-white hover:bg-white/10'
                       }
                     `}
-                    onClick={() => handleNavClick(item.label)}
+                    onClick={() => handleNavClick(item.label, item.path)}
                   >
                     <div className="flex items-center w-full cursor-pointer">
                       <div className="flex items-center gap-3 flex-1">
                         <item.icon className="w-5 h-5" />
                         {!collapsed && <span className="font-medium">{item.label}</span>}
                       </div>
-                      {!collapsed && (
+                      {!collapsed && item.count > 0 && (
                         <span className="text-sm font-semibold bg-white/20 px-2 py-1 rounded">
                           {item.count}
                         </span>

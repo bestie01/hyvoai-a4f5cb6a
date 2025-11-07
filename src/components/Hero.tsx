@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Sparkles, TrendingUp } from "lucide-react";
+import { Play, Sparkles, TrendingUp, Radio, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-dashboard.jpg";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SlideIn } from "@/components/animations/SlideIn";
@@ -11,6 +12,7 @@ import { motion } from "framer-motion";
 
 const Hero = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleStartTrial = () => {
     navigate('/studio');
@@ -113,10 +115,11 @@ const Hero = () => {
                 <Button 
                   size="lg" 
                   className="group bg-gradient-primary hover:shadow-glow-primary-strong transition-all duration-300 font-semibold text-lg px-8 py-6 rounded-xl" 
-                  onClick={handleStartTrial}
+                  onClick={() => user ? navigate('/studio') : navigate('/auth')}
                 >
-                  <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                  Launch Studio
+                  <Radio className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform animate-pulse" />
+                  {user ? 'Go Live Now' : 'Start Streaming'}
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </MagneticButton>
               <MagneticButton>
@@ -124,10 +127,10 @@ const Hero = () => {
                   variant="outline" 
                   size="lg" 
                   className="glass hover:bg-accent/10 border-accent/30 hover:border-accent font-semibold text-lg px-8 py-6 rounded-xl transition-all duration-300"
-                  onClick={handleViewDemo}
+                  onClick={() => navigate('/dashboard')}
                 >
                   <TrendingUp className="w-5 h-5 mr-2" />
-                  Try Demo
+                  View Dashboard
                 </Button>
               </MagneticButton>
             </div>
