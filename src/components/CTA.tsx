@@ -7,6 +7,7 @@ import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { ParallaxSection } from "@/components/animations/ParallaxSection";
 import { CountUp } from "@/components/animations/CountUp";
 import { MagneticButton } from "@/components/animations/MagneticButton";
+import { motion } from "framer-motion";
 
 const stats = [
   { icon: Users, value: "10K+", label: "AI-Powered Creators" },
@@ -41,10 +42,18 @@ const CTA = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {stats.map((stat, index) => (
               <ScrollReveal key={index} delay={index * 0.1}>
-                <div className="text-center space-y-3">
-                  <div className="w-16 h-16 mx-auto bg-gradient-primary rounded-full flex items-center justify-center mb-4 shadow-glow-primary">
+                <motion.div 
+                  className="text-center space-y-3 p-6 rounded-2xl glass hover:bg-accent/5 transition-all duration-300 group"
+                  whileHover={{ y: -5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <motion.div 
+                    className="w-16 h-16 mx-auto bg-gradient-primary rounded-full flex items-center justify-center mb-4 shadow-glow-primary"
+                    whileHover={{ rotate: 360, scale: 1.1 }}
+                    transition={{ duration: 0.6 }}
+                  >
                     <stat.icon className="w-8 h-8 text-primary-foreground" />
-                  </div>
+                  </motion.div>
                   <div className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent font-mono">
                     {stat.value.includes('+') ? (
                       <>
@@ -53,10 +62,10 @@ const CTA = () => {
                       </>
                     ) : stat.value}
                   </div>
-                  <div className="text-muted-foreground">
+                  <div className="text-muted-foreground group-hover:text-foreground transition-colors">
                     {stat.label}
                   </div>
-                </div>
+                </motion.div>
               </ScrollReveal>
             ))}
           </div>

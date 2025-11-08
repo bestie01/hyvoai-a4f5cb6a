@@ -61,7 +61,7 @@ const features = [
 
 const Features = () => {
   return (
-    <section className="py-32 bg-gradient-to-b from-background via-secondary/20 to-background relative overflow-hidden">
+    <section id="features" className="py-32 bg-gradient-to-b from-background via-secondary/20 to-background relative overflow-hidden scroll-mt-20">
       {/* Animated background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(240_5%_16%)_1px,transparent_1px),linear-gradient(to_bottom,hsl(240_5%_16%)_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20" />
       
@@ -91,36 +91,47 @@ const Features = () => {
               delay={index * 0.1}
             >
               <Card3D>
-                <Card className="card-elevated group h-full backdrop-blur-sm">
-                <div className="p-8 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <motion.div 
-                      className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow-primary"
-                      whileHover={{ 
-                        scale: 1.1, 
-                        rotate: 3,
-                        transition: { duration: 0.3 }
-                      }}
-                    >
-                      <feature.icon className="w-7 h-7 text-primary-foreground" />
-                    </motion.div>
-                    <Badge variant="secondary" className="text-xs font-semibold glass">
-                      {feature.badge}
-                    </Badge>
+                <Card className="relative card-elevated group h-full backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all duration-500 overflow-hidden">
+                  <div className="p-8 space-y-6 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <motion.div 
+                        className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow-primary"
+                        whileHover={{ 
+                          scale: 1.1, 
+                          rotate: 5,
+                          transition: { duration: 0.3, type: "spring", stiffness: 300 }
+                        }}
+                      >
+                        <feature.icon className="w-7 h-7 text-primary-foreground" />
+                      </motion.div>
+                      <Badge variant="secondary" className="text-xs font-semibold glass">
+                        {feature.badge}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-display font-bold text-foreground group-hover:text-gradient-primary group-hover:bg-gradient-primary group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
+                        {feature.title}
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed text-sm">
+                        {feature.description}
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    <h3 className="text-xl font-display font-bold text-foreground group-hover:text-primary transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="text-muted-foreground leading-relaxed text-sm">
-                      {feature.description}
-                    </p>
-                  </div>
-                </div>
-                
-                  <div className="absolute inset-0 bg-gradient-primary rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
-                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow-primary pointer-events-none" />
+                  {/* Animated gradient overlay on hover */}
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-primary rounded-xl opacity-0 group-hover:opacity-5 pointer-events-none"
+                    initial={false}
+                    whileHover={{ opacity: 0.05 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                  
+                  {/* Animated glow effect */}
+                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 shadow-glow-primary pointer-events-none" />
+                  
+                  {/* Shimmer effect on hover */}
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-primary/10 to-transparent pointer-events-none" />
                 </Card>
               </Card3D>
             </ScrollReveal>

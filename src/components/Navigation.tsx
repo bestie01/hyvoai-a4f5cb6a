@@ -18,13 +18,23 @@ const Navigation = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { label: "Features", href: "#features" },
+    { label: "Features", href: "/#features" },
     { label: "Dashboard", href: "/dashboard" },
     { label: "Growth", href: "/growth" },
     { label: "Community", href: "/community" },
     { label: "Pricing", href: "/pricing" },
     { label: "Download", href: "/download" },
   ];
+
+  const handleNavClick = (href: string) => {
+    if (href.startsWith('/#')) {
+      const element = document.querySelector(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        setIsMenuOpen(false);
+      }
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 supports-[backdrop-filter]:bg-background/60">
@@ -74,6 +84,12 @@ const Navigation = () => {
                   <a
                     href={item.href}
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
+                    onClick={(e) => {
+                      if (item.href.startsWith('/#')) {
+                        e.preventDefault();
+                        handleNavClick(item.href);
+                      }
+                    }}
                   >
                     {item.label}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
@@ -159,97 +175,125 @@ const Navigation = () => {
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-border">
-            <div className="flex flex-col gap-4 pt-4">
-              {navItems.map((item) => (
-                item.href.startsWith('/') ? (
-                  <Link
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div 
+              className="md:hidden mt-4 pb-4 border-t border-border overflow-hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <div className="flex flex-col gap-4 pt-4">
+                {navItems.map((item, index) => (
+                  <motion.div
                     key={item.label}
-                    to={item.href}
-                    className="text-foreground hover:text-primary transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
                   >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className="text-foreground hover:text-primary transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </a>
-                )
-              ))}
-              <div className="flex flex-col gap-3 pt-4 border-t border-border">
-                <div className="flex items-center gap-3 mb-3">
-                  <ThemeToggle />
-                  {user && <NotificationCenter />}
-                </div>
-                
-                {user ? (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="justify-start"
-                      onClick={() => {
-                        navigate("/profile");
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      Profile
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="justify-start"
-                      onClick={() => {
-                        navigate("/studio");
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      Studio
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={signOut}
-                    >
-                      Sign Out
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="justify-start"
-                      onClick={() => {
-                        navigate("/auth");
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      Sign In
-                    </Button>
-                    <Button 
-                      variant="hero" 
-                      size="sm"
-                      onClick={() => {
-                        navigate("/auth");
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      Start Free Trial
-                    </Button>
-                  </>
-                )}
+                    {item.href.startsWith('/') ? (
+                      <Link
+                        to={item.href}
+                        className="text-foreground hover:text-primary transition-colors py-2 block"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="text-foreground hover:text-primary transition-colors py-2 block"
+                        onClick={(e) => {
+                          if (item.href.startsWith('/#')) {
+                            e.preventDefault();
+                            handleNavClick(item.href);
+                          } else {
+                            setIsMenuOpen(false);
+                          }
+                        }}
+                      >
+                        {item.label}
+                      </a>
+                    )}
+                  </motion.div>
+                ))}
+                <motion.div 
+                  className="flex flex-col gap-3 pt-4 border-t border-border"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <ThemeToggle />
+                    {user && <NotificationCenter />}
+                  </div>
+                  
+                  {user ? (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="justify-start"
+                        onClick={() => {
+                          navigate("/profile");
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="justify-start"
+                        onClick={() => {
+                          navigate("/studio");
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Studio
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={signOut}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="justify-start"
+                        onClick={() => {
+                          navigate("/auth");
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        Sign In
+                      </Button>
+                      <Button 
+                        variant="hero" 
+                        size="sm"
+                        onClick={() => {
+                          navigate("/auth");
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        Start Free Trial
+                      </Button>
+                    </>
+                  )}
+                </motion.div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );
