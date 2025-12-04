@@ -1,0 +1,12 @@
+This is a placeholder for the Hyvo Stream Studio Windows installer.
+
+To get the actual installer:
+1. Build the desktop app using: npm run build && npx cap sync electron
+2. Navigate to electron/ directory
+3. Run: npm run build:win
+4. Copy the generated installer here
+
+For now, use the web version at: https://hyvo.ai/studio
+
+Version: 1.0.0
+Platform: Windows 10/11 (64-bit)
