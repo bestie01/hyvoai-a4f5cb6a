@@ -26,17 +26,51 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { amount, currency, donorName, donorEmail, message, userId, streamId } = await req.json();
+    // Verify user authentication from JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header required');
+    }
 
-    console.log('[PROCESS-DONATION] Creating payment intent', { amount, currency, donorName });
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Unauthorized - valid authentication required');
+    }
+
+    const { amount, currency, donorName, donorEmail, message, streamerId, streamId } = await req.json();
+
+    // Validate required fields
+    if (!amount || amount <= 0) {
+      throw new Error('Valid amount is required');
+    }
+
+    if (!streamerId) {
+      throw new Error('Streamer ID is required');
+    }
+
+    // Validate amount is reasonable (between $1 and $10000)
+    if (amount < 100 || amount > 1000000) {
+      throw new Error('Amount must be between $1 and $10,000');
+    }
+
+    console.log('[PROCESS-DONATION] Creating payment intent', { 
+      amount, 
+      currency, 
+      donorId: user.id,
+      streamerId 
+    });
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: currency || 'usd',
       metadata: {
-        donor_name: donorName,
-        donor_email: donorEmail || '',
-        user_id: userId,
+        donor_name: donorName || user.email || 'Anonymous',
+        donor_email: donorEmail || user.email || '',
+        donor_user_id: user.id, // Authenticated donor
+        streamer_id: streamerId, // Recipient streamer
         stream_id: streamId || '',
       },
     });
@@ -44,18 +78,19 @@ serve(async (req) => {
     const { error: dbError } = await supabase
       .from('donations')
       .insert([{
-        user_id: userId,
-        stream_id: streamId,
-        donor_name: donorName,
-        donor_email: donorEmail,
+        user_id: streamerId, // The streamer receiving the donation
+        stream_id: streamId || null,
+        donor_name: donorName || user.email || 'Anonymous',
+        donor_email: donorEmail || user.email || '',
         amount: amount,
         currency: currency || 'usd',
-        message: message,
+        message: message || null,
         stripe_payment_intent: paymentIntent.id,
       }]);
 
     if (dbError) {
       console.error('[PROCESS-DONATION] Database error:', dbError);
+      // Don't fail the request - payment intent was created successfully
     }
 
     return new Response(

@@ -6,6 +6,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Validate Discord webhook URL to prevent SSRF attacks
+function validateDiscordWebhook(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Only allow Discord webhook URLs
+    if (!parsed.hostname.endsWith('discord.com') && 
+        !parsed.hostname.endsWith('discordapp.com')) {
+      return false;
+    }
+    if (!parsed.pathname.startsWith('/api/webhooks/')) {
+      return false;
+    }
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -33,6 +51,11 @@ serve(async (req) => {
 
     if (!webhookUrl) {
       throw new Error('Webhook URL is required');
+    }
+
+    // Validate webhook URL to prevent SSRF
+    if (!validateDiscordWebhook(webhookUrl)) {
+      throw new Error('Invalid Discord webhook URL. Only https://discord.com/api/webhooks/ URLs are allowed.');
     }
 
     if (scheduled) {
