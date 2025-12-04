@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { ProBadge } from "@/components/ProFeatureGate";
 import { motion } from "framer-motion";
-import PageTransition from "@/components/animations/PageTransition";
+import { PageTransition } from "@/components/animations/PageTransition";
 
 const Pricing = () => {
   const { createCheckout, loading, subscription, isPro, isYearOne, initialLoading } = useSubscription();
@@ -383,6 +383,7 @@ const Pricing = () => {
           </div>
         </div>
       </section>
+      </div>
     </PageTransition>
   );
 };

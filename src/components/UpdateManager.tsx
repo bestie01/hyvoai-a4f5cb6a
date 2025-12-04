@@ -1,57 +1,58 @@
-import { useEffect } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
 import { RefreshCw } from 'lucide-react';
 
 export function UpdateManager() {
-  const {
-    offlineReady: [offlineReady, setOfflineReady],
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegistered(r) {
-      console.log('SW Registered: ' + r);
-      
-      // Check for updates every hour
-      r && setInterval(() => {
-        r.update();
-      }, 60 * 60 * 1000);
-    },
-    onRegisterError(error) {
-      console.log('SW registration error', error);
-    },
-  });
+  const checkForUpdates = useCallback(() => {
+    // Check if service worker is available
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          registration.update().catch(console.error);
+        }
+      });
+    }
+  }, []);
 
   useEffect(() => {
-    if (offlineReady) {
-      toast.success('App ready to work offline', {
+    // Check for updates on mount
+    checkForUpdates();
+    
+    // Check for updates every hour
+    const interval = setInterval(checkForUpdates, 60 * 60 * 1000);
+    
+    // Listen for visibility changes to check updates when app becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForUpdates();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Listen for online event to check updates when coming back online
+    const handleOnline = () => {
+      toast.success('Back online', { duration: 2000 });
+      checkForUpdates();
+    };
+    
+    const handleOffline = () => {
+      toast.warning('You are offline', { 
         duration: 3000,
+        description: 'Some features may be limited'
       });
-      setOfflineReady(false);
-    }
-  }, [offlineReady, setOfflineReady]);
-
-  useEffect(() => {
-    if (needRefresh) {
-      toast.info('New version available!', {
-        duration: 10000,
-        action: {
-          label: (
-            <span className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Update
-            </span>
-          ),
-          onClick: () => {
-            updateServiceWorker(true);
-            setNeedRefresh(false);
-          },
-        },
-        description: 'Click to update and get the latest features',
-      });
-    }
-  }, [needRefresh, setNeedRefresh, updateServiceWorker]);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [checkForUpdates]);
 
   return null;
 }
