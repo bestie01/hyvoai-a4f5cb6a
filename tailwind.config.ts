@@ -20,8 +20,8 @@ export default {
 		extend: {
 		fontFamily: {
 				sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
-				display: ['Space Grotesk', 'system-ui', 'sans-serif'],
-				mono: ['JetBrains Mono', 'Courier New', 'monospace'],
+				display: ['Sora', 'Space Grotesk', 'system-ui', 'sans-serif'],
+				mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
