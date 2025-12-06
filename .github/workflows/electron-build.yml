@@ -47,49 +47,55 @@ jobs:
       - name: Build web assets
         run: npm run build
 
-      - name: Add Electron platform
-        run: npx cap add electron
-        continue-on-error: true
+      - name: Setup Electron directory
+        run: |
+          mkdir -p electron/app
+          mkdir -p electron/app/icons
+          cp -r dist/* electron/app/
+          cp public/app-icon-1024.png electron/app/icons/appIcon.png
 
-      - name: Sync Electron
-        run: npx cap sync electron
+      - name: Copy Electron source files
+        run: |
+          cp electron/package.json electron/package.json.bak || true
+          cp -r electron/src electron/src.bak || true
 
       - name: Install Electron dependencies
         working-directory: electron
         run: npm install
 
-      - name: Install electron-builder
-        working-directory: electron
-        run: npm install --save-dev electron-builder
-
-      - name: Configure electron-builder
+      - name: Configure electron-builder with auto-update
         working-directory: electron
         run: |
           cat > electron-builder.json << 'EOF'
           {
-            "appId": "app.lovable.016291d698de4ca99131b756a44a0c02",
+            "appId": "com.hyvo.streamstudio",
             "productName": "Hyvo Stream Studio",
             "directories": {
               "output": "dist"
             },
             "files": [
-              "app/**/*",
-              "capacitor.config.json",
-              "!node_modules/**/*"
+              "src/**/*",
+              "app/**/*"
             ],
+            "publish": {
+              "provider": "github",
+              "owner": "${{ github.repository_owner }}",
+              "repo": "${{ github.event.repository.name }}",
+              "releaseType": "release"
+            },
             "win": {
               "target": ["nsis"],
               "icon": "app/icons/appIcon.png",
               "artifactName": "Hyvo-Stream-Studio-Setup-${version}.${ext}"
             },
             "mac": {
-              "target": ["dmg"],
+              "target": ["dmg", "zip"],
               "category": "public.app-category.video",
               "icon": "app/icons/appIcon.png",
               "artifactName": "Hyvo-Stream-Studio-${version}.${ext}"
             },
             "linux": {
-              "target": ["AppImage"],
+              "target": ["AppImage", "deb"],
               "category": "Video",
               "icon": "app/icons/appIcon.png",
               "artifactName": "Hyvo-Stream-Studio-${version}.${ext}"
@@ -103,39 +109,24 @@ jobs:
           }
           EOF
 
-      - name: Add build scripts to package.json
-        working-directory: electron
-        shell: bash
-        run: |
-          npm pkg set scripts.build:win="electron-builder --windows --config electron-builder.json"
-          npm pkg set scripts.build:mac="electron-builder --mac --config electron-builder.json"
-          npm pkg set scripts.build:linux="electron-builder --linux --config electron-builder.json"
-
-      - name: Create app icon directory
-        working-directory: electron
-        run: mkdir -p app/icons
-
-      - name: Copy app icon
-        run: cp public/app-icon-1024.png electron/app/icons/appIcon.png
-
       - name: Build installer (Windows)
         if: matrix.platform == 'win'
         working-directory: electron
-        run: npm run build:win
+        run: npx electron-builder --windows --config electron-builder.json --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build installer (macOS)
         if: matrix.platform == 'mac'
         working-directory: electron
-        run: npm run build:mac
+        run: npx electron-builder --mac --config electron-builder.json --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build installer (Linux)
         if: matrix.platform == 'linux'
         working-directory: electron
-        run: npm run build:linux
+        run: npx electron-builder --linux --config electron-builder.json --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -147,7 +138,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}-${{ matrix.platform }}
-          path: electron/dist/*.${{ matrix.artifact_ext }}
+          path: |
+            electron/dist/*.${{ matrix.artifact_ext }}
+            electron/dist/*.zip
+            electron/dist/*.deb
+            electron/dist/latest*.yml
           retention-days: 30
 
   release:
@@ -170,7 +165,10 @@ jobs:
           files: |
             artifacts/**/*.exe
             artifacts/**/*.dmg
+            artifacts/**/*.zip
             artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/latest*.yml
           draft: false
           prerelease: false
           generate_release_notes: true
