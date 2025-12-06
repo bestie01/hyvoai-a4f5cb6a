@@ -7,23 +7,35 @@ import { useToast } from "@/hooks/use-toast";
 
 const DownloadPage = () => {
   const { toast } = useToast();
+  // GitHub releases URL - update with your actual GitHub username/repo
+  const githubReleasesBase = "https://github.com/YOUR_USERNAME/hyvo-stream-studio/releases/latest/download";
+  
   const platforms = [
     {
       name: "Windows",
       icon: Monitor,
       version: "1.0.0",
-      size: "120 MB",
+      size: "~120 MB",
       requirements: "Windows 10/11 (64-bit)",
-      downloadUrl: "/downloads/Hyvo-Stream-Studio-Setup-1.0.0.exe",
+      downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-Setup-1.0.0.exe`,
       primary: true
     },
     {
       name: "macOS",
       icon: Monitor,
       version: "1.0.0", 
-      size: "125 MB",
+      size: "~125 MB",
       requirements: "macOS 11.0 or later",
-      downloadUrl: "/downloads/Hyvo-Stream-Studio-1.0.0.dmg",
+      downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-1.0.0.dmg`,
+      primary: true
+    },
+    {
+      name: "Linux",
+      icon: Monitor,
+      version: "1.0.0",
+      size: "~115 MB", 
+      requirements: "Ubuntu 18.04+ or equivalent",
+      downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-1.0.0.AppImage`,
       primary: true
     },
     {
