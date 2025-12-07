@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const DownloadPage = () => {
   const { toast } = useToast();
-  // GitHub releases URL - update with your actual GitHub username/repo
-  const githubReleasesBase = "https://github.com/YOUR_USERNAME/hyvo-stream-studio/releases/latest/download";
+  // GitHub releases URL - configured for hyvo-stream-studio
+  const githubReleasesBase = "https://github.com/hyvo-ai/hyvo-stream-studio/releases/latest/download";
   
   const platforms = [
     {
