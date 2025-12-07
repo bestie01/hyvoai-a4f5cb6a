@@ -4,58 +4,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Download, Monitor, Smartphone, Shield, Zap, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
 const DownloadPage = () => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   // GitHub releases URL - configured for hyvo-stream-studio
   const githubReleasesBase = "https://github.com/hyvo-ai/hyvo-stream-studio/releases/latest/download";
-  
-  const platforms = [
-    {
-      name: "Windows",
-      icon: Monitor,
-      version: "1.0.0",
-      size: "~120 MB",
-      requirements: "Windows 10/11 (64-bit)",
-      downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-Setup-1.0.0.exe`,
-      primary: true
-    },
-    {
-      name: "macOS",
-      icon: Monitor,
-      version: "1.0.0", 
-      size: "~125 MB",
-      requirements: "macOS 11.0 or later",
-      downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-1.0.0.dmg`,
-      primary: true
-    },
-    {
-      name: "Linux",
-      icon: Monitor,
-      version: "1.0.0",
-      size: "~115 MB", 
-      requirements: "Ubuntu 18.04+ or equivalent",
-      downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-1.0.0.AppImage`,
-      primary: true
-    },
-    {
-      name: "Mobile App",
-      icon: Smartphone,
-      version: "Coming Soon",
-      size: "TBD",
-      requirements: "iOS 14+ / Android 8+",
-      downloadUrl: "#",
-      primary: false
-    }
-  ];
-
+  const platforms = [{
+    name: "Windows",
+    icon: Monitor,
+    version: "1.0.0",
+    size: "~120 MB",
+    requirements: "Windows 10/11 (64-bit)",
+    downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-Setup-1.0.0.exe`,
+    primary: true
+  }, {
+    name: "macOS",
+    icon: Monitor,
+    version: "1.0.0",
+    size: "~125 MB",
+    requirements: "macOS 11.0 or later",
+    downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-1.0.0.dmg`,
+    primary: true
+  }, {
+    name: "Linux",
+    icon: Monitor,
+    version: "1.0.0",
+    size: "~115 MB",
+    requirements: "Ubuntu 18.04+ or equivalent",
+    downloadUrl: `${githubReleasesBase}/Hyvo-Stream-Studio-1.0.0.AppImage`,
+    primary: true
+  }, {
+    name: "Mobile App",
+    icon: Smartphone,
+    version: "Coming Soon",
+    size: "TBD",
+    requirements: "iOS 14+ / Android 8+",
+    downloadUrl: "#",
+    primary: false
+  }];
   const handleDownload = (platform: typeof platforms[0]) => {
     if (platform.primary && platform.downloadUrl !== "#") {
       toast({
         title: "Download Starting",
-        description: `Preparing Hyvo Stream Studio installer for ${platform.name}`,
+        description: `Preparing Hyvo Stream Studio installer for ${platform.name}`
       });
-      
+
       // Create temporary download link
       const link = document.createElement('a');
       link.href = platform.downloadUrl;
@@ -63,12 +57,12 @@ const DownloadPage = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Show success message and redirect to studio
       setTimeout(() => {
         toast({
           title: "Download Complete!",
-          description: "Check your downloads folder and run the installer",
+          description: "Check your downloads folder and run the installer"
         });
         setTimeout(() => {
           window.location.href = '/studio';
@@ -76,18 +70,8 @@ const DownloadPage = () => {
       }, 1000);
     }
   };
-
-  const features = [
-    "Real-time stream monitoring",
-    "AI-powered highlight detection", 
-    "Multi-platform streaming support",
-    "Advanced analytics dashboard",
-    "Custom overlay creation",
-    "Automated clip generation"
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const features = ["Real-time stream monitoring", "AI-powered highlight detection", "Multi-platform streaming support", "Advanced analytics dashboard", "Custom overlay creation", "Automated clip generation"];
+  return <div className="min-h-screen bg-background">
       <Navigation />
       
       {/* Hero Section */}
@@ -97,7 +81,7 @@ const DownloadPage = () => {
             <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
               <Download className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold bg-gradient-primary bg-clip-text text-secondary-foreground">
               Download Hyvo Stream Studio
             </h1>
           </div>
@@ -116,13 +100,10 @@ const DownloadPage = () => {
       <section className="pb-16 px-6">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {platforms.map((platform) => (
-              <Card key={platform.name} className={`relative ${platform.primary ? 'border-primary shadow-lg' : 'opacity-75'}`}>
-                {platform.primary && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary">
+            {platforms.map(platform => <Card key={platform.name} className={`relative ${platform.primary ? 'border-primary shadow-lg' : 'opacity-75'}`}>
+                {platform.primary && <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary">
                     Recommended
-                  </Badge>
-                )}
+                  </Badge>}
                 
                 <CardHeader className="text-center">
                   <platform.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
@@ -142,18 +123,12 @@ const DownloadPage = () => {
                     </div>
                   </div>
                   
-                  <Button 
-                    className="w-full" 
-                    variant={platform.primary ? "default" : "secondary"}
-                    disabled={!platform.primary}
-                    onClick={() => handleDownload(platform)}
-                  >
+                  <Button className="w-full" variant={platform.primary ? "default" : "secondary"} disabled={!platform.primary} onClick={() => handleDownload(platform)}>
                     <Download className="w-4 h-4 mr-2" />
                     {platform.primary ? "Download Now" : "Coming Soon"}
                   </Button>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -169,12 +144,10 @@ const DownloadPage = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {features.map((feature) => (
-              <div key={feature} className="flex items-center gap-3 p-4 bg-background rounded-lg border">
+            {features.map(feature => <div key={feature} className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                 <Check className="w-5 h-5 text-primary flex-shrink-0" />
                 <span>{feature}</span>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -277,8 +250,6 @@ const DownloadPage = () => {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default DownloadPage;
