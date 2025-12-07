@@ -1,10 +1,13 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { AutoUpdater } = require('./auto-updater');
 
 let mainWindow;
 let tray;
 let autoUpdater;
+let isRecording = false;
+let registeredShortcuts = new Map();
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -239,4 +242,93 @@ ipcMain.handle('check-for-updates', () => {
 
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
+});
+
+// ===== Local Recording Support =====
+ipcMain.handle('save-recording', async (event, { buffer, filename }) => {
+  try {
+    const documentsPath = app.getPath('documents');
+    const recordingsDir = path.join(documentsPath, 'Hyvo Recordings');
+    
+    if (!fs.existsSync(recordingsDir)) {
+      fs.mkdirSync(recordingsDir, { recursive: true });
+    }
+    
+    const filePath = path.join(recordingsDir, filename);
+    fs.writeFileSync(filePath, Buffer.from(buffer));
+    
+    return { success: true, path: filePath };
+  } catch (error) {
+    console.error('Error saving recording:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-recordings-path', () => {
+  const documentsPath = app.getPath('documents');
+  return path.join(documentsPath, 'Hyvo Recordings');
+});
+
+ipcMain.handle('open-recordings-folder', async () => {
+  const { shell } = require('electron');
+  const documentsPath = app.getPath('documents');
+  const recordingsDir = path.join(documentsPath, 'Hyvo Recordings');
+  
+  if (!fs.existsSync(recordingsDir)) {
+    fs.mkdirSync(recordingsDir, { recursive: true });
+  }
+  
+  await shell.openPath(recordingsDir);
+  return true;
+});
+
+// ===== Global Hotkey System =====
+ipcMain.handle('register-hotkey', (event, { id, accelerator, action }) => {
+  try {
+    // Unregister if already exists
+    if (registeredShortcuts.has(id)) {
+      globalShortcut.unregister(registeredShortcuts.get(id));
+    }
+    
+    const success = globalShortcut.register(accelerator, () => {
+      if (mainWindow) {
+        mainWindow.webContents.send('hotkey-triggered', { id, action });
+      }
+    });
+    
+    if (success) {
+      registeredShortcuts.set(id, accelerator);
+    }
+    
+    return { success, accelerator };
+  } catch (error) {
+    console.error('Error registering hotkey:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('unregister-hotkey', (event, { id }) => {
+  if (registeredShortcuts.has(id)) {
+    globalShortcut.unregister(registeredShortcuts.get(id));
+    registeredShortcuts.delete(id);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('unregister-all-hotkeys', () => {
+  globalShortcut.unregisterAll();
+  registeredShortcuts.clear();
+  return true;
+});
+
+// ===== Hardware Acceleration =====
+ipcMain.handle('get-gpu-info', async () => {
+  const gpuInfo = await app.getGPUInfo('complete');
+  return gpuInfo;
+});
+
+// Clean up shortcuts on quit
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });
