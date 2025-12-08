@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,9 @@ import { StreamPreview } from "@/components/streaming/StreamPreview";
 import { ProfessionalAudioMixer } from "@/components/streaming/ProfessionalAudioMixer";
 import { SceneTransitions } from "@/components/streaming/SceneTransitions";
 import { SourceManager } from "@/components/streaming/SourceManager";
+import { RecordingControls } from "@/components/streaming/RecordingControls";
 import { useWebRTCStream } from "@/hooks/useWebRTCStream";
+import { useLocalRecording } from "@/hooks/useLocalRecording";
 import { StreamHealthMonitor } from "@/components/StreamHealthMonitor";
 import { 
   Play, 
@@ -84,11 +86,48 @@ const StreamingApp = () => {
   const twitch = useTwitchStream();
   const youtube = useYouTubeStream();
   const webrtc = useWebRTCStream();
+  const localRecording = useLocalRecording();
   
   const [captureStats, setCaptureStats] = useState({
     resolution: { width: 1920, height: 1080 },
     fps: 30
   });
+
+  // Recording handlers
+  const handleStartRecording = async () => {
+    if (webrtc.streamRef.current) {
+      await localRecording.startRecording(webrtc.streamRef.current);
+      toast({
+        title: "Recording Started",
+        description: "Your stream is being recorded locally",
+      });
+    } else {
+      toast({
+        title: "No Stream Active",
+        description: "Start capturing video first to record",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStopRecording = async () => {
+    const blob = await localRecording.stopRecording();
+    if (blob) {
+      toast({
+        title: "Recording Saved",
+        description: "Click download to save your recording",
+      });
+    }
+  };
+
+  const handleDownloadRecording = () => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    localRecording.downloadRecording(`hyvo-recording-${timestamp}.webm`);
+    toast({
+      title: "Download Started",
+      description: "Your recording is being downloaded",
+    });
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -426,6 +465,20 @@ const StreamingApp = () => {
               streamRef={webrtc.streamRef}
               resolution={captureStats.resolution}
               fps={captureStats.fps}
+            />
+            
+            {/* Recording Controls */}
+            <RecordingControls
+              isRecording={localRecording.isRecording}
+              isPaused={localRecording.isPaused}
+              duration={localRecording.recordingDuration}
+              hasRecording={localRecording.recordingDuration > 0 && !localRecording.isRecording}
+              onStart={handleStartRecording}
+              onStop={handleStopRecording}
+              onPause={localRecording.pauseRecording}
+              onResume={localRecording.resumeRecording}
+              onDownload={handleDownloadRecording}
+              disabled={!webrtc.isCapturing}
             />
             
             {/* Audio Mixer */}
