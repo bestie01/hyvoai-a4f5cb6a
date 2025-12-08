@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
+import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
+import { PlatformConnector } from "@/components/streaming/PlatformConnector";
 import {
   BarChart3,
   Users,
@@ -12,7 +15,10 @@ import {
   Eye,
   MessageSquare,
   Heart,
-  Share2
+  Share2,
+  Tv,
+  Youtube,
+  RefreshCw
 } from "lucide-react";
 
 interface StreamAnalyticsProps {
@@ -26,14 +32,28 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
   const [totalMessages, setTotalMessages] = useState(0);
   const [engagementRate, setEngagementRate] = useState(0);
   const [streamQuality, setStreamQuality] = useState<'Good' | 'Fair' | 'Poor'>('Good');
+  const [showConnector, setShowConnector] = useState(false);
+  
   const { metrics, loading } = useRealtimeAnalytics();
+  const { 
+    twitchStats, 
+    youtubeStats, 
+    isLoading: statsLoading,
+    fetchStats,
+    startPolling,
+    stopPolling 
+  } = useRealPlatformStats();
+
+  // Calculate combined real viewers from connected platforms
+  const realViewers = (twitchStats?.viewers || 0) + (youtubeStats?.viewers || 0);
+  const displayViewers = realViewers > 0 ? realViewers : viewers;
 
   // Update peak viewers from real data
   useEffect(() => {
-    if (viewers > peakViewers) {
-      setPeakViewers(viewers);
+    if (displayViewers > peakViewers) {
+      setPeakViewers(displayViewers);
     }
-  }, [viewers, peakViewers]);
+  }, [displayViewers, peakViewers]);
 
   // Use real metrics when available
   useEffect(() => {
@@ -42,6 +62,22 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
       setEngagementRate(metrics.avgEngagement || engagementRate);
     }
   }, [metrics, peakViewers, engagementRate]);
+
+  // Start polling when streaming
+  useEffect(() => {
+    if (isStreaming) {
+      const platforms: ('twitch' | 'youtube')[] = [];
+      if (twitchStats !== null || youtubeStats !== null) {
+        if (twitchStats) platforms.push('twitch');
+        if (youtubeStats) platforms.push('youtube');
+      } else {
+        platforms.push('twitch', 'youtube');
+      }
+      startPolling(platforms, 30000);
+      
+      return () => stopPolling();
+    }
+  }, [isStreaming, startPolling, stopPolling]);
 
   useEffect(() => {
     if (isStreaming) {
@@ -52,8 +88,8 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
 
       // Calculate engagement rate
       const engagementInterval = setInterval(() => {
-        if (viewers > 0) {
-          const rate = Math.min(100, (totalMessages / viewers) * 10);
+        if (displayViewers > 0) {
+          const rate = Math.min(100, (totalMessages / displayViewers) * 10);
           setEngagementRate(rate);
         }
       }, 10000);
@@ -63,7 +99,7 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
         clearInterval(engagementInterval);
       };
     }
-  }, [isStreaming, viewers, totalMessages]);
+  }, [isStreaming, displayViewers, totalMessages]);
 
   const getQualityColor = (quality: string) => {
     switch (quality) {
@@ -74,8 +110,77 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
     }
   };
 
+  const handleRefreshStats = () => {
+    fetchStats('twitch');
+    fetchStats('youtube');
+  };
+
   return (
     <div className="space-y-4">
+      {/* Platform Connection Toggle */}
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="w-full"
+        onClick={() => setShowConnector(!showConnector)}
+      >
+        {showConnector ? 'Hide' : 'Connect'} Platforms for Real Stats
+      </Button>
+
+      {showConnector && <PlatformConnector />}
+
+      {/* Live Platform Stats */}
+      {(twitchStats?.isLive || youtubeStats?.isLive) && (
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Eye className="h-4 w-4 text-primary" />
+                Live Platform Stats
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleRefreshStats}
+                disabled={statsLoading}
+              >
+                <RefreshCw className={`h-3 w-3 ${statsLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {twitchStats?.isLive && (
+              <div className="flex items-center justify-between p-2 rounded bg-[#9146FF]/10">
+                <div className="flex items-center gap-2">
+                  <Tv className="h-4 w-4 text-[#9146FF]" />
+                  <span className="text-sm">Twitch</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold">{twitchStats.viewers} viewers</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {twitchStats.followers} followers
+                  </Badge>
+                </div>
+              </div>
+            )}
+            {youtubeStats?.isLive && (
+              <div className="flex items-center justify-between p-2 rounded bg-[#FF0000]/10">
+                <div className="flex items-center gap-2">
+                  <Youtube className="h-4 w-4 text-[#FF0000]" />
+                  <span className="text-sm">YouTube</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold">{youtubeStats.viewers} viewers</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {youtubeStats.subscribers} subs
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Current Stream Stats */}
       <Card>
         <CardHeader className="pb-3">
@@ -91,7 +196,10 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Current Viewers</span>
               </div>
-              <p className="text-2xl font-bold text-primary">{viewers}</p>
+              <p className="text-2xl font-bold text-primary">{displayViewers}</p>
+              {realViewers > 0 && (
+                <p className="text-xs text-muted-foreground">Real-time from APIs</p>
+              )}
             </div>
             
             <div className="space-y-1">
@@ -152,19 +260,19 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
             <div className="text-center">
               <Eye className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
               <p className="text-xs text-muted-foreground">Views</p>
-              <p className="text-sm font-semibold">{viewers * 3}</p>
+              <p className="text-sm font-semibold">{displayViewers * 3}</p>
             </div>
             
             <div className="text-center">
               <Heart className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
               <p className="text-xs text-muted-foreground">Likes</p>
-              <p className="text-sm font-semibold">{Math.floor(viewers * 0.7)}</p>
+              <p className="text-sm font-semibold">{Math.floor(displayViewers * 0.7)}</p>
             </div>
             
             <div className="text-center">
               <Share2 className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
               <p className="text-xs text-muted-foreground">Shares</p>
-              <p className="text-sm font-semibold">{Math.floor(viewers * 0.2)}</p>
+              <p className="text-sm font-semibold">{Math.floor(displayViewers * 0.2)}</p>
             </div>
           </div>
         </CardContent>

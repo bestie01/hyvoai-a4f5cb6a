@@ -1,3 +1,5 @@
+project_id = "fxvvcyjwgxxxezqzucwm"
+
 [functions.create-checkout]
 verify_jwt = true
 
@@ -65,4 +67,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.multi-stream-relay]
+verify_jwt = true
+
+[functions.platform-stats]
 verify_jwt = true
