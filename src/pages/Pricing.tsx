@@ -113,7 +113,7 @@ const Pricing = () => {
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
                 Simple pricing,{" "}
-                <span className="bg-gradient-primary bg-clip-text text-secondary-foreground">
+                <span className="bg-gradient-primary bg-clip-text text-secondary-foreground bg-primary-foreground">
                   powerful features
                 </span>
               </h1>
