@@ -117,7 +117,7 @@ const Hero = () => {
                 y: 0
               }} transition={{
                 delay: 0.3
-              }} className="text-gradient-primary inline-block text-secondary-foreground">
+              }} className="text-gradient-primary inline-block text-secondary-foreground bg-primary-foreground">
                   Stream Like
                 </motion.span>
                 <br />
