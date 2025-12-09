@@ -61,6 +61,8 @@ import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant";
 import { AICaptionOverlay } from "@/components/ai/AICaptionOverlay";
 import { AIGameCoach } from "@/components/ai/AIGameCoach";
 import { ProFeatureGate } from "@/components/ProFeatureGate";
+import { LiveChatPanel } from "@/components/streaming/LiveChatPanel";
+import { useLiveChat } from "@/hooks/useLiveChat";
 
 const StreamingApp = () => {
   const navigate = useNavigate();
@@ -87,6 +89,7 @@ const StreamingApp = () => {
   const youtube = useYouTubeStream();
   const webrtc = useWebRTCStream();
   const localRecording = useLocalRecording();
+  const liveChat = useLiveChat();
   
   const [captureStats, setCaptureStats] = useState({
     resolution: { width: 1920, height: 1080 },
@@ -549,36 +552,8 @@ const StreamingApp = () => {
             </TabsList>
           </div>
           
-          <TabsContent value="chat" className="flex-1 flex flex-col m-0">
-            <div className="flex-1 p-4 overflow-y-auto space-y-3">
-              {chatMessages.map((msg) => (
-                <div key={msg.id} className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${msg.mod ? 'text-green-500' : 'text-primary'}`}>
-                      {msg.user}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{msg.timestamp}</span>
-                  </div>
-                  <p className="text-sm text-foreground">{msg.message}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 border-t border-border">
-              <div className="flex gap-2 mb-3">
-                <Button size="sm" variant="outline">
-                  <Heart className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="outline">
-                  <Share2 className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="text-center text-sm text-muted-foreground">
-                {(twitch.isStreaming || youtube.isStreaming) ? 
-                  `${activeStream === 'twitch' ? twitch.viewers : youtube.viewers} viewers watching` : 
-                  "Start streaming to see chat"}
-              </div>
-            </div>
+          <TabsContent value="chat" className="flex-1 flex flex-col m-0 p-0">
+            <LiveChatPanel isStreaming={twitch.isStreaming || youtube.isStreaming} />
           </TabsContent>
           
           <TabsContent value="ai" className="flex-1 flex flex-col m-0 overflow-y-auto">
@@ -599,8 +574,8 @@ const StreamingApp = () => {
                 
                 <TabsContent value="insights" className="flex-1 p-4 space-y-4 overflow-y-auto">
                 <AIChatAnalysis 
-                  messages={chatMessages.map(msg => ({ 
-                    username: msg.user, 
+                  messages={liveChat.messages.map(msg => ({ 
+                    username: msg.displayName, 
                     message: msg.message, 
                     timestamp: msg.timestamp 
                   }))} 
@@ -614,8 +589,8 @@ const StreamingApp = () => {
                     viewers: activeStream === 'twitch' ? twitch.viewers : youtube.viewers,
                     category: 'Gaming'
                   }}
-                  chatMessages={chatMessages.map(msg => ({ 
-                    username: msg.user, 
+                  chatMessages={liveChat.messages.map(msg => ({ 
+                    username: msg.displayName, 
                     message: msg.message, 
                     timestamp: msg.timestamp 
                   }))}

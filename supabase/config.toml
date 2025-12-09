@@ -71,3 +71,6 @@ verify_jwt = true
 
 [functions.platform-stats]
 verify_jwt = true
+
+[functions.live-chat]
+verify_jwt = true
