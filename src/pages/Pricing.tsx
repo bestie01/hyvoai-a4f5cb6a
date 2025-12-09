@@ -185,7 +185,7 @@ const Pricing = () => {
                     <div className="mt-6">
                       <motion.span whileHover={{
                       scale: 1.05
-                    }} className="text-5xl font-bold bg-gradient-primary bg-clip-text text-secondary-foreground">
+                    }} className="text-5xl font-bold bg-gradient-primary bg-clip-text text-secondary-foreground bg-primary-foreground">
                         {plan.price}
                       </motion.span>
                       <span className="text-muted-foreground ml-2">/{plan.period}</span>
