@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useLiveChat, ChatMessage } from "@/hooks/useLiveChat";
+import { useTwitchIRC } from "@/hooks/useTwitchIRC";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { 
   MessageSquare, 
@@ -16,9 +18,11 @@ import {
   Crown,
   Shield,
   Loader2,
-  Send
+  Radio,
+  Settings2
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface LiveChatPanelProps {
   isStreaming?: boolean;
@@ -26,36 +30,71 @@ interface LiveChatPanelProps {
 
 export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
   const { 
-    messages, 
-    isConnected, 
-    isLoading, 
-    connectChat, 
-    disconnectChat,
-    clearMessages 
+    messages: ytMessages, 
+    isConnected: isYtConnected, 
+    isLoading: isYtLoading, 
+    connectChat: connectYtChat, 
+    disconnectChat: disconnectYtChat,
+    clearMessages: clearYtMessages 
   } = useLiveChat();
+  
+  const twitchIRC = useTwitchIRC();
   
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [twitchChannel, setTwitchChannel] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Combine messages from both sources
+  const allMessages: ChatMessage[] = [
+    ...ytMessages,
+    ...twitchIRC.messages.map(msg => ({
+      id: msg.id,
+      platform: 'twitch' as const,
+      username: msg.username,
+      displayName: msg.displayName,
+      message: msg.message,
+      timestamp: msg.timestamp,
+      badges: msg.badges,
+      color: msg.color,
+      isSubscriber: msg.isSubscriber,
+      isModerator: msg.isModerator,
+    }))
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  const isConnected = isYtConnected || twitchIRC.isConnected;
+  const isLoading = isYtLoading || twitchIRC.isConnecting;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, autoScroll]);
+  }, [allMessages, autoScroll]);
 
   const handleConnect = async () => {
-    const platforms: ('twitch' | 'youtube')[] = [];
-    if (twitchConnection?.isConnected) platforms.push('twitch');
-    if (youtubeConnection?.isConnected) platforms.push('youtube');
-    
-    if (platforms.length === 0) {
-      // If no OAuth connections, still try to connect (will show demo messages)
-      platforms.push('youtube');
+    // Connect YouTube if available
+    if (youtubeConnection?.isConnected) {
+      await connectYtChat(['youtube']);
     }
     
-    await connectChat(platforms);
+    // Connect Twitch IRC if channel is set
+    if (twitchChannel.trim()) {
+      twitchIRC.connect(twitchChannel.trim());
+    }
+    
+    setSettingsOpen(false);
+  };
+
+  const handleDisconnect = () => {
+    disconnectYtChat();
+    twitchIRC.disconnect();
+  };
+
+  const handleClear = () => {
+    clearYtMessages();
+    twitchIRC.clearMessages();
   };
 
   const getPlatformIcon = (platform: 'twitch' | 'youtube') => {
@@ -109,7 +148,13 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
             Live Chat
             {isConnected && (
               <Badge variant="secondary" className="text-xs">
-                {messages.length} messages
+                {allMessages.length} messages
+              </Badge>
+            )}
+            {twitchIRC.isConnected && (
+              <Badge variant="outline" className="text-xs gap-1 bg-[#9146FF]/10">
+                <Radio className="h-2 w-2 animate-pulse" />
+                IRC
               </Badge>
             )}
           </CardTitle>
@@ -118,16 +163,64 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={clearMessages}
+                onClick={handleClear}
                 title="Clear messages"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
+            
+            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" title="Chat settings">
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Chat Connection Settings</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="twitch-channel" className="flex items-center gap-2">
+                      <Tv className="h-4 w-4 text-[#9146FF]" />
+                      Twitch Channel (IRC)
+                    </Label>
+                    <Input
+                      id="twitch-channel"
+                      placeholder="Enter channel name (e.g., shroud)"
+                      value={twitchChannel}
+                      onChange={(e) => setTwitchChannel(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Real-time chat via Twitch IRC WebSocket. No authentication required for reading.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Youtube className="h-4 w-4 text-[#FF0000]" />
+                      YouTube Live Chat
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {youtubeConnection?.isConnected 
+                        ? "Connected via OAuth. Will poll for messages during active broadcasts."
+                        : "Connect your YouTube account in the Analytics panel to enable YouTube chat."}
+                    </p>
+                  </div>
+                  
+                  <Button onClick={handleConnect} className="w-full">
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Connect Chat
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
             <Button
               variant={isConnected ? "outline" : "default"}
               size="sm"
-              onClick={isConnected ? disconnectChat : handleConnect}
+              onClick={isConnected ? handleDisconnect : () => setSettingsOpen(true)}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -168,19 +261,27 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
                   YouTube
                 </Badge>
               )}
-              {!twitchConnection?.isConnected && !youtubeConnection?.isConnected && (
-                <span>Connect platforms in Analytics panel</span>
-              )}
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-4"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              Configure Chat
+            </Button>
           </div>
-        ) : messages.length === 0 ? (
+        ) : allMessages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
             <Loader2 className="h-8 w-8 text-muted-foreground/50 mb-4 animate-spin" />
             <p className="text-sm text-muted-foreground">
               Waiting for chat messages...
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Make sure you have an active livestream
+              {twitchIRC.isConnected 
+                ? `Connected to #${twitchChannel} via IRC`
+                : "Make sure you have an active livestream"}
             </p>
           </div>
         ) : (
@@ -194,7 +295,7 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
             }}
           >
             <div className="space-y-1 py-2">
-              {messages.map(renderMessage)}
+              {allMessages.map(renderMessage)}
             </div>
           </ScrollArea>
         )}
@@ -205,13 +306,22 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span>Connected</span>
+                <span>
+                  {twitchIRC.isConnected && isYtConnected 
+                    ? "IRC + Polling" 
+                    : twitchIRC.isConnected 
+                      ? "IRC (Real-time)" 
+                      : "Polling"}
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                {twitchConnection?.isConnected && (
-                  <Tv className="h-3 w-3 text-[#9146FF]" />
+                {twitchIRC.isConnected && (
+                  <Badge variant="outline" className="text-xs py-0">
+                    <Tv className="h-3 w-3 mr-1 text-[#9146FF]" />
+                    {twitchChannel}
+                  </Badge>
                 )}
-                {youtubeConnection?.isConnected && (
+                {isYtConnected && (
                   <Youtube className="h-3 w-3 text-[#FF0000]" />
                 )}
               </div>
