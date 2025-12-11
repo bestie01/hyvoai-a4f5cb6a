@@ -63,6 +63,7 @@ import { AIGameCoach } from "@/components/ai/AIGameCoach";
 import { ProFeatureGate } from "@/components/ProFeatureGate";
 import { LiveChatPanel } from "@/components/streaming/LiveChatPanel";
 import { useLiveChat } from "@/hooks/useLiveChat";
+import { HotkeyManager } from "@/components/streaming/HotkeyManager";
 
 const StreamingApp = () => {
   const navigate = useNavigate();
@@ -432,6 +433,16 @@ const StreamingApp = () => {
                   {microphone.isRecording ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                   {microphone.isRecording ? "Mic On" : "Mic Off"}
                 </Button>
+                
+                <HotkeyManager
+                  onStartStream={handleStartStream}
+                  onStopStream={handleStartStream}
+                  onToggleMic={handleMicrophoneToggle}
+                  isStreaming={twitch.isStreaming || youtube.isStreaming}
+                  isRecording={localRecording.isRecording}
+                  onStartRecording={handleStartRecording}
+                  onStopRecording={handleStopRecording}
+                />
                 
                 <Button variant="outline" size="icon">
                   <Settings className="w-4 h-4" />

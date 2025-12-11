@@ -46,22 +46,41 @@ const DownloadPage = () => {
       name: "Windows",
       icon: Monitor,
       requirements: "Windows 10/11 (64-bit)",
-      pattern: ".exe",
+      patterns: [".exe"],
+      fileExt: ".exe",
       primary: true,
     },
     {
-      name: "macOS",
+      name: "macOS (Intel)",
       icon: Monitor,
-      requirements: "macOS 11.0 or later",
-      pattern: ".dmg",
+      requirements: "macOS 11.0+ (Intel)",
+      patterns: ["-x64.dmg", "x64.dmg", "-intel.dmg"],
+      fileExt: ".dmg",
       primary: true,
     },
     {
-      name: "Linux",
+      name: "macOS (Apple Silicon)",
       icon: Monitor,
-      requirements: "Ubuntu 18.04+ or equivalent",
-      pattern: ".AppImage",
+      requirements: "macOS 11.0+ (M1/M2/M3)",
+      patterns: ["-arm64.dmg", "arm64.dmg", "-universal.dmg"],
+      fileExt: ".dmg",
       primary: true,
+    },
+    {
+      name: "Linux (AppImage)",
+      icon: Monitor,
+      requirements: "Any Linux distro",
+      patterns: [".AppImage"],
+      fileExt: ".AppImage",
+      primary: true,
+    },
+    {
+      name: "Linux (Debian)",
+      icon: Monitor,
+      requirements: "Ubuntu/Debian",
+      patterns: [".deb"],
+      fileExt: ".deb",
+      primary: false,
     },
   ];
 
@@ -151,17 +170,33 @@ const DownloadPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {platforms.map((platform) => {
-              const downloadUrl = getAssetUrl(platform.pattern);
-              const size = getAssetSize(platform.pattern);
+              // Try each pattern to find a matching asset
+              let downloadUrl: string | null = null;
+              let size: string | null = null;
+              
+              for (const pattern of platform.patterns) {
+                downloadUrl = getAssetUrl(pattern);
+                if (downloadUrl) {
+                  size = getAssetSize(pattern);
+                  break;
+                }
+              }
+              
+              // Fallback: try the file extension directly
+              if (!downloadUrl) {
+                downloadUrl = getAssetUrl(platform.fileExt);
+                size = getAssetSize(platform.fileExt);
+              }
+              
               const isAvailable = !!downloadUrl;
 
               return (
                 <Card key={platform.name} className={`relative ${!isAvailable ? 'opacity-60' : ''}`}>
                   <CardHeader className="text-center pb-3">
                     <platform.icon className="w-10 h-10 mx-auto mb-3 text-primary" />
-                    <CardTitle className="text-xl">{platform.name}</CardTitle>
+                    <CardTitle className="text-lg">{platform.name}</CardTitle>
                     <CardDescription>
                       {isAvailable ? `v${latestVersion}` : 'Coming Soon'}
                     </CardDescription>
