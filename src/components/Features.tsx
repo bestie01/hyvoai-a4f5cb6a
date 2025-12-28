@@ -104,7 +104,7 @@ const Features = () => {
           </Badge>
           <h2 className="text-4xl lg:text-6xl xl:text-7xl font-display font-extrabold tracking-tight">
             Everything you need to{" "}
-            <span className="text-gradient-primary bg-secondary text-secondary-foreground">
+            <span className="text-gradient-primary text-secondary-foreground bg-primary-foreground">
               stream like a pro
             </span>
           </h2>
