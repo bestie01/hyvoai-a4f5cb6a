@@ -140,7 +140,7 @@ const Hero = () => {
                 y: 0
               }} transition={{
                 delay: 0.5
-              }} className="text-gradient-accent relative inline-block text-secondary-foreground bg-primary-foreground">
+              }} className="text-gradient-accent relative inline-block text-secondary-foreground bg-primary-hover">
                   AI
                   <motion.span className="absolute -right-3 -top-3 text-3xl" animate={{
                   rotate: [0, 15, -10, 0],
