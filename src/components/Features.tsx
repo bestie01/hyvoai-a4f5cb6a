@@ -159,7 +159,7 @@ const Features = () => {
             <span className="font-semibold text-sm">AI Superpowers</span>
           </Badge>
           <h3 className="text-3xl lg:text-5xl font-display font-bold tracking-tight">
-            Automate with <span className="text-gradient-accent text-secondary-foreground">AI</span>
+            Automate with <span className="text-gradient-accent text-secondary-foreground bg-white">AI</span>
           </h3>
         </FadeIn>
         
