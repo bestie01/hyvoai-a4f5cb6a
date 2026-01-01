@@ -73,17 +73,37 @@ export const useGitHubReleases = (): UseGitHubReleasesReturn => {
 
   const getAssetUrl = useCallback((pattern: string): string | null => {
     if (!release?.assets) return null;
-    const asset = release.assets.find(a => 
-      a.name.toLowerCase().includes(pattern.toLowerCase())
-    );
+    
+    const patternLower = pattern.toLowerCase();
+    
+    // Find asset that matches the pattern
+    const asset = release.assets.find(a => {
+      const nameLower = a.name.toLowerCase();
+      
+      // Direct inclusion check
+      if (nameLower.includes(patternLower)) return true;
+      
+      // Handle file extensions
+      if (patternLower.startsWith('.') && nameLower.endsWith(patternLower)) return true;
+      
+      return false;
+    });
+    
     return asset?.browser_download_url || null;
   }, [release]);
 
   const getAssetSize = useCallback((pattern: string): string | null => {
     if (!release?.assets) return null;
-    const asset = release.assets.find(a => 
-      a.name.toLowerCase().includes(pattern.toLowerCase())
-    );
+    
+    const patternLower = pattern.toLowerCase();
+    
+    const asset = release.assets.find(a => {
+      const nameLower = a.name.toLowerCase();
+      if (nameLower.includes(patternLower)) return true;
+      if (patternLower.startsWith('.') && nameLower.endsWith(patternLower)) return true;
+      return false;
+    });
+    
     if (!asset) return null;
     
     const bytes = asset.size;
