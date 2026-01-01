@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useLiveChat, ChatMessage } from "@/hooks/useLiveChat";
 import { useTwitchIRC } from "@/hooks/useTwitchIRC";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
+import { ChatModerationControls } from "./ChatModerationControls";
 import { 
   MessageSquare, 
   Tv, 
@@ -26,9 +28,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface LiveChatPanelProps {
   isStreaming?: boolean;
+  streamId?: string;
 }
 
-export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
+export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: LiveChatPanelProps) {
   const { 
     messages: ytMessages, 
     isConnected: isYtConnected, 
@@ -45,6 +48,8 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
   const [autoScroll, setAutoScroll] = useState(true);
   const [twitchChannel, setTwitchChannel] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [moderationEnabled, setModerationEnabled] = useState(true);
+  const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(new Set());
 
   // Combine messages from both sources
   const allMessages: ChatMessage[] = [
@@ -61,7 +66,8 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
       isSubscriber: msg.isSubscriber,
       isModerator: msg.isModerator,
     }))
-  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+   .filter(msg => !hiddenMessages.has(msg.id));
 
   const isConnected = isYtConnected || twitchIRC.isConnected;
   const isLoading = isYtLoading || twitchIRC.isConnecting;
@@ -95,6 +101,13 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
   const handleClear = () => {
     clearYtMessages();
     twitchIRC.clearMessages();
+    setHiddenMessages(new Set());
+  };
+
+  const handleModerationAction = (action: string, username: string, messageId?: string) => {
+    if (action === 'delete' && messageId) {
+      setHiddenMessages(prev => new Set(prev).add(messageId));
+    }
   };
 
   const getPlatformIcon = (platform: 'twitch' | 'youtube') => {
@@ -111,7 +124,7 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
   const renderMessage = (msg: ChatMessage) => (
     <div 
       key={msg.id} 
-      className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+      className="group flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors"
     >
       <div className="flex-shrink-0 mt-0.5">
         {getPlatformIcon(msg.platform)}
@@ -136,6 +149,16 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
         </div>
         <p className="text-sm break-words">{msg.message}</p>
       </div>
+      {moderationEnabled && (
+        <ChatModerationControls
+          username={msg.username}
+          messageId={msg.id}
+          message={msg.message}
+          platform={msg.platform}
+          streamId={streamId}
+          onAction={(action, username) => handleModerationAction(action, username, msg.id)}
+        />
+      )}
     </div>
   );
 
@@ -208,6 +231,22 @@ export function LiveChatPanel({ isStreaming = false }: LiveChatPanelProps) {
                         : "Connect your YouTube account in the Analytics panel to enable YouTube chat."}
                     </p>
                   </div>
+
+                  {/* Moderation Settings */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="moderation-enabled">Enable Moderation Controls</Label>
+                    </div>
+                    <Switch
+                      id="moderation-enabled"
+                      checked={moderationEnabled}
+                      onCheckedChange={setModerationEnabled}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, hover over messages to access ban, timeout, and warning controls.
+                  </p>
                   
                   <Button onClick={handleConnect} className="w-full">
                     <Link2 className="h-4 w-4 mr-2" />
