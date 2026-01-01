@@ -564,7 +564,10 @@ const StreamingApp = () => {
           </div>
           
           <TabsContent value="chat" className="flex-1 flex flex-col m-0 p-0">
-            <LiveChatPanel isStreaming={twitch.isStreaming || youtube.isStreaming} />
+            <LiveChatPanel 
+              isStreaming={twitch.isStreaming || youtube.isStreaming} 
+              streamId={activeStream || 'default-stream'}
+            />
           </TabsContent>
           
           <TabsContent value="ai" className="flex-1 flex flex-col m-0 overflow-y-auto">

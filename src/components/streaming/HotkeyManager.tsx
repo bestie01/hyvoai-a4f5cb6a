@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
-import { useHotkeys, STREAMING_HOTKEYS } from '@/hooks/useHotkeys';
-import { HotkeySettings } from './HotkeySettings';
+import { useCustomHotkeys } from '@/hooks/useCustomHotkeys';
+import { HotkeyEditor } from './HotkeyEditor';
+import { STREAMING_HOTKEYS } from '@/hooks/useHotkeys';
 
 interface HotkeyManagerProps {
   onStartStream: () => void;
@@ -30,10 +31,12 @@ export const HotkeyManager = ({
   const { 
     registerHotkey, 
     unregisterHotkey, 
+    updateHotkey,
+    resetHotkeys,
     getRegisteredHotkeys,
     isEnabled,
     setEnabled 
-  } = useHotkeys();
+  } = useCustomHotkeys();
 
   const handleStreamToggle = useCallback(() => {
     if (isStreaming) {
@@ -126,10 +129,12 @@ export const HotkeyManager = ({
   ]);
 
   return (
-    <HotkeySettings
+    <HotkeyEditor
       isEnabled={isEnabled}
       onToggleEnabled={setEnabled}
       registeredHotkeys={getRegisteredHotkeys()}
+      onUpdateHotkey={updateHotkey}
+      onResetHotkeys={resetHotkeys}
     />
   );
 };
