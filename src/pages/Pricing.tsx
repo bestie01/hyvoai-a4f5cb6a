@@ -25,7 +25,7 @@ const Pricing = () => {
   const plans = [{
     id: "pro",
     name: "Pro",
-    price: "$29",
+    price: "$15",
     period: "per month",
     description: "For professionals and growing streamers",
     features: ["Advanced Stream Analytics", "Multi-platform Streaming", "Stream Recording & Highlights", "Custom Overlay Templates", "Premium Audio Controls", "Priority Support", "API Access", "Custom Branding Options"],
@@ -36,10 +36,10 @@ const Pricing = () => {
   }, {
     id: "yearone",
     name: "Year One",
-    price: "$290",
+    price: "$30",
     period: "per year",
-    description: "Save 17% with annual billing + exclusive perks",
-    features: ["Everything in Pro", "2 months free (17% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
+    description: "Save 83% with annual billing + exclusive perks",
+    features: ["Everything in Pro", "10 months free (83% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
     buttonText: "Get Year One",
     variant: "secondary" as const,
     popular: true,

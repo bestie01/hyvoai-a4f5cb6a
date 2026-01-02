@@ -28,6 +28,9 @@ const Navigation = () => {
     label: "Dashboard",
     href: "/dashboard"
   }, {
+    label: "Create",
+    href: "/create"
+  }, {
     label: "Growth",
     href: "/growth"
   }, {
