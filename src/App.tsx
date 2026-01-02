@@ -18,6 +18,7 @@ import Settings from "./pages/Settings";
 import Schedule from "./pages/Schedule";
 import Growth from "./pages/Growth";
 import Community from "./pages/Community";
+import StreamCreator from "./pages/StreamCreator";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/growth" element={<Growth />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/create" element={<StreamCreator />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
