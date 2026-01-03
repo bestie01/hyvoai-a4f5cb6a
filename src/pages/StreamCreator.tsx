@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import { PageTransition } from "@/components/animations/PageTransition";
@@ -12,7 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAITitleGenerator } from "@/hooks/useAITitleGenerator";
 import { useAIThumbnailGenerator } from "@/hooks/useAIThumbnailGenerator";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
 import { 
   Sparkles, 
   Image, 
@@ -48,8 +50,18 @@ const itemVariants = {
 
 const StreamCreator = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isPro, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
+  
+  // Redirect non-Pro users after auth check
+  useEffect(() => {
+    if (!authLoading && !subLoading) {
+      if (!user) {
+        navigate("/auth", { state: { redirect: "/create" } });
+      }
+    }
+  }, [user, authLoading, subLoading, navigate]);
   
   // Title generator
   const { generateTitles, result: titleResult, loading: titleLoading } = useAITitleGenerator();
@@ -64,6 +76,25 @@ const StreamCreator = () => {
   const [thumbnailTitle, setThumbnailTitle] = useState("");
   const [thumbnailGame, setThumbnailGame] = useState("");
   const [selectedThumbnail, setSelectedThumbnail] = useState<number | null>(null);
+  
+  // Show Pro gate for non-Pro users
+  if (!authLoading && !subLoading && user && !isPro) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-hero">
+          <Navigation />
+          <section className="pt-32 pb-16 px-6">
+            <div className="container mx-auto max-w-2xl">
+              <ProFeatureGate 
+                feature="AI Stream Creator" 
+                description="Generate AI-powered titles and thumbnails for your streams. Upgrade to Pro to unlock this feature."
+              />
+            </div>
+          </section>
+        </div>
+      </PageTransition>
+    );
+  }
 
   const handleGenerateTitles = async () => {
     if (!user) {

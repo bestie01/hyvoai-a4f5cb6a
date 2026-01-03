@@ -74,3 +74,6 @@ verify_jwt = true
 
 [functions.live-chat]
 verify_jwt = true
+
+[functions.send-subscription-email]
+verify_jwt = true
