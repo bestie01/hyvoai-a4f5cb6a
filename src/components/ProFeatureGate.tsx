@@ -7,7 +7,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 
 interface ProFeatureGateProps {
-  children: ReactNode;
+  children?: ReactNode;
   feature: string;
   description?: string;
   showUpgrade?: boolean;

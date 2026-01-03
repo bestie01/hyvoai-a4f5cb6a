@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +8,31 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, ArrowLeft, Zap, Crown } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Zap, Crown, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+// Validation schemas
+const emailSchema = z.string().email("Please enter a valid email address");
+const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, staggerChildren: 0.1 }
+  },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 }
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +54,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
 
   // Form states
   const [email, setEmail] = useState("");
@@ -61,21 +84,52 @@ const Auth = () => {
       });
     }
   }, [user, navigate, redirectPath, planId, createCheckout]);
+
+  const validateForm = (isSignUp: boolean) => {
+    const errors: { email?: string; password?: string } = {};
+    
+    try {
+      emailSchema.parse(email);
+    } catch (e) {
+      errors.email = "Please enter a valid email address";
+    }
+    
+    try {
+      passwordSchema.parse(password);
+    } catch (e) {
+      errors.password = "Password must be at least 6 characters";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm(true)) return;
+    
     if (password !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
       return;
     }
     setIsLoading(true);
     await signUp(email, password);
     setIsLoading(false);
   };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm(false)) return;
+    
     setIsLoading(true);
     await signIn(email, password);
     setIsLoading(false);
   };
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -83,26 +137,49 @@ const Auth = () => {
     setIsLoading(false);
     setIsResetMode(false);
   };
-  return <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
+  return (
+    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 -z-10">
+        <motion.div 
+          className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div 
+          className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+        />
+      </div>
+      
+      <motion.div 
+        className="w-full max-w-md space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Header */}
-        <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <motion.div className="text-center space-y-2" variants={itemVariants}>
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-gradient-primary">
+          <motion.div 
+            className="flex items-center justify-center gap-2 mb-2"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="p-2 rounded-lg bg-gradient-primary shadow-glow-primary">
               <Zap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-secondary-foreground">
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Hyvo.ai
             </h1>
-          </div>
+          </motion.div>
           <p className="text-muted-foreground">
             {isResetMode ? "Reset your password" : planId ? "Sign in to subscribe" : "Access your streaming studio"}
           </p>
-        </div>
+        </motion.div>
 
         {/* Plan Info */}
         {planId && <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
@@ -112,11 +189,11 @@ const Auth = () => {
                 {planId === "pro" ? "Pro Monthly Plan" : "Year One Annual Plan"}
               </h3>
               <Badge variant="secondary" className="bg-primary/10">
-                {planId === "pro" ? "$29/month" : "$290/year"}
+                {planId === "pro" ? "$15/month" : "$30/year"}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {planId === "pro" ? "Sign in to start your Pro subscription with advanced streaming features" : "Sign in to get Year One annual plan with 17% savings and exclusive perks"}
+              {planId === "pro" ? "Sign in to start your Pro subscription with advanced streaming features" : "Sign in to get Year One annual plan with 50% savings and exclusive perks"}
             </p>
           </div>}
 
@@ -302,7 +379,10 @@ const Auth = () => {
         <Separator />
         
         {/* Footer */}
-        <div className="text-center text-sm text-muted-foreground">
+        <motion.div 
+          className="text-center text-sm text-muted-foreground"
+          variants={itemVariants}
+        >
           <p>
             By continuing, you agree to our{" "}
             <Link to="#" className="underline underline-offset-4 hover:text-foreground">
@@ -313,8 +393,9 @@ const Auth = () => {
               Privacy Policy
             </Link>
           </p>
-        </div>
-      </div>
-    </div>;
+        </motion.div>
+      </motion.div>
+    </div>
+  );
 };
 export default Auth;

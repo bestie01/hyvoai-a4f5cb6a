@@ -22,14 +22,12 @@ const Navigation = () => {
   } = useSubscription();
   const navigate = useNavigate();
   const navItems = [{
-    label: "Features",
-    href: "/#features"
-  }, {
     label: "Dashboard",
     href: "/dashboard"
   }, {
     label: "Create",
-    href: "/create"
+    href: "/create",
+    requiresPro: true
   }, {
     label: "Growth",
     href: "/growth"

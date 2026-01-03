@@ -7,6 +7,43 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Helper function to send subscription email
+const sendSubscriptionEmail = async (
+  email: string, 
+  eventType: "subscription_created" | "subscription_updated" | "subscription_cancelled",
+  tier?: string,
+  endDate?: string,
+  name?: string
+) => {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      logStep("Missing Supabase credentials for email notification");
+      return;
+    }
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-subscription-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({ email, name, eventType, tier, endDate }),
+    });
+    
+    if (response.ok) {
+      logStep("Subscription email sent", { email, eventType });
+    } else {
+      const errorText = await response.text();
+      logStep("Failed to send subscription email", { error: errorText });
+    }
+  } catch (error) {
+    logStep("Error sending subscription email", { error: (error as Error).message });
+  }
+};
+
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
   
@@ -99,6 +136,10 @@ serve(async (req) => {
               logStep("ERROR: Failed to upsert subscriber", { error: error.message });
             } else {
               logStep("Successfully updated subscriber in database");
+              
+              // Send welcome email
+              const customerName = (customer as Stripe.Customer).name;
+              await sendSubscriptionEmail(email, "subscription_created", subscriptionTier, subscriptionEnd, customerName || undefined);
             }
           }
         }
@@ -127,16 +168,16 @@ serve(async (req) => {
           ? new Date(subscription.current_period_end * 1000).toISOString()
           : null;
 
-        // Determine tier from price
+        // Determine tier from price - Updated for new pricing
         const priceId = subscription.items.data[0].price.id;
         const price = await stripe.prices.retrieve(priceId);
         const amount = price.unit_amount || 0;
         
         let subscriptionTier = null;
         if (isActive) {
-          if (amount >= 29000) {
+          if (amount >= 3000) { // $30 or more = Year One
             subscriptionTier = "Year One";
-          } else if (amount >= 2900) {
+          } else if (amount >= 1500) { // $15 or more = Pro
             subscriptionTier = "Pro";
           }
         }
@@ -163,6 +204,10 @@ serve(async (req) => {
           logStep("ERROR: Failed to update subscriber", { error: error.message });
         } else {
           logStep("Successfully updated subscriber status");
+          
+          // Send update email
+          const customerName = (customer as Stripe.Customer).name;
+          await sendSubscriptionEmail(email, "subscription_updated", subscriptionTier || undefined, subscriptionEnd || undefined, customerName || undefined);
         }
         break;
       }
@@ -200,6 +245,10 @@ serve(async (req) => {
           logStep("ERROR: Failed to update subscriber", { error: error.message });
         } else {
           logStep("Successfully marked subscriber as unsubscribed");
+          
+          // Send cancellation email
+          const customerName = (customer as Stripe.Customer).name;
+          await sendSubscriptionEmail(email, "subscription_cancelled", undefined, undefined, customerName || undefined);
         }
         break;
       }
