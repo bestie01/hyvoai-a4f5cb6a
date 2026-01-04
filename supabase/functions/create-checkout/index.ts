@@ -30,22 +30,35 @@ serve(async (req) => {
       apiVersion: "2023-10-16" 
     });
 
-    // Check if customer exists
+    // Check if customer exists, create if not
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
+    let customerId: string;
+    
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      console.log('Using existing Stripe customer:', customerId);
+    } else {
+      // Create new Stripe customer to save their details
+      const newCustomer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          supabase_user_id: user.id,
+          created_from: 'hyvo_checkout'
+        }
+      });
+      customerId = newCustomer.id;
+      console.log('Created new Stripe customer:', customerId);
     }
 
-    // Plan configuration
+    // Plan configuration - aligned with website pricing
     const planConfig = {
       pro: {
-        amount: 2900, // $29.00
+        amount: 1500, // $15.00/month
         interval: "month",
         name: "Pro Monthly Subscription"
       },
       yearone: {
-        amount: 29000, // $290.00  
+        amount: 3000, // $30.00/year  
         interval: "year",
         name: "Year One Annual Subscription"
       }

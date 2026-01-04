@@ -229,7 +229,7 @@ const Auth = () => {
             </TabsList>
             
             {/* Sign In Tab */}
-            <TabsContent value="signin">
+            <TabsContent value="signin" forceMount className="data-[state=inactive]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Welcome Back</CardTitle>
@@ -242,6 +242,7 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signin-email">Email</Label>
                       <Input id="signin-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required />
+                      {validationErrors.email && <p className="text-sm text-destructive">{validationErrors.email}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signin-password">Password</Label>
@@ -251,11 +252,12 @@ const Auth = () => {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
+                      {validationErrors.password && <p className="text-sm text-destructive">{validationErrors.password}</p>}
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col space-y-4">
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Signing In..." : "Sign In"}
+                      {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing In...</> : "Sign In"}
                     </Button>
                     
                     <div className="relative">
@@ -263,7 +265,7 @@ const Auth = () => {
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-card px-2 text-muted-foreground">
                           Or continue with
                         </span>
                       </div>
@@ -302,7 +304,7 @@ const Auth = () => {
             </TabsContent>
             
             {/* Sign Up Tab */}
-            <TabsContent value="signup">
+            <TabsContent value="signup" forceMount className="data-[state=inactive]:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Create Account</CardTitle>
@@ -333,7 +335,7 @@ const Auth = () => {
                   </CardContent>
                   <CardFooter className="flex flex-col space-y-4">
                     <Button type="submit" className="w-full" disabled={isLoading || password !== confirmPassword}>
-                      {isLoading ? "Creating Account..." : "Create Account"}
+                      {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating Account...</> : "Create Account"}
                     </Button>
                     
                     <div className="relative">
@@ -341,7 +343,7 @@ const Auth = () => {
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-card px-2 text-muted-foreground">
                           Or continue with
                         </span>
                       </div>

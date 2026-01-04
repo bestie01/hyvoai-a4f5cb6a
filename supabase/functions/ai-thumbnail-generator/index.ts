@@ -40,10 +40,17 @@ serve(async (req) => {
 
     console.log('[AI-THUMBNAIL-GENERATOR] Generating thumbnail for:', { title, game, style });
 
+    // Professional thumbnail prompts inspired by top creators (Pitzels, MrBeast, Ninja)
+    const stylePresets = style ? [style, style, style] : ['vibrant', 'cinematic', 'bold'];
     const prompts = [
-      `Gaming stream thumbnail for ${game}, featuring ${title}, vibrant neon colors, action-packed composition, professional esports style, dramatic lighting, 16:9 aspect ratio`,
-      `${game} gameplay thumbnail, cinematic composition, ${title} text overlay, gaming aesthetic, high energy, colorful gradients, modern design`,
-      `Stream thumbnail for ${game}, close-up dynamic action, ${title}, bold typography, eye-catching colors, professional quality`
+      // Style 1: High-contrast vibrant (MrBeast/Pitzels style)
+      `Ultra high quality gaming thumbnail, ${game} theme, "${title}" concept. Vibrant saturated colors, dramatic rim lighting, depth of field blur, 3D render style, clean composition with negative space for text, professional esports quality, trending on Artstation, 16:9 aspect ratio, 4K resolution, ${stylePresets[0]} aesthetic`,
+      
+      // Style 2: Cinematic epic (Movie poster style)  
+      `Cinematic ${game} thumbnail art, epic scene representing "${title}". Dramatic volumetric lighting, film grain, color graded like blockbuster movie, dynamic action pose, smoke and particle effects, lens flare, professional composition rule of thirds, 16:9 widescreen, ${stylePresets[1]} mood, photorealistic quality`,
+      
+      // Style 3: Bold graphic (Ninja/Modern streamer style)
+      `Modern stream thumbnail for ${game}, "${title}" theme. Bold graphic design, geometric shapes, neon glow effects, gradient overlays, minimalist but impactful, high contrast, clean edges, professional broadcast quality, contemporary gaming aesthetic, 16:9 format, ${stylePresets[2]} color scheme`
     ];
 
     const thumbnails = [];
@@ -56,7 +63,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash-image-preview',
+          model: 'google/gemini-3-pro-image-preview',
           messages: [
             {
               role: 'user',
