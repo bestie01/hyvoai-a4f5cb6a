@@ -50,25 +50,45 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
         messages: [
           {
             role: 'system',
-            content: `You are a creative stream title generator. Generate catchy, SEO-optimized stream titles that attract viewers. Consider:
-- Using emojis strategically
-- Creating urgency or excitement
-- Including relevant keywords
-- Keeping titles concise (under 60 characters)
-- Matching the streamer's vibe and target audience`
+            content: `You are a world-class stream title copywriter, trained on viral YouTube and Twitch content. Your titles consistently drive 3-5x more clicks than average.
+
+Master the psychology of clickable titles:
+- Pattern interrupt: Start with unexpected words or contrasts
+- Curiosity gaps: Make viewers NEED to know more
+- Power words: Use emotional triggers (INSANE, SECRET, FINALLY, BRUTAL)
+- Social proof hints: Imply community engagement
+- Specificity: Numbers and specific details build trust
+- Urgency without clickbait: Create FOMO authentically
+
+Title formulas that WORK:
+1. [EMOTION] + [GAME] + [SPECIFIC OUTCOME] → "BRUTAL Dark Souls 1 Challenge - No Healing Allowed"
+2. [NUMBER] + [UNEXPECTED THING] + [GAME] → "3 Pro Secrets That Changed My Valorant Rank"
+3. [CURIOSITY HOOK] + [GAME] + [STAKES] → "This Loadout Got Me BANNED... (Apex Legends)"
+4. [TIME PRESSURE] + [CHALLENGE] → "24 HOURS to Hit Diamond or I Quit"
+5. [CONTROVERSY/HOT TAKE] + [PROOF] → "Why Everyone's Playing [GAME] Wrong"`
           },
           {
             role: 'user',
-            content: `Generate 5 stream title options for:
+            content: `Create 5 VIRAL-WORTHY stream title options for:
 Game: ${game}
-Theme: ${theme || 'casual gameplay'}
-Target Audience: ${targetAudience || 'general gamers'}
+Theme: ${theme || 'engaging gameplay'}
+Target Audience: ${targetAudience || 'gaming enthusiasts'}
 
-Also generate 3 description variants (under 200 characters each).
+Requirements:
+- Each title MUST use a different formula/approach
+- Include 1-2 strategic emojis max (not at start)
+- Under 60 characters for YouTube optimization
+- Sound natural, not AI-generated
+- Create genuine curiosity
+
+Also generate 3 compelling description variants (under 200 characters) that:
+- Hook viewers in first 5 words
+- Include relevant keywords naturally
+- End with a soft CTA or curiosity hook
 
 Return as JSON:
 {
