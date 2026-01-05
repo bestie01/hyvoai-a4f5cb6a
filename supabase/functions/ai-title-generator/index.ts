@@ -6,43 +6,78 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function safeErrorResponse(error: unknown, context: string, statusCode: number = 500): Response {
+  console.error(`[${context}] Error:`, error instanceof Error ? error.message : String(error));
+  
+  const clientMessages: Record<number, string> = {
+    400: 'Invalid request parameters',
+    401: 'Authentication required',
+    500: 'An unexpected error occurred',
+  };
+  
+  return new Response(
+    JSON.stringify({ error: clientMessages[statusCode] || 'An unexpected error occurred' }),
+    { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+function safeJsonParse<T>(data: any, defaultValue: T): T {
+  try {
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) return defaultValue;
+    return JSON.parse(content) as T;
+  } catch {
+    console.warn('[AI-TITLE-GENERATOR] Failed to parse AI response, using defaults');
+    return defaultValue;
+  }
+}
+
+interface TitleResult {
+  titles: string[];
+  descriptions: string[];
+}
+
+const defaultResult: TitleResult = {
+  titles: ['Exciting Stream Coming Soon!', 'Join the Action Live', 'Don\'t Miss This Stream'],
+  descriptions: ['Join us for an amazing stream experience!', 'Live now - come hang out!'],
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { game, theme, targetAudience } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { game, theme, targetAudience } = body;
 
     if (!game) {
-      throw new Error('Game/category is required');
+      return safeErrorResponse(new Error('Game is required'), 'VALIDATION', 400);
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+      console.error('[AI-TITLE-GENERATOR] LOVABLE_API_KEY not configured');
+      return safeErrorResponse(new Error('Service not configured'), 'CONFIG', 500);
     }
 
-    // Get auth token from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return safeErrorResponse(new Error('No auth header'), 'AUTH', 401);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify user
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      return safeErrorResponse(new Error('Unauthorized'), 'AUTH', 401);
     }
 
     console.log('[AI-TITLE-GENERATOR] Generating titles for:', { game, theme, targetAudience });
 
-    // Call Lovable AI
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -74,9 +109,9 @@ Title formulas that WORK:
           {
             role: 'user',
             content: `Create 5 VIRAL-WORTHY stream title options for:
-Game: ${game}
-Theme: ${theme || 'engaging gameplay'}
-Target Audience: ${targetAudience || 'gaming enthusiasts'}
+Game: ${game.slice(0, 100)}
+Theme: ${(theme || 'engaging gameplay').slice(0, 100)}
+Target Audience: ${(targetAudience || 'gaming enthusiasts').slice(0, 100)}
 
 Requirements:
 - Each title MUST use a different formula/approach
@@ -102,13 +137,12 @@ Return as JSON:
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('[AI-TITLE-GENERATOR] API error:', errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      console.error('[AI-TITLE-GENERATOR] AI API error:', aiResponse.status);
+      return safeErrorResponse(new Error('AI service unavailable'), 'AI', 500);
     }
 
     const aiData = await aiResponse.json();
-    const content = JSON.parse(aiData.choices[0].message.content);
+    const content = safeJsonParse<TitleResult>(aiData, defaultResult);
 
     // Store generated content
     await supabase.from('ai_generated_content').insert({
@@ -125,13 +159,6 @@ Return as JSON:
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[AI-TITLE-GENERATOR] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return safeErrorResponse(error, 'AI-TITLE-GENERATOR');
   }
 });

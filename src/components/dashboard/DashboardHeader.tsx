@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Search, Bell, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Bell, Settings, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export function DashboardHeader() {
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSearch = () => {
@@ -63,8 +65,13 @@ export function DashboardHeader() {
           <span className="text-white font-semibold">DialInsorUp</span>
         </div>
         
-        <Button className="bg-accent hover:bg-accent/80 text-black font-medium px-4 py-2 rounded-full">
-          ChillEchos
+        <Button 
+          className="bg-accent hover:bg-accent/80 text-black font-medium px-4 py-2 rounded-full"
+          onClick={() => navigate('/studio')}
+          data-tour="stream-button"
+        >
+          <Play className="w-4 h-4 mr-2" />
+          Go Live
         </Button>
       </div>
 
@@ -104,7 +111,8 @@ export function DashboardHeader() {
             variant="ghost" 
             size="sm" 
             className="text-white/60 hover:text-white hover:bg-white/10"
-            onClick={handleSettings}
+            onClick={() => navigate('/settings')}
+            data-tour="settings"
           >
             <Settings className="w-4 h-4" />
           </Button>

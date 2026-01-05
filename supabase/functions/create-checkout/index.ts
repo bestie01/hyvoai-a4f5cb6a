@@ -7,28 +7,55 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function safeErrorResponse(error: unknown, context: string, statusCode: number = 500): Response {
+  console.error(`[${context}] Error:`, error instanceof Error ? error.message : String(error));
+  
+  const clientMessages: Record<number, string> = {
+    400: 'Invalid plan selected',
+    401: 'Authentication required',
+    500: 'Unable to process checkout',
+  };
+  
+  return new Response(
+    JSON.stringify({ error: clientMessages[statusCode] || 'Unable to process checkout' }),
+    { status: statusCode, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
-    const { plan } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { plan } = body;
     
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return safeErrorResponse(new Error('No auth header'), 'AUTH', 401);
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    
+    if (!user?.email) {
+      return safeErrorResponse(new Error('User not authenticated'), 'AUTH', 401);
+    }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
-      apiVersion: "2023-10-16" 
-    });
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error('[CREATE-CHECKOUT] STRIPE_SECRET_KEY not configured');
+      return safeErrorResponse(new Error('Payment service not configured'), 'CONFIG', 500);
+    }
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check if customer exists, create if not
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -36,7 +63,7 @@ serve(async (req) => {
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      console.log('Using existing Stripe customer:', customerId);
+      console.log('[CREATE-CHECKOUT] Using existing Stripe customer:', customerId);
     } else {
       // Create new Stripe customer to save their details
       const newCustomer = await stripe.customers.create({
@@ -47,11 +74,11 @@ serve(async (req) => {
         }
       });
       customerId = newCustomer.id;
-      console.log('Created new Stripe customer:', customerId);
+      console.log('[CREATE-CHECKOUT] Created new Stripe customer:', customerId);
     }
 
     // Plan configuration - aligned with website pricing
-    const planConfig = {
+    const planConfig: Record<string, { amount: number; interval: 'month' | 'year'; name: string }> = {
       pro: {
         amount: 1500, // $15.00/month
         interval: "month",
@@ -64,14 +91,15 @@ serve(async (req) => {
       }
     };
 
-    const selectedPlan = planConfig[plan as keyof typeof planConfig];
+    const selectedPlan = planConfig[plan];
     if (!selectedPlan) {
-      throw new Error("Invalid plan selected");
+      return safeErrorResponse(new Error('Invalid plan'), 'VALIDATION', 400);
     }
+
+    const origin = req.headers.get("origin") || 'https://hyvo.ai';
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price_data: {
@@ -81,29 +109,27 @@ serve(async (req) => {
               description: `Hyvo.ai ${plan === 'pro' ? 'Pro' : 'Year One'} subscription`
             },
             unit_amount: selectedPlan.amount,
-            recurring: { interval: selectedPlan.interval as 'month' | 'year' },
+            recurring: { interval: selectedPlan.interval },
           },
           quantity: 1,
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/pricing`,
+      success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/pricing`,
       metadata: {
         user_id: user.id,
         plan_type: plan
       }
     });
 
+    console.log('[CREATE-CHECKOUT] Session created:', session.id);
+
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return safeErrorResponse(error, 'CREATE-CHECKOUT');
   }
 });
