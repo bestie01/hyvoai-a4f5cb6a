@@ -21,6 +21,9 @@ import { useWebRTCStream } from "@/hooks/useWebRTCStream";
 import { useLocalRecording } from "@/hooks/useLocalRecording";
 import { StreamHealthMonitor } from "@/components/StreamHealthMonitor";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LiveViewerStats } from "@/components/streaming/LiveViewerStats";
+import { PlatformConnector } from "@/components/streaming/PlatformConnector";
+import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { 
   Play, 
   Square, 
@@ -93,6 +96,7 @@ const StreamingApp = () => {
   const webrtc = useWebRTCStream();
   const localRecording = useLocalRecording();
   const liveChat = useLiveChat();
+  const platformOAuth = usePlatformOAuth();
   
   const [captureStats, setCaptureStats] = useState({
     resolution: { width: 1920, height: 1080 },
@@ -515,6 +519,21 @@ const StreamingApp = () => {
 
           {/* Right Panel - Analytics & Health */}
           <div className="w-96 space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
+            {/* Live Viewer Stats */}
+            <LiveViewerStats 
+              isStreaming={twitch.isStreaming || youtube.isStreaming}
+              onConnectPlatform={(platform) => {
+                if (platform === 'twitch') {
+                  platformOAuth.connectTwitch();
+                } else {
+                  platformOAuth.connectYouTube();
+                }
+              }}
+            />
+
+            {/* Platform Connector */}
+            <PlatformConnector />
+
             {/* Stream Health Monitor */}
             <StreamHealthMonitor />
             
