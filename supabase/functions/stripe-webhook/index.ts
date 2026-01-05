@@ -36,11 +36,10 @@ const sendSubscriptionEmail = async (
     if (response.ok) {
       logStep("Subscription email sent", { email, eventType });
     } else {
-      const errorText = await response.text();
-      logStep("Failed to send subscription email", { error: errorText });
+      logStep("Failed to send subscription email");
     }
   } catch (error) {
-    logStep("Error sending subscription email", { error: (error as Error).message });
+    logStep("Error sending subscription email");
   }
 };
 
@@ -49,17 +48,20 @@ serve(async (req) => {
   
   if (!signature) {
     logStep("ERROR: No signature found in request");
-    return new Response(JSON.stringify({ error: "No signature" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400 });
   }
 
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey) {
+      logStep("ERROR: STRIPE_SECRET_KEY not set");
+      return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 500 });
+    }
 
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     if (!webhookSecret) {
-      logStep("ERROR: STRIPE_WEBHOOK_SECRET is not set - webhook verification required");
-      throw new Error("STRIPE_WEBHOOK_SECRET is required for webhook verification");
+      logStep("ERROR: STRIPE_WEBHOOK_SECRET not set");
+      return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 500 });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
@@ -79,11 +81,7 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        logStep("Checkout session completed", { 
-          sessionId: session.id, 
-          customerId: session.customer,
-          metadata: session.metadata 
-        });
+        logStep("Checkout session completed", { sessionId: session.id });
 
         if (session.mode === "subscription" && session.customer) {
           const customerId = session.customer as string;
@@ -95,7 +93,7 @@ serve(async (req) => {
           const email = (customer as Stripe.Customer).email;
 
           if (!email) {
-            logStep("ERROR: No email found for customer", { customerId });
+            logStep("ERROR: No email found for customer");
             break;
           }
 
@@ -113,12 +111,7 @@ serve(async (req) => {
             // Determine tier
             let subscriptionTier = planType === 'yearone' ? 'Year One' : 'Pro';
 
-            logStep("Creating/updating subscriber", { 
-              email, 
-              userId, 
-              subscriptionTier,
-              subscriptionEnd 
-            });
+            logStep("Creating/updating subscriber", { email, subscriptionTier });
 
             const { error } = await supabaseClient
               .from("subscribers")
@@ -133,11 +126,9 @@ serve(async (req) => {
               }, { onConflict: 'email' });
 
             if (error) {
-              logStep("ERROR: Failed to upsert subscriber", { error: error.message });
+              logStep("ERROR: Failed to upsert subscriber");
             } else {
               logStep("Successfully updated subscriber in database");
-              
-              // Send welcome email
               const customerName = (customer as Stripe.Customer).name;
               await sendSubscriptionEmail(email, "subscription_created", subscriptionTier, subscriptionEnd, customerName || undefined);
             }
@@ -148,18 +139,14 @@ serve(async (req) => {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        logStep("Subscription updated", { 
-          subscriptionId: subscription.id,
-          status: subscription.status,
-          customerId: subscription.customer 
-        });
+        logStep("Subscription updated", { subscriptionId: subscription.id, status: subscription.status });
 
         const customerId = subscription.customer as string;
         const customer = await stripe.customers.retrieve(customerId);
         const email = (customer as Stripe.Customer).email;
 
         if (!email) {
-          logStep("ERROR: No email found for customer", { customerId });
+          logStep("ERROR: No email found for customer");
           break;
         }
 
@@ -168,26 +155,21 @@ serve(async (req) => {
           ? new Date(subscription.current_period_end * 1000).toISOString()
           : null;
 
-        // Determine tier from price - Updated for new pricing
+        // Determine tier from price
         const priceId = subscription.items.data[0].price.id;
         const price = await stripe.prices.retrieve(priceId);
         const amount = price.unit_amount || 0;
         
         let subscriptionTier = null;
         if (isActive) {
-          if (amount >= 3000) { // $30 or more = Year One
+          if (amount >= 3000) {
             subscriptionTier = "Year One";
-          } else if (amount >= 1500) { // $15 or more = Pro
+          } else if (amount >= 1500) {
             subscriptionTier = "Pro";
           }
         }
 
-        logStep("Updating subscriber status", { 
-          email, 
-          isActive, 
-          subscriptionTier,
-          subscriptionEnd 
-        });
+        logStep("Updating subscriber status", { email, isActive, subscriptionTier });
 
         const { error } = await supabaseClient
           .from("subscribers")
@@ -201,11 +183,9 @@ serve(async (req) => {
           }, { onConflict: 'email' });
 
         if (error) {
-          logStep("ERROR: Failed to update subscriber", { error: error.message });
+          logStep("ERROR: Failed to update subscriber");
         } else {
           logStep("Successfully updated subscriber status");
-          
-          // Send update email
           const customerName = (customer as Stripe.Customer).name;
           await sendSubscriptionEmail(email, "subscription_updated", subscriptionTier || undefined, subscriptionEnd || undefined, customerName || undefined);
         }
@@ -214,17 +194,14 @@ serve(async (req) => {
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        logStep("Subscription deleted", { 
-          subscriptionId: subscription.id,
-          customerId: subscription.customer 
-        });
+        logStep("Subscription deleted", { subscriptionId: subscription.id });
 
         const customerId = subscription.customer as string;
         const customer = await stripe.customers.retrieve(customerId);
         const email = (customer as Stripe.Customer).email;
 
         if (!email) {
-          logStep("ERROR: No email found for customer", { customerId });
+          logStep("ERROR: No email found for customer");
           break;
         }
 
@@ -242,11 +219,9 @@ serve(async (req) => {
           }, { onConflict: 'email' });
 
         if (error) {
-          logStep("ERROR: Failed to update subscriber", { error: error.message });
+          logStep("ERROR: Failed to update subscriber");
         } else {
           logStep("Successfully marked subscriber as unsubscribed");
-          
-          // Send cancellation email
           const customerName = (customer as Stripe.Customer).name;
           await sendSubscriptionEmail(email, "subscription_cancelled", undefined, undefined, customerName || undefined);
         }
@@ -262,10 +237,9 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR processing webhook", { message: errorMessage });
+    logStep("ERROR processing webhook");
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Webhook processing failed" }),
       { status: 400 }
     );
   }

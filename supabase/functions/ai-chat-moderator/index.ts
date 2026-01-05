@@ -6,26 +6,72 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Safe error response - logs details server-side, returns generic message to client
+function safeErrorResponse(error: unknown, context: string, statusCode: number = 500): Response {
+  console.error(`[${context}] Error:`, error instanceof Error ? error.message : String(error));
+  
+  const clientMessages: Record<number, string> = {
+    400: 'Invalid request parameters',
+    401: 'Authentication required',
+    403: 'Access denied',
+    500: 'An unexpected error occurred',
+  };
+  
+  return new Response(
+    JSON.stringify({ error: clientMessages[statusCode] || 'An unexpected error occurred' }),
+    { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// Safe JSON parsing
+function safeJsonParse<T>(data: any, defaultValue: T): T {
+  try {
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) return defaultValue;
+    return JSON.parse(content) as T;
+  } catch {
+    console.warn('[AI-CHAT-MODERATOR] Failed to parse AI response, using defaults');
+    return defaultValue;
+  }
+}
+
+interface ModerationResult {
+  toxicity_score: number;
+  action: string;
+  reason: string;
+  categories: string[];
+}
+
+const defaultResult: ModerationResult = {
+  toxicity_score: 0,
+  action: 'none',
+  reason: 'Unable to analyze message',
+  categories: [],
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, username, streamId, sensitivity = 'balanced' } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { message, username, streamId, sensitivity = 'balanced' } = body;
 
+    // Validate required fields
     if (!message || !username || !streamId) {
-      throw new Error('Message, username, and streamId are required');
+      return safeErrorResponse(new Error('Missing required fields'), 'VALIDATION', 400);
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+      console.error('[AI-CHAT-MODERATOR] LOVABLE_API_KEY not configured');
+      return safeErrorResponse(new Error('Service not configured'), 'CONFIG', 500);
     }
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return safeErrorResponse(new Error('No auth header'), 'AUTH', 401);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -35,20 +81,19 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      return safeErrorResponse(new Error('Unauthorized'), 'AUTH', 401);
     }
 
-    const sensitivityThresholds = {
+    const sensitivityThresholds: Record<string, number> = {
       strict: 30,
       balanced: 50,
       lenient: 70
     };
 
-    const threshold = sensitivityThresholds[sensitivity as keyof typeof sensitivityThresholds] || 50;
+    const threshold = sensitivityThresholds[sensitivity] || 50;
 
     console.log('[AI-CHAT-MODERATOR] Analyzing message:', { username, streamId, sensitivity });
 
-    // Call Lovable AI for toxicity analysis
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -75,7 +120,7 @@ Consider context: competitive banter vs actual harassment.`
             role: 'user',
             content: `Analyze this chat message:
 Username: ${username}
-Message: "${message}"
+Message: "${message.slice(0, 500)}"
 
 Return JSON:
 {
@@ -91,13 +136,12 @@ Return JSON:
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('[AI-CHAT-MODERATOR] API error:', errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      console.error('[AI-CHAT-MODERATOR] AI API error:', aiResponse.status);
+      return safeErrorResponse(new Error('AI service unavailable'), 'AI', 500);
     }
 
     const aiData = await aiResponse.json();
-    const analysis = JSON.parse(aiData.choices[0].message.content);
+    const analysis = safeJsonParse<ModerationResult>(aiData, defaultResult);
 
     // Adjust action based on sensitivity
     let finalAction = 'none';
@@ -115,11 +159,11 @@ Return JSON:
     await supabase.from('chat_moderation_actions').insert({
       user_id: user.id,
       stream_id: streamId,
-      message,
-      username,
+      message: message.slice(0, 1000),
+      username: username.slice(0, 100),
       action: finalAction,
       toxicity_score: analysis.toxicity_score,
-      reason: analysis.reason
+      reason: analysis.reason?.slice(0, 500) || null
     });
 
     console.log('[AI-CHAT-MODERATOR] Analysis complete:', { 
@@ -137,13 +181,6 @@ Return JSON:
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[AI-CHAT-MODERATOR] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return safeErrorResponse(error, 'AI-CHAT-MODERATOR');
   }
 });

@@ -16,6 +16,7 @@ interface DashboardMetrics {
   avgViewers: number;
   peakViewers: number;
   avgEngagement: number;
+  totalMessages: number;
 }
 
 export function useRealtimeAnalytics() {
@@ -99,7 +100,8 @@ export function useRealtimeAnalytics() {
         totalViewers: data.reduce((sum, record) => sum + record.viewers, 0),
         avgViewers: data.length ? Math.round((data.reduce((sum, record) => sum + record.viewers, 0) / data.length) * 100) / 100 : 0,
         peakViewers: Math.max(...data.map(record => record.viewers), 0),
-        avgEngagement: data.length ? Math.round((data.reduce((sum, record) => sum + record.engagement_rate, 0) / data.length) * 100) / 100 : 0
+        avgEngagement: data.length ? Math.round((data.reduce((sum, record) => sum + record.engagement_rate, 0) / data.length) * 100) / 100 : 0,
+        totalMessages: data.reduce((sum, record) => sum + (record.messages || 0), 0)
       };
 
       setMetrics(calculatedMetrics);
