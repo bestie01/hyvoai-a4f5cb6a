@@ -66,7 +66,7 @@ const Navigation = () => {
               <img src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" alt="Hyvo.ai Logo" className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0" />
             </motion.div>
             <div className="flex flex-col">
-              <span className="text-2xl font-display font-bold bg-gradient-primary bg-clip-text text-secondary-foreground bg-transparent">
+              <span className="text-2xl font-display font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Hyvo.ai
               </span>
               <Badge variant="secondary" className="text-[10px] w-fit bg-gradient-primary/20 text-primary border-0">
