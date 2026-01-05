@@ -72,7 +72,7 @@ export const useSubscription = () => {
     }
   }, [user, session, toast]);
 
-  const createCheckout = async (plan: 'pro' | 'yearone') => {
+  const createCheckout = async (plan: 'starter' | 'pro' | 'yearone') => {
     if (!user || !session) {
       toast({
         title: "Authentication required",
@@ -184,6 +184,7 @@ export const useSubscription = () => {
     openCustomerPortal,
     isPro: subscription.subscribed && (subscription.subscription_tier === 'Pro' || subscription.subscription_tier === 'Year One'),
     isYearOne: subscription.subscribed && subscription.subscription_tier === 'Year One',
+    isStarter: subscription.subscribed && subscription.subscription_tier === 'Starter',
     isPaid: subscription.subscribed,
   };
 };

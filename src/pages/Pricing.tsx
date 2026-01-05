@@ -22,7 +22,19 @@ const Pricing = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
+  const isStarter = subscription?.subscription_tier === 'starter';
   const plans = [{
+    id: "starter",
+    name: "Starter",
+    price: "$5",
+    period: "per month",
+    description: "Perfect for new streamers getting started",
+    features: ["Basic Stream Analytics", "Single Platform Streaming", "Standard Audio Controls", "Community Support", "Basic Overlay Templates", "720p Streaming Quality"],
+    buttonText: "Get Started",
+    variant: "outline" as const,
+    popular: false,
+    isCurrent: isStarter
+  }, {
     id: "pro",
     name: "Pro",
     price: "$15",
@@ -31,8 +43,8 @@ const Pricing = () => {
     features: ["Advanced Stream Analytics", "Multi-platform Streaming", "Stream Recording & Highlights", "Custom Overlay Templates", "Premium Audio Controls", "Priority Support", "API Access", "Custom Branding Options"],
     buttonText: "Start Pro Trial",
     variant: "hero" as const,
-    popular: false,
-    isCurrent: isPro && !isYearOne
+    popular: true,
+    isCurrent: isPro && !isYearOne && !isStarter
   }, {
     id: "yearone",
     name: "Year One",
@@ -42,7 +54,7 @@ const Pricing = () => {
     features: ["Everything in Pro", "10 months free (83% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
     buttonText: "Get Year One",
     variant: "secondary" as const,
-    popular: true,
+    popular: false,
     isCurrent: isYearOne
   }];
   const handleSubscribe = (planId: string) => {
@@ -56,7 +68,9 @@ const Pricing = () => {
       });
       return;
     }
-    if (planId === "pro") {
+    if (planId === "starter") {
+      createCheckout('starter');
+    } else if (planId === "pro") {
       createCheckout('pro');
     } else {
       createCheckout('yearone');
@@ -113,7 +127,7 @@ const Pricing = () => {
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
                 Simple pricing,{" "}
-                <span className="bg-gradient-primary bg-clip-text text-secondary-foreground bg-primary-foreground">
+                <span className="text-gradient-primary">
                   powerful features
                 </span>
               </h1>
@@ -152,7 +166,7 @@ const Pricing = () => {
       {/* Pricing Cards */}
       <section className="pb-24 px-6">
         <div className="container mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan, index) => <motion.div key={plan.name} initial={{
               opacity: 0,
               y: 30
@@ -185,7 +199,7 @@ const Pricing = () => {
                     <div className="mt-6">
                       <motion.span whileHover={{
                       scale: 1.05
-                    }} className="text-5xl font-bold bg-gradient-primary bg-clip-text text-secondary-foreground bg-primary-foreground">
+                    }} className="text-5xl font-bold text-gradient-primary">
                         {plan.price}
                       </motion.span>
                       <span className="text-muted-foreground ml-2">/{plan.period}</span>
@@ -296,7 +310,7 @@ const Pricing = () => {
             duration: 0.5
           }}>
             <h2 className="text-4xl font-bold mb-4">
-              <span className="bg-gradient-primary bg-clip-text text-secondary-foreground">
+              <span className="text-gradient-primary">
                 Questions?
               </span>{" "}
               We've got answers

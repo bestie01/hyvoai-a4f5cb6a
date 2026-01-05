@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, ArrowLeft, Zap, Crown, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Crown, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
@@ -180,9 +180,13 @@ const Auth = () => {
           scale: 1.02
         }}>
             <div className="p-2 rounded-lg bg-gradient-primary shadow-glow-primary">
-              <Zap className="w-6 h-6 text-primary-foreground" />
+              <img 
+                src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" 
+                alt="Hyvo.ai Logo" 
+                className="w-6 h-6 object-contain brightness-0 invert dark:brightness-100 dark:invert-0" 
+              />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent bg-primary-foreground">
+            <h1 className="text-2xl font-bold text-gradient-primary">
               Hyvo.ai
             </h1>
           </motion.div>

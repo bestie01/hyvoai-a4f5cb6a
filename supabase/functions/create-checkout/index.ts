@@ -79,6 +79,11 @@ serve(async (req) => {
 
     // Plan configuration - aligned with website pricing
     const planConfig: Record<string, { amount: number; interval: 'month' | 'year'; name: string }> = {
+      starter: {
+        amount: 500, // $5.00/month
+        interval: "month",
+        name: "Starter Monthly Subscription"
+      },
       pro: {
         amount: 1500, // $15.00/month
         interval: "month",
@@ -96,17 +101,25 @@ serve(async (req) => {
       return safeErrorResponse(new Error('Invalid plan'), 'VALIDATION', 400);
     }
 
+    const getPlanLabel = (p: string) => {
+      const labels: Record<string, string> = { starter: 'Starter', pro: 'Pro', yearone: 'Year One' };
+      return labels[p] || p;
+    };
+
     const origin = req.headers.get("origin") || 'https://hyvo.ai';
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
+      phone_number_collection: {
+        enabled: true,
+      },
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: { 
               name: selectedPlan.name,
-              description: `Hyvo.ai ${plan === 'pro' ? 'Pro' : 'Year One'} subscription`
+              description: `Hyvo.ai ${getPlanLabel(plan)} subscription`
             },
             unit_amount: selectedPlan.amount,
             recurring: { interval: selectedPlan.interval },
@@ -117,6 +130,10 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
+      customer_update: {
+        name: 'auto',
+        address: 'auto',
+      },
       metadata: {
         user_id: user.id,
         plan_type: plan
