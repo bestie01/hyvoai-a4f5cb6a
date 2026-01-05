@@ -47,13 +47,15 @@ serve(async (req) => {
       .maybeSingle();
 
     if (connError || !connection) {
+      // Return 200 with needsAuth flag - this is expected behavior, not an error
       return new Response(
         JSON.stringify({ 
-          error: 'Platform not connected',
+          success: false,
           needsAuth: true,
-          platform 
+          platform,
+          stats: null
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
