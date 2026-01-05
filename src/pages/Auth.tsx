@@ -17,22 +17,37 @@ import { z } from "zod";
 // Validation schemas
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
-
 const containerVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5, staggerChildren: 0.1 }
+  hidden: {
+    opacity: 0,
+    y: 20
   },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      staggerChildren: 0.1
+    }
+  },
+  exit: {
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.3
+    }
+  }
 };
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0 }
+  hidden: {
+    opacity: 0,
+    y: 10
+  },
+  visible: {
+    opacity: 1,
+    y: 0
+  }
 };
-
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,7 +69,10 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
+  const [validationErrors, setValidationErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
 
   // Form states
   const [email, setEmail] = useState("");
@@ -84,35 +102,32 @@ const Auth = () => {
       });
     }
   }, [user, navigate, redirectPath, planId, createCheckout]);
-
   const validateForm = (isSignUp: boolean) => {
-    const errors: { email?: string; password?: string } = {};
-    
+    const errors: {
+      email?: string;
+      password?: string;
+    } = {};
     try {
       emailSchema.parse(email);
     } catch (e) {
       errors.email = "Please enter a valid email address";
     }
-    
     try {
       passwordSchema.parse(password);
     } catch (e) {
       errors.password = "Password must be at least 6 characters";
     }
-    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(true)) return;
-    
     if (password !== confirmPassword) {
       toast({
         title: "Passwords don't match",
         description: "Please make sure your passwords match.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -120,16 +135,13 @@ const Auth = () => {
     await signUp(email, password);
     setIsLoading(false);
   };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(false)) return;
-    
     setIsLoading(true);
     await signIn(email, password);
     setIsLoading(false);
   };
-
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -137,42 +149,40 @@ const Auth = () => {
     setIsLoading(false);
     setIsResetMode(false);
   };
-  return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
+  return <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0 -z-10">
-        <motion.div 
-          className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div 
-          className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-        />
+        <motion.div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" animate={{
+        scale: [1, 1.2, 1],
+        opacity: [0.3, 0.5, 0.3]
+      }} transition={{
+        duration: 8,
+        repeat: Infinity
+      }} />
+        <motion.div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl" animate={{
+        scale: [1, 1.3, 1],
+        opacity: [0.3, 0.5, 0.3]
+      }} transition={{
+        duration: 10,
+        repeat: Infinity,
+        delay: 1
+      }} />
       </div>
       
-      <motion.div 
-        className="w-full max-w-md space-y-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <motion.div className="w-full max-w-md space-y-6" variants={containerVariants} initial="hidden" animate="visible">
         {/* Header */}
         <motion.div className="text-center space-y-2" variants={itemVariants}>
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
-          <motion.div 
-            className="flex items-center justify-center gap-2 mb-2"
-            whileHover={{ scale: 1.02 }}
-          >
+          <motion.div className="flex items-center justify-center gap-2 mb-2" whileHover={{
+          scale: 1.02
+        }}>
             <div className="p-2 rounded-lg bg-gradient-primary shadow-glow-primary">
               <Zap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent bg-primary-foreground">
               Hyvo.ai
             </h1>
           </motion.div>
@@ -381,10 +391,7 @@ const Auth = () => {
         <Separator />
         
         {/* Footer */}
-        <motion.div 
-          className="text-center text-sm text-muted-foreground"
-          variants={itemVariants}
-        >
+        <motion.div className="text-center text-sm text-muted-foreground" variants={itemVariants}>
           <p>
             By continuing, you agree to our{" "}
             <Link to="#" className="underline underline-offset-4 hover:text-foreground">
@@ -397,7 +404,6 @@ const Auth = () => {
           </p>
         </motion.div>
       </motion.div>
-    </div>
-  );
+    </div>;
 };
 export default Auth;
