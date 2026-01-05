@@ -20,6 +20,7 @@ import { RecordingControls } from "@/components/streaming/RecordingControls";
 import { useWebRTCStream } from "@/hooks/useWebRTCStream";
 import { useLocalRecording } from "@/hooks/useLocalRecording";
 import { StreamHealthMonitor } from "@/components/StreamHealthMonitor";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { 
   Play, 
   Square, 
@@ -68,11 +69,12 @@ import { HotkeyManager } from "@/components/streaming/HotkeyManager";
 const StreamingApp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const haptics = useHaptics();
   const statusBar = useStatusBar();
   const notifications = usePushNotifications();
   
+  const [isAppLoading, setIsAppLoading] = useState(true);
   const [streamTime, setStreamTime] = useState("00:00:00");
   const [activeStream, setActiveStream] = useState<'twitch' | 'youtube' | null>(null);
   
@@ -133,12 +135,23 @@ const StreamingApp = () => {
     });
   };
 
-  // Redirect if not authenticated
+  // Handle loading and auth redirect
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
+    if (!authLoading) {
+      if (!user) {
+        navigate("/auth");
+      } else {
+        // Simulate loading for smooth transition
+        const timer = setTimeout(() => setIsAppLoading(false), 800);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
+
+  // Show loading screen while app initializes
+  if (authLoading || isAppLoading) {
+    return <LoadingScreen message="Loading Studio..." />;
+  }
   const [scenes] = useState([
     { id: 1, name: "Gaming Scene", active: true },
     { id: 2, name: "Just Chatting", active: false },
@@ -275,7 +288,7 @@ const StreamingApp = () => {
         <div className="border-b border-border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-gradient-primary">
                 Hyvo.ai Studio
               </h1>
               <Badge variant={

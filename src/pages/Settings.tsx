@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 import { Loader2, User, Settings2, Bell, CreditCard, ArrowLeft, Crown, ExternalLink, Video, Key, Calendar } from 'lucide-react';
 
 const containerVariants = {
@@ -74,11 +75,7 @@ const Settings = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingScreen message="Loading Settings..." />;
   }
 
   return (

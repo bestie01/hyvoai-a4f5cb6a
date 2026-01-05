@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { ProFeatureGate } from "@/components/ProFeatureGate";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { 
   Sparkles, 
   Image, 
@@ -54,14 +55,16 @@ const StreamCreator = () => {
   const { isPro, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   
-  // Redirect non-Pro users after auth check
-  useEffect(() => {
-    if (!authLoading && !subLoading) {
-      if (!user) {
-        navigate("/auth", { state: { redirect: "/create" } });
-      }
-    }
-  }, [user, authLoading, subLoading, navigate]);
+  // Show loading while checking auth
+  if (authLoading || subLoading) {
+    return <LoadingScreen message="Loading Creator Tools..." />;
+  }
+
+  // Redirect non-authenticated users
+  if (!user) {
+    navigate("/auth", { state: { redirect: "/create" } });
+    return null;
+  }
   
   // Title generator
   const { generateTitles, result: titleResult, loading: titleLoading } = useAITitleGenerator();
@@ -199,7 +202,7 @@ const StreamCreator = () => {
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
                 Create Your{" "}
-                <span className="bg-gradient-primary bg-clip-text text-transparent">
+                <span className="text-gradient-primary">
                   Perfect Stream
                 </span>
               </h1>

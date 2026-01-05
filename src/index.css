@@ -239,15 +239,18 @@ code, pre, .font-mono {
   
   /* Gradient text - Enhanced */
   .text-gradient-primary {
-    @apply bg-gradient-primary bg-clip-text text-transparent;
-    background-size: 200% 200%;
-    animation: gradient-shift 8s ease infinite;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .text-gradient-accent {
-    @apply bg-gradient-secondary bg-clip-text text-transparent;
+    background: var(--gradient-secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  
   /* Mesh background */
   .bg-mesh {
     background: var(--gradient-mesh);

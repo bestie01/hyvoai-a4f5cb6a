@@ -148,7 +148,7 @@ const DownloadPage = () => {
                 >
                   <Download className="w-7 h-7 text-primary-foreground" />
                 </motion.div>
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-5xl font-bold text-gradient-primary">
                   Get Hyvo Stream Studio
                 </h1>
               </div>
@@ -174,8 +174,9 @@ const DownloadPage = () => {
                   </Badge>
                 </motion.div>
               ) : (
-                <Badge variant="outline" className="mb-8">
-                  Desktop builds coming soon
+                <Badge className="mb-8 bg-gradient-primary text-primary-foreground px-4 py-2 text-sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Desktop App Available
                 </Badge>
               )}
             </motion.div>
@@ -320,7 +321,7 @@ const DownloadPage = () => {
                             ) : (
                               <Download className="w-4 h-4 mr-2" />
                             )}
-                            {isAvailable ? "Download Now" : "Coming Soon"}
+                            {isAvailable ? "Download Now" : "Download"}
                           </Button>
                         </motion.div>
                       </CardContent>
