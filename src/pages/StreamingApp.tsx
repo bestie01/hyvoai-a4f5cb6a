@@ -99,6 +99,28 @@ const StreamingApp = () => {
     fps: 30
   });
 
+  const [scenes] = useState([
+    { id: 1, name: "Gaming Scene", active: true },
+    { id: 2, name: "Just Chatting", active: false },
+    { id: 3, name: "BRB Screen", active: false },
+    { id: 4, name: "Starting Soon", active: false }
+  ]);
+  
+  const [sources] = useState([
+    { id: 1, name: "Desktop Capture", type: "display", enabled: true },
+    { id: 2, name: "Webcam", type: "camera", enabled: true },
+    { id: 3, name: "Microphone", type: "audio", enabled: true },
+    { id: 4, name: "Game Audio", type: "audio", enabled: true },
+    { id: 5, name: "Chat Overlay", type: "overlay", enabled: false }
+  ]);
+
+  const [chatMessages] = useState([
+    { id: 1, user: "StreamFan123", message: "Great stream! Keep it up!", timestamp: "12:34" },
+    { id: 2, user: "GamerPro", message: "What's your setup?", timestamp: "12:35" },
+    { id: 3, user: "ChatMod", message: "Welcome everyone!", timestamp: "12:36", mod: true },
+    { id: 4, user: "NewViewer", message: "First time here, loving it!", timestamp: "12:37" }
+  ]);
+
   // Recording handlers
   const handleStartRecording = async () => {
     if (webrtc.streamRef.current) {
@@ -148,32 +170,6 @@ const StreamingApp = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Show loading screen while app initializes
-  if (authLoading || isAppLoading) {
-    return <LoadingScreen message="Loading Studio..." />;
-  }
-  const [scenes] = useState([
-    { id: 1, name: "Gaming Scene", active: true },
-    { id: 2, name: "Just Chatting", active: false },
-    { id: 3, name: "BRB Screen", active: false },
-    { id: 4, name: "Starting Soon", active: false }
-  ]);
-  
-  const [sources] = useState([
-    { id: 1, name: "Desktop Capture", type: "display", enabled: true },
-    { id: 2, name: "Webcam", type: "camera", enabled: true },
-    { id: 3, name: "Microphone", type: "audio", enabled: true },
-    { id: 4, name: "Game Audio", type: "audio", enabled: true },
-    { id: 5, name: "Chat Overlay", type: "overlay", enabled: false }
-  ]);
-
-  const [chatMessages] = useState([
-    { id: 1, user: "StreamFan123", message: "Great stream! Keep it up!", timestamp: "12:34" },
-    { id: 2, user: "GamerPro", message: "What's your setup?", timestamp: "12:35" },
-    { id: 3, user: "ChatMod", message: "Welcome everyone!", timestamp: "12:36", mod: true },
-    { id: 4, user: "NewViewer", message: "First time here, loving it!", timestamp: "12:37" }
-  ]);
-
   useEffect(() => {
     // Stream timer
     const isStreaming = twitch.isStreaming || youtube.isStreaming;
@@ -191,6 +187,11 @@ const StreamingApp = () => {
       setStreamTime("00:00:00");
     }
   }, [twitch.isStreaming, youtube.isStreaming]);
+
+  // Show loading screen while app initializes
+  if (authLoading || isAppLoading) {
+    return <LoadingScreen message="Loading Studio..." />;
+  }
 
   const handleConnectToPlatform = async (platform: 'twitch' | 'youtube') => {
     await haptics.impact(ImpactStyle.Medium);
