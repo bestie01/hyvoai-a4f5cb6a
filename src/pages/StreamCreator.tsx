@@ -61,18 +61,7 @@ const StreamCreator = () => {
   const { isPro, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   
-  // Show loading while checking auth
-  if (authLoading || subLoading) {
-    return <LoadingScreen message="Loading Creator Tools..." />;
-  }
-
-  // Redirect non-authenticated users
-  if (!user) {
-    navigate("/auth", { state: { redirect: "/create" } });
-    return null;
-  }
-  
-  // Title generator
+  // Title generator - ALL hooks must be called before any early returns
   const { generateTitles, result: titleResult, loading: titleLoading } = useAITitleGenerator();
   const [game, setGame] = useState("");
   const [theme, setTheme] = useState("");
@@ -86,8 +75,19 @@ const StreamCreator = () => {
   const [thumbnailGame, setThumbnailGame] = useState("");
   const [selectedThumbnail, setSelectedThumbnail] = useState<number | null>(null);
   
+  // Show loading while checking auth
+  if (authLoading || subLoading) {
+    return <LoadingScreen message="Loading Creator Tools..." />;
+  }
+
+  // Redirect non-authenticated users
+  if (!user) {
+    navigate("/auth", { state: { redirect: "/create" } });
+    return null;
+  }
+  
   // Show Pro gate for non-Pro users
-  if (!authLoading && !subLoading && user && !isPro) {
+  if (!isPro) {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-hero">
