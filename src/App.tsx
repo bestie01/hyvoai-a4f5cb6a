@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import Index from "./pages/Index";
 import Download from "./pages/Download";
 import Pricing from "./pages/Pricing";
@@ -26,6 +27,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" storageKey="hyvo-ui-theme">
       <TooltipProvider>
+        <UpdateBanner />
         <Toaster />
         <Sonner />
         <BrowserRouter>
