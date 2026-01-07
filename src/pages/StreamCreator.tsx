@@ -27,8 +27,14 @@ import {
   Zap,
   Loader2,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Repeat,
+  MessageSquare
 } from "lucide-react";
+import { ThumbnailAnalyzer } from "@/components/ai/ThumbnailAnalyzer";
+import { ThumbnailRecreator } from "@/components/ai/ThumbnailRecreator";
+import { NaturalLanguageEditor } from "@/components/ai/NaturalLanguageEditor";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -223,14 +229,26 @@ const StreamCreator = () => {
           >
             <Tabs defaultValue="titles" className="w-full">
               <motion.div variants={itemVariants}>
-                <TabsList className="grid w-full grid-cols-2 mb-8">
-                  <TabsTrigger value="titles" className="text-lg py-3">
-                    <Type className="w-5 h-5 mr-2" />
+                <TabsList className="grid w-full grid-cols-5 mb-8">
+                  <TabsTrigger value="titles" className="text-sm py-3">
+                    <Type className="w-4 h-4 mr-1.5" />
                     AI Titles
                   </TabsTrigger>
-                  <TabsTrigger value="thumbnails" className="text-lg py-3">
-                    <Image className="w-5 h-5 mr-2" />
+                  <TabsTrigger value="thumbnails" className="text-sm py-3">
+                    <Image className="w-4 h-4 mr-1.5" />
                     AI Thumbnails
+                  </TabsTrigger>
+                  <TabsTrigger value="analyzer" className="text-sm py-3">
+                    <Search className="w-4 h-4 mr-1.5" />
+                    Analyzer
+                  </TabsTrigger>
+                  <TabsTrigger value="recreator" className="text-sm py-3">
+                    <Repeat className="w-4 h-4 mr-1.5" />
+                    Recreator
+                  </TabsTrigger>
+                  <TabsTrigger value="editor" className="text-sm py-3">
+                    <MessageSquare className="w-4 h-4 mr-1.5" />
+                    NL Editor
                   </TabsTrigger>
                 </TabsList>
               </motion.div>
@@ -520,6 +538,27 @@ const StreamCreator = () => {
                       </CardContent>
                     </Card>
                   </motion.div>
+                </motion.div>
+              </TabsContent>
+
+              {/* Analyzer Tab */}
+              <TabsContent value="analyzer">
+                <motion.div variants={itemVariants}>
+                  <ThumbnailAnalyzer />
+                </motion.div>
+              </TabsContent>
+
+              {/* Recreator Tab */}
+              <TabsContent value="recreator">
+                <motion.div variants={itemVariants}>
+                  <ThumbnailRecreator />
+                </motion.div>
+              </TabsContent>
+
+              {/* Natural Language Editor Tab */}
+              <TabsContent value="editor">
+                <motion.div variants={itemVariants}>
+                  <NaturalLanguageEditor />
                 </motion.div>
               </TabsContent>
             </Tabs>
