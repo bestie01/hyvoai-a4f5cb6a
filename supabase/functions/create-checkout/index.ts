@@ -134,6 +134,19 @@ serve(async (req) => {
         name: 'auto',
         address: 'auto',
       },
+      // Add 14-day free trial for Pro and Year One plans
+      subscription_data: plan !== 'starter' ? {
+        trial_period_days: 14,
+        metadata: {
+          user_id: user.id,
+          plan_type: plan
+        }
+      } : {
+        metadata: {
+          user_id: user.id,
+          plan_type: plan
+        }
+      },
       metadata: {
         user_id: user.id,
         plan_type: plan

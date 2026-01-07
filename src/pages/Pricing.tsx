@@ -40,22 +40,24 @@ const Pricing = () => {
     price: "$15",
     period: "per month",
     description: "For professionals and growing streamers",
-    features: ["Advanced Stream Analytics", "Multi-platform Streaming", "Stream Recording & Highlights", "Custom Overlay Templates", "Premium Audio Controls", "Priority Support", "API Access", "Custom Branding Options"],
-    buttonText: "Start Pro Trial",
+    features: ["14-day free trial", "Advanced Stream Analytics", "Multi-platform Streaming", "Stream Recording & Highlights", "Custom Overlay Templates", "Premium Audio Controls", "Priority Support", "API Access", "Custom Branding Options"],
+    buttonText: "Start 14-Day Free Trial",
     variant: "hero" as const,
     popular: true,
-    isCurrent: isPro && !isYearOne && !isStarter
+    isCurrent: isPro && !isYearOne && !isStarter,
+    hasTrial: true
   }, {
     id: "yearone",
     name: "Year One",
     price: "$30",
     period: "per year",
     description: "Save 83% with annual billing + exclusive perks",
-    features: ["Everything in Pro", "10 months free (83% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
-    buttonText: "Get Year One",
+    features: ["14-day free trial", "Everything in Pro", "10 months free (83% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
+    buttonText: "Start 14-Day Free Trial",
     variant: "secondary" as const,
     popular: false,
-    isCurrent: isYearOne
+    isCurrent: isYearOne,
+    hasTrial: true
   }];
   const handleSubscribe = (planId: string) => {
     if (!user) {
@@ -181,6 +183,11 @@ const Pricing = () => {
                   {plan.popular && <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary shadow-lg">
                       <Star className="w-3 h-3 mr-1" />
                       Most Popular
+                    </Badge>}
+                  
+                  {(plan as any).hasTrial && !plan.isCurrent && <Badge className="absolute -top-3 left-4 bg-amber-500 text-white shadow-lg">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      14-Day Trial
                     </Badge>}
                   
                   {plan.isCurrent && <Badge className="absolute -top-3 right-4 bg-success text-success-foreground shadow-glow-success">
