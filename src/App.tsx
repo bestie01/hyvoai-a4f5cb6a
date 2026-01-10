@@ -25,6 +25,8 @@ import HapticsFeatures from "./pages/native/HapticsFeatures";
 import StorageFeatures from "./pages/native/StorageFeatures";
 import NotificationFeatures from "./pages/native/NotificationFeatures";
 import DisplayFeatures from "./pages/native/DisplayFeatures";
+import GeolocationFeatures from "./pages/native/GeolocationFeatures";
+import DeviceFeatures from "./pages/native/DeviceFeatures";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,8 @@ const App = () => (
           <Route path="/native/storage" element={<StorageFeatures />} />
           <Route path="/native/notifications" element={<NotificationFeatures />} />
           <Route path="/native/display" element={<DisplayFeatures />} />
+          <Route path="/native/geolocation" element={<GeolocationFeatures />} />
+          <Route path="/native/device" element={<DeviceFeatures />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/subscription-success" element={<SubscriptionSuccess />} />

@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Vibrate, HardDrive, Bell, Smartphone, ChevronRight, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Vibrate, HardDrive, Bell, Smartphone, ChevronRight, Sparkles, MapPin, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LiquidGlassCard, LiquidGlassIcon, LiquidGlassBadge } from "@/components/ui/liquid-glass-card";
@@ -50,6 +50,24 @@ const features = [
     path: "/native/display",
     color: "from-rose-500 to-red-500",
     badge: "Display",
+  },
+  {
+    id: "geolocation",
+    title: "Geolocation",
+    description: "GPS tracking, location tags, stream from anywhere",
+    icon: MapPin,
+    path: "/native/geolocation",
+    color: "from-green-500 to-emerald-500",
+    badge: "Location",
+  },
+  {
+    id: "device",
+    title: "Device Info",
+    description: "Battery status, system info, stream readiness check",
+    icon: Cpu,
+    path: "/native/device",
+    color: "from-indigo-500 to-violet-500",
+    badge: "System",
   },
 ];
 

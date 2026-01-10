@@ -166,6 +166,8 @@ serve(async (req) => {
             subscriptionTier = "Year One";
           } else if (amount >= 1500) {
             subscriptionTier = "Pro";
+          } else if (amount >= 500) {
+            subscriptionTier = "Starter";
           }
         }
 
