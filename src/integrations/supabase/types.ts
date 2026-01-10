@@ -305,6 +305,48 @@ export type Database = {
         }
         Relationships: []
       }
+      device_sessions: {
+        Row: {
+          battery_level: number | null
+          device_model: string | null
+          id: string
+          is_virtual: boolean | null
+          language_code: string | null
+          manufacturer: string | null
+          os_version: string | null
+          platform: string | null
+          session_end: string | null
+          session_start: string
+          user_id: string
+        }
+        Insert: {
+          battery_level?: number | null
+          device_model?: string | null
+          id?: string
+          is_virtual?: boolean | null
+          language_code?: string | null
+          manufacturer?: string | null
+          os_version?: string | null
+          platform?: string | null
+          session_end?: string | null
+          session_start?: string
+          user_id: string
+        }
+        Update: {
+          battery_level?: number | null
+          device_model?: string | null
+          id?: string
+          is_virtual?: boolean | null
+          language_code?: string | null
+          manufacturer?: string | null
+          os_version?: string | null
+          platform?: string | null
+          session_end?: string | null
+          session_start?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -745,6 +787,39 @@ export type Database = {
           stream_id?: string
           summary?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      stream_locations: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          id: string
+          latitude: number
+          location_name: string | null
+          longitude: number
+          stream_id: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          latitude: number
+          location_name?: string | null
+          longitude: number
+          stream_id?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          location_name?: string | null
+          longitude?: number
+          stream_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

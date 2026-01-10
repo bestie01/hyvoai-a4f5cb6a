@@ -26,14 +26,16 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen liquid-glass-mesh flex items-center justify-center">
+        <div className="liquid-glass-panel p-8 rounded-2xl">
+          <div className="animate-pulse text-white">Loading...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" data-tour="dashboard">
+    <div className="min-h-screen liquid-glass-mesh" data-tour="dashboard">
       {/* Onboarding */}
       <WelcomeWizard isOpen={showWelcome} onComplete={completeWelcome} />
       <ProductTour run={showTour} onComplete={completeTour} />
@@ -48,9 +50,9 @@ const Dashboard = () => {
             <div className="flex-1 flex">
               <main className="flex-1 p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList>
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="ai-insights" data-tour="ai-tools">🤖 AI Insights</TabsTrigger>
+                  <TabsList className="liquid-glass-panel">
+                    <TabsTrigger value="overview" className="data-[state=active]:bg-white/20">Overview</TabsTrigger>
+                    <TabsTrigger value="ai-insights" data-tour="ai-tools" className="data-[state=active]:bg-white/20">🤖 AI Insights</TabsTrigger>
                   </TabsList>
                   <TabsContent value="overview" className="mt-6" data-tour="analytics">
                     <DashboardMain />
@@ -61,7 +63,7 @@ const Dashboard = () => {
                 </Tabs>
               </main>
               
-              <aside className="w-80">
+              <aside className="w-80 liquid-glass-panel m-4 rounded-2xl overflow-hidden">
                 <DashboardRightPanel />
               </aside>
             </div>
