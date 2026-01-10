@@ -14,12 +14,17 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
-import NativeFeaturesDemo from "./pages/NativeFeaturesDemo";
 import Settings from "./pages/Settings";
 import Schedule from "./pages/Schedule";
 import Growth from "./pages/Growth";
 import Community from "./pages/Community";
 import StreamCreator from "./pages/StreamCreator";
+import NativeHub from "./pages/native/NativeHub";
+import CameraFeatures from "./pages/native/CameraFeatures";
+import HapticsFeatures from "./pages/native/HapticsFeatures";
+import StorageFeatures from "./pages/native/StorageFeatures";
+import NotificationFeatures from "./pages/native/NotificationFeatures";
+import DisplayFeatures from "./pages/native/DisplayFeatures";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +42,12 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/studio" element={<StreamingApp />} />
-          <Route path="/native-features" element={<NativeFeaturesDemo />} />
+          <Route path="/native" element={<NativeHub />} />
+          <Route path="/native/camera" element={<CameraFeatures />} />
+          <Route path="/native/haptics" element={<HapticsFeatures />} />
+          <Route path="/native/storage" element={<StorageFeatures />} />
+          <Route path="/native/notifications" element={<NotificationFeatures />} />
+          <Route path="/native/display" element={<DisplayFeatures />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/subscription-success" element={<SubscriptionSuccess />} />

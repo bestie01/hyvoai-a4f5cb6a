@@ -24,7 +24,7 @@ const CameraFeatures = () => {
 
   const handleCameraCapture = async () => {
     await haptics.impact(ImpactStyle.Light);
-    const photo = await camera.takePicture(CameraSource.Camera, quality[0], resultType);
+    const photo = await camera.takePicture(CameraSource.Camera);
     if (photo) {
       setCapturedPhotos(prev => [photo, ...prev]);
     }
@@ -32,7 +32,7 @@ const CameraFeatures = () => {
 
   const handleGalleryPick = async () => {
     await haptics.impact(ImpactStyle.Light);
-    const photo = await camera.takePicture(CameraSource.Photos, quality[0], resultType);
+    const photo = await camera.takePicture(CameraSource.Photos);
     if (photo) {
       setCapturedPhotos(prev => [photo, ...prev]);
     }
@@ -67,7 +67,7 @@ const CameraFeatures = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate("/native-features")}
+                onClick={() => navigate("/native")}
                 className="liquid-glass-button !p-2"
               >
                 <ArrowLeft className="w-5 h-5" />
