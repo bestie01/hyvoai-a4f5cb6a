@@ -107,12 +107,14 @@ serve(async (req) => {
     };
 
     const origin = req.headers.get("origin") || 'https://hyvo.ai';
+    const { promoCode } = body;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       phone_number_collection: {
         enabled: true,
       },
+      billing_address_collection: 'required',
       line_items: [
         {
           price_data: {
@@ -134,6 +136,11 @@ serve(async (req) => {
         name: 'auto',
         address: 'auto',
       },
+      // Enable promo codes
+      allow_promotion_codes: !promoCode, // Allow UI selection if no code passed
+      ...(promoCode && {
+        discounts: [{ promotion_code: promoCode }],
+      }),
       // Add 14-day free trial for Pro and Year One plans
       subscription_data: plan !== 'starter' ? {
         trial_period_days: 14,

@@ -24,6 +24,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { LiveViewerStats } from "@/components/streaming/LiveViewerStats";
 import { PlatformConnector } from "@/components/streaming/PlatformConnector";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
+import { LiquidGlassCard, LiquidGlassNav } from "@/components/ui/liquid-glass-card";
 import { 
   Play, 
   Square, 
@@ -286,22 +287,23 @@ const StreamingApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen liquid-glass-bg flex">
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        {/* Top Controls */}
-        <div className="border-b border-border p-4">
+        {/* Top Controls - Liquid Glass Nav */}
+        <LiquidGlassNav sticky={true} className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold text-gradient-primary">
                 Hyvo.ai Studio
               </h1>
-              <Badge variant={
-                (twitch.isStreaming || youtube.isStreaming) ? "default" : 
-                (twitch.isConnected || youtube.isConnected) ? "secondary" : 
-                "outline"
-              }>
-                {(twitch.isStreaming || youtube.isStreaming) ? "LIVE" : 
+              <Badge 
+                variant={(twitch.isStreaming || youtube.isStreaming) ? "default" : 
+                  (twitch.isConnected || youtube.isConnected) ? "secondary" : 
+                  "outline"}
+                className={(twitch.isStreaming || youtube.isStreaming) ? "bg-red-500 animate-pulse" : ""}
+              >
+                {(twitch.isStreaming || youtube.isStreaming) ? "● LIVE" : 
                  (twitch.isConnected || youtube.isConnected) ? `CONNECTED (${activeStream?.toUpperCase()})` : 
                  "OFFLINE"}
               </Badge>
@@ -315,12 +317,13 @@ const StreamingApp = () => {
             <div className="flex items-center gap-4">
               {(twitch.isStreaming || youtube.isStreaming) && (
                 <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-red-400">
                     <Eye className="w-4 h-4" />
-                    <span>{activeStream === 'twitch' ? twitch.viewers : youtube.viewers}</span>
+                    <span className="font-semibold">{activeStream === 'twitch' ? twitch.viewers : youtube.viewers}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span>Live: {streamTime}</span>
+                  <div className="flex items-center gap-2 liquid-glass-badge px-3 py-1">
+                    <Circle className="w-2 h-2 fill-red-500 text-red-500 animate-pulse" />
+                    <span className="font-mono">{streamTime}</span>
                   </div>
                 </div>
               )}
@@ -329,12 +332,12 @@ const StreamingApp = () => {
                 {!twitch.isConnected && !youtube.isConnected ? (
                   <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="gap-2">
+                      <Button className="gap-2 liquid-glass-button bg-primary/20 border-primary/40 text-primary hover:bg-primary/30">
                         <Zap className="w-4 h-4" />
                         Connect Platform
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="sm:max-w-md liquid-glass-elevated border-white/10">
                       <DialogHeader>
                         <DialogTitle>Connect Streaming Platform</DialogTitle>
                         <DialogDescription>
@@ -342,7 +345,7 @@ const StreamingApp = () => {
                         </DialogDescription>
                       </DialogHeader>
                       <Tabs defaultValue="twitch" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-2 liquid-glass-panel">
                           <TabsTrigger value="twitch" className="gap-2">
                             <Twitch className="w-4 h-4" />
                             Twitch
@@ -362,6 +365,7 @@ const StreamingApp = () => {
                               placeholder="Enter your Twitch stream key..."
                               value={twitchStreamKey}
                               onChange={(e) => setTwitchStreamKey(e.target.value)}
+                              className="liquid-glass-panel border-white/10"
                             />
                           </div>
                           <div>
@@ -371,9 +375,10 @@ const StreamingApp = () => {
                               placeholder="Enter stream title..."
                               value={streamTitle}
                               onChange={(e) => setStreamTitle(e.target.value)}
+                              className="liquid-glass-panel border-white/10"
                             />
                           </div>
-                          <Button onClick={() => handleConnectToPlatform('twitch')} className="w-full">
+                          <Button onClick={() => handleConnectToPlatform('twitch')} className="w-full bg-purple-600 hover:bg-purple-700">
                             Connect to Twitch
                           </Button>
                         </TabsContent>
@@ -387,6 +392,7 @@ const StreamingApp = () => {
                               placeholder="Enter your YouTube stream key..."
                               value={youtubeStreamKey}
                               onChange={(e) => setYoutubeStreamKey(e.target.value)}
+                              className="liquid-glass-panel border-white/10"
                             />
                           </div>
                           <div>
@@ -396,6 +402,7 @@ const StreamingApp = () => {
                               placeholder="Enter stream title..."
                               value={streamTitle}
                               onChange={(e) => setStreamTitle(e.target.value)}
+                              className="liquid-glass-panel border-white/10"
                             />
                           </div>
                           <div>
@@ -405,28 +412,29 @@ const StreamingApp = () => {
                               placeholder="Stream description..."
                               value={streamDescription}
                               onChange={(e) => setStreamDescription(e.target.value)}
+                              className="liquid-glass-panel border-white/10"
                             />
                           </div>
                           <div>
                             <Label htmlFor="privacy">Privacy</Label>
                             <Select value={privacy} onValueChange={(value: 'public' | 'unlisted' | 'private') => setPrivacy(value)}>
-                              <SelectTrigger>
+                              <SelectTrigger className="liquid-glass-panel border-white/10">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="liquid-glass-elevated border-white/10">
                                 <SelectItem value="public">Public</SelectItem>
                                 <SelectItem value="unlisted">Unlisted</SelectItem>
                                 <SelectItem value="private">Private</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
-                          <Button onClick={() => handleConnectToPlatform('youtube')} className="w-full">
+                          <Button onClick={() => handleConnectToPlatform('youtube')} className="w-full bg-red-600 hover:bg-red-700">
                             Connect to YouTube
                           </Button>
                         </TabsContent>
                       </Tabs>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)} className="liquid-glass-button">
                           Cancel
                         </Button>
                       </DialogFooter>
@@ -446,7 +454,7 @@ const StreamingApp = () => {
                 <Button
                   variant={microphone.isRecording ? "default" : "outline"}
                   onClick={handleMicrophoneToggle}
-                  className="gap-2"
+                  className={`gap-2 ${!microphone.isRecording ? 'liquid-glass-button' : ''}`}
                 >
                   {microphone.isRecording ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                   {microphone.isRecording ? "Mic On" : "Mic Off"}
@@ -462,125 +470,145 @@ const StreamingApp = () => {
                   onStopRecording={handleStopRecording}
                 />
                 
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="liquid-glass-button">
                   <Settings className="w-4 h-4" />
                 </Button>
                 
-                <Button variant="outline" size="icon" onClick={handleSignOut}>
+                <Button variant="outline" size="icon" onClick={handleSignOut} className="liquid-glass-button">
                   <LogOut className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           </div>
-        </div>
+        </LiquidGlassNav>
 
         {/* Main Studio Layout */}
         <div className="flex-1 flex gap-4 p-4">
           {/* Left Panel - Scenes & Sources */}
           <div className="w-80 space-y-4">
-            <SceneTransitions />
-            <SourceManager onAddSource={(type) => {
-              if (type === 'camera') {
-                webrtc.startCapture('camera');
-              } else if (type === 'display') {
-                webrtc.startCapture('screen');
-              }
-            }} />
+            <LiquidGlassCard variant="panel" hoverEffect={false} className="p-0">
+              <SceneTransitions />
+            </LiquidGlassCard>
+            <LiquidGlassCard variant="panel" hoverEffect={false} className="p-0">
+              <SourceManager onAddSource={(type) => {
+                if (type === 'camera') {
+                  webrtc.startCapture('camera');
+                } else if (type === 'display') {
+                  webrtc.startCapture('screen');
+                }
+              }} />
+            </LiquidGlassCard>
           </div>
 
           {/* Center - Preview & Audio */}
           <div className="flex-1 space-y-4">
             {/* Stream Preview */}
-            <StreamPreview
-              isLive={twitch.isStreaming || youtube.isStreaming}
-              viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
-              streamRef={webrtc.streamRef}
-              resolution={captureStats.resolution}
-              fps={captureStats.fps}
-            />
+            <LiquidGlassCard variant="elevated" hoverEffect={false} className="p-0 overflow-hidden">
+              <StreamPreview
+                isLive={twitch.isStreaming || youtube.isStreaming}
+                viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
+                streamRef={webrtc.streamRef}
+                resolution={captureStats.resolution}
+                fps={captureStats.fps}
+              />
+            </LiquidGlassCard>
             
             {/* Recording Controls */}
-            <RecordingControls
-              isRecording={localRecording.isRecording}
-              isPaused={localRecording.isPaused}
-              duration={localRecording.recordingDuration}
-              hasRecording={localRecording.recordingDuration > 0 && !localRecording.isRecording}
-              onStart={handleStartRecording}
-              onStop={handleStopRecording}
-              onPause={localRecording.pauseRecording}
-              onResume={localRecording.resumeRecording}
-              onDownload={handleDownloadRecording}
-              disabled={!webrtc.isCapturing}
-            />
+            <LiquidGlassCard variant="panel" hoverEffect={false} className="p-4">
+              <RecordingControls
+                isRecording={localRecording.isRecording}
+                isPaused={localRecording.isPaused}
+                duration={localRecording.recordingDuration}
+                hasRecording={localRecording.recordingDuration > 0 && !localRecording.isRecording}
+                onStart={handleStartRecording}
+                onStop={handleStopRecording}
+                onPause={localRecording.pauseRecording}
+                onResume={localRecording.resumeRecording}
+                onDownload={handleDownloadRecording}
+                disabled={!webrtc.isCapturing}
+              />
+            </LiquidGlassCard>
             
             {/* Audio Mixer */}
-            <ProfessionalAudioMixer />
+            <LiquidGlassCard variant="panel" hoverEffect={false} className="p-0">
+              <ProfessionalAudioMixer />
+            </LiquidGlassCard>
           </div>
 
           {/* Right Panel - Analytics & Health */}
           <div className="w-96 space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
             {/* Live Viewer Stats */}
-            <LiveViewerStats 
-              isStreaming={twitch.isStreaming || youtube.isStreaming}
-              onConnectPlatform={(platform) => {
-                if (platform === 'twitch') {
-                  platformOAuth.connectTwitch();
-                } else {
-                  platformOAuth.connectYouTube();
-                }
-              }}
-            />
+            <LiquidGlassCard variant="default" hoverEffect={false} className="p-0">
+              <LiveViewerStats 
+                isStreaming={twitch.isStreaming || youtube.isStreaming}
+                onConnectPlatform={(platform) => {
+                  if (platform === 'twitch') {
+                    platformOAuth.connectTwitch();
+                  } else {
+                    platformOAuth.connectYouTube();
+                  }
+                }}
+              />
+            </LiquidGlassCard>
 
             {/* Platform Connector */}
-            <PlatformConnector />
+            <LiquidGlassCard variant="default" hoverEffect={false} className="p-0">
+              <PlatformConnector />
+            </LiquidGlassCard>
 
             {/* Stream Health Monitor */}
-            <StreamHealthMonitor />
+            <LiquidGlassCard variant="default" hoverEffect={false} className="p-0">
+              <StreamHealthMonitor />
+            </LiquidGlassCard>
             
             {/* Stream Analytics */}
             {(twitch.isStreaming || youtube.isStreaming) && (
-              <StreamAnalytics
-                viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
-                streamTime={streamTime}
-                isStreaming={twitch.isStreaming || youtube.isStreaming}
-              />
+              <LiquidGlassCard variant="glow-primary" hoverEffect={false} className="p-0">
+                <StreamAnalytics
+                  viewers={activeStream === 'twitch' ? twitch.viewers : youtube.viewers}
+                  streamTime={streamTime}
+                  isStreaming={twitch.isStreaming || youtube.isStreaming}
+                />
+              </LiquidGlassCard>
             )}
 
             {/* AI Features */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  AI Features
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Auto Highlights</span>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Chat Analysis</span>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Smart Overlays</span>
-                  <Switch />
-                </div>
-                <Button size="sm" className="w-full">
-                  AI Settings
-                </Button>
-              </CardContent>
-            </Card>
+            <LiquidGlassCard variant="glow-accent" className="p-0">
+              <Card className="bg-transparent border-0 shadow-none">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-accent" />
+                    AI Features
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Auto Highlights</span>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Chat Analysis</span>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Smart Overlays</span>
+                    <Switch />
+                  </div>
+                  <Button size="sm" className="w-full liquid-glass-button">
+                    AI Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            </LiquidGlassCard>
           </div>
         </div>
       </div>
 
       {/* Chat & Polls Panel */}
-      <div className="w-80 border-l border-border flex flex-col">
+      <div className="w-80 liquid-glass-elevated border-l border-white/10 flex flex-col">
         <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-          <div className="p-4 border-b border-border">
-            <TabsList className="grid w-full grid-cols-3">
+          <div className="p-4 border-b border-white/10">
+            <TabsList className="grid w-full grid-cols-3 liquid-glass-panel">
               <TabsTrigger value="chat" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Chat
@@ -611,7 +639,7 @@ const StreamingApp = () => {
             >
               <Tabs defaultValue="insights" className="flex-1 flex flex-col">
                 <div className="px-4 pt-4">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-4 liquid-glass-panel">
                     <TabsTrigger value="insights">Insights</TabsTrigger>
                     <TabsTrigger value="voice">Voice</TabsTrigger>
                     <TabsTrigger value="captions">Captions</TabsTrigger>

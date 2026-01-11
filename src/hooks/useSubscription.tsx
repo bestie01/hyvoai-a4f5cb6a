@@ -7,6 +7,9 @@ interface SubscriptionData {
   subscribed: boolean;
   subscription_tier: string | null;
   subscription_end: string | null;
+  is_paused?: boolean;
+  paused_at?: string | null;
+  payment_status?: string | null;
 }
 
 export const useSubscription = () => {
@@ -14,6 +17,9 @@ export const useSubscription = () => {
     subscribed: false,
     subscription_tier: null,
     subscription_end: null,
+    is_paused: false,
+    paused_at: null,
+    payment_status: null,
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -26,6 +32,9 @@ export const useSubscription = () => {
         subscribed: false,
         subscription_tier: null,
         subscription_end: null,
+        is_paused: false,
+        paused_at: null,
+        payment_status: null,
       });
       setInitialLoading(false);
       return;
@@ -45,6 +54,9 @@ export const useSubscription = () => {
         subscribed: data.subscribed || false,
         subscription_tier: data.subscription_tier || null,
         subscription_end: data.subscription_end || null,
+        is_paused: data.is_paused || false,
+        paused_at: data.paused_at || null,
+        payment_status: data.payment_status || null,
       });
 
       if (showToast && data.subscribed) {
@@ -72,7 +84,7 @@ export const useSubscription = () => {
     }
   }, [user, session, toast]);
 
-  const createCheckout = async (plan: 'starter' | 'pro' | 'yearone') => {
+  const createCheckout = async (plan: 'starter' | 'pro' | 'yearone', promoCode?: string) => {
     if (!user || !session) {
       toast({
         title: "Authentication required",
@@ -85,7 +97,7 @@ export const useSubscription = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan },
+        body: { plan, promoCode },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -154,6 +166,90 @@ export const useSubscription = () => {
     }
   };
 
+  const pauseSubscription = async () => {
+    if (!user || !session) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to pause subscription",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pause-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Subscription Paused",
+        description: "Your subscription has been paused. You can resume anytime.",
+      });
+
+      // Refresh subscription status
+      await checkSubscription(false);
+      
+      return true;
+    } catch (error) {
+      console.error('Error pausing subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to pause subscription. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resumeSubscription = async () => {
+    if (!user || !session) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to resume subscription",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resume-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Subscription Resumed",
+        description: "Your subscription has been resumed successfully!",
+      });
+
+      // Refresh subscription status
+      await checkSubscription(false);
+      
+      return true;
+    } catch (error) {
+      console.error('Error resuming subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to resume subscription. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Check subscription on auth changes
   useEffect(() => {
     checkSubscription();
@@ -174,6 +270,19 @@ export const useSubscription = () => {
     checkSubscription(true);
   };
 
+  // Computed properties for feature access
+  const isPro = subscription.subscribed && (subscription.subscription_tier === 'Pro' || subscription.subscription_tier === 'Year One');
+  const isYearOne = subscription.subscribed && subscription.subscription_tier === 'Year One';
+  const isStarter = subscription.subscribed && subscription.subscription_tier === 'Starter';
+  const isPaid = subscription.subscribed;
+  const isPaused = subscription.is_paused || false;
+  const paymentFailed = subscription.payment_status === 'failed';
+
+  // Feature access helpers
+  const canAccessStudio = isPaid && !isPaused;
+  const canAccessAI = isPro && !isPaused;
+  const canAccessAdvanced = isYearOne && !isPaused;
+
   return {
     subscription,
     loading,
@@ -182,9 +291,18 @@ export const useSubscription = () => {
     refreshSubscription,
     createCheckout,
     openCustomerPortal,
-    isPro: subscription.subscribed && (subscription.subscription_tier === 'Pro' || subscription.subscription_tier === 'Year One'),
-    isYearOne: subscription.subscribed && subscription.subscription_tier === 'Year One',
-    isStarter: subscription.subscribed && subscription.subscription_tier === 'Starter',
-    isPaid: subscription.subscribed,
+    pauseSubscription,
+    resumeSubscription,
+    // Tier checks
+    isPro,
+    isYearOne,
+    isStarter,
+    isPaid,
+    isPaused,
+    paymentFailed,
+    // Feature access
+    canAccessStudio,
+    canAccessAI,
+    canAccessAdvanced,
   };
 };
