@@ -217,6 +217,7 @@ serve(async (req) => {
             subscribed: false,
             subscription_tier: null,
             subscription_end: null,
+            payment_status: 'cancelled',
             updated_at: new Date().toISOString(),
           }, { onConflict: 'email' });
 
@@ -226,6 +227,122 @@ serve(async (req) => {
           logStep("Successfully marked subscriber as unsubscribed");
           const customerName = (customer as Stripe.Customer).name;
           await sendSubscriptionEmail(email, "subscription_cancelled", undefined, undefined, customerName || undefined);
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        logStep("Payment failed", { invoiceId: invoice.id });
+
+        const customerId = invoice.customer as string;
+        const customer = await stripe.customers.retrieve(customerId);
+        const email = (customer as Stripe.Customer).email;
+
+        if (!email) {
+          logStep("ERROR: No email found for customer");
+          break;
+        }
+
+        logStep("Marking payment as failed", { email });
+
+        const { error } = await supabaseClient
+          .from("subscribers")
+          .update({
+            payment_status: 'failed',
+            payment_failed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("email", email);
+
+        if (error) {
+          logStep("ERROR: Failed to update payment status");
+        } else {
+          logStep("Successfully marked payment as failed");
+          // Send payment failed notification email
+          try {
+            const supabaseUrl = Deno.env.get("SUPABASE_URL");
+            const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+            
+            if (supabaseUrl && supabaseKey) {
+              await fetch(`${supabaseUrl}/functions/v1/send-subscription-email`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${supabaseKey}`,
+                },
+                body: JSON.stringify({ 
+                  email, 
+                  name: (customer as Stripe.Customer).name,
+                  eventType: "payment_failed",
+                  amount: invoice.amount_due / 100
+                }),
+              });
+            }
+          } catch (emailError) {
+            logStep("Error sending payment failed email");
+          }
+        }
+        break;
+      }
+
+      case "customer.subscription.paused": {
+        const subscription = event.data.object as Stripe.Subscription;
+        logStep("Subscription paused", { subscriptionId: subscription.id });
+
+        const customerId = subscription.customer as string;
+        const customer = await stripe.customers.retrieve(customerId);
+        const email = (customer as Stripe.Customer).email;
+
+        if (!email) {
+          logStep("ERROR: No email found for customer");
+          break;
+        }
+
+        const { error } = await supabaseClient
+          .from("subscribers")
+          .update({
+            is_paused: true,
+            paused_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("email", email);
+
+        if (error) {
+          logStep("ERROR: Failed to update pause status");
+        } else {
+          logStep("Successfully marked subscription as paused");
+        }
+        break;
+      }
+
+      case "customer.subscription.resumed": {
+        const subscription = event.data.object as Stripe.Subscription;
+        logStep("Subscription resumed", { subscriptionId: subscription.id });
+
+        const customerId = subscription.customer as string;
+        const customer = await stripe.customers.retrieve(customerId);
+        const email = (customer as Stripe.Customer).email;
+
+        if (!email) {
+          logStep("ERROR: No email found for customer");
+          break;
+        }
+
+        const { error } = await supabaseClient
+          .from("subscribers")
+          .update({
+            is_paused: false,
+            paused_at: null,
+            resume_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("email", email);
+
+        if (error) {
+          logStep("ERROR: Failed to update resume status");
+        } else {
+          logStep("Successfully marked subscription as resumed");
         }
         break;
       }

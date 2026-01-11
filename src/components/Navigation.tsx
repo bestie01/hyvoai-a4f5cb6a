@@ -35,6 +35,9 @@ const Navigation = () => {
     label: "Community",
     href: "/community"
   }, {
+    label: "Native",
+    href: "/native"
+  }, {
     label: "Pricing",
     href: "/pricing"
   }, {

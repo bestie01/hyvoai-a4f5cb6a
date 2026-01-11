@@ -86,3 +86,9 @@ verify_jwt = true
 
 [functions.ai-thumbnail-recreate]
 verify_jwt = true
+
+[functions.pause-subscription]
+verify_jwt = true
+
+[functions.resume-subscription]
+verify_jwt = true
