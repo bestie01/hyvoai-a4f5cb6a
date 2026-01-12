@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Eye, EyeOff, ArrowLeft, Crown, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,76 +16,42 @@ import { z } from "zod";
 // Validation schemas
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+
 const containerVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20
-  },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.5,
-      staggerChildren: 0.1
-    }
+    transition: { duration: 0.5, staggerChildren: 0.1 }
   },
-  exit: {
-    opacity: 0,
-    y: -20,
-    transition: {
-      duration: 0.3
-    }
-  }
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
 };
+
 const itemVariants = {
-  hidden: {
-    opacity: 0,
-    y: 10
-  },
-  visible: {
-    opacity: 1,
-    y: 0
-  }
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 }
 };
+
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    user,
-    signUp,
-    signIn,
-    signInWithTwitch,
-    signInWithGoogle,
-    signInWithDiscord,
-    resetPassword
-  } = useAuth();
-  const {
-    createCheckout
-  } = useSubscription();
-  const {
-    toast
-  } = useToast();
+  const { user, signUp, signIn, signInWithTwitch, signInWithGoogle, signInWithDiscord, resetPassword } = useAuth();
+  const { createCheckout } = useSubscription();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{
-    email?: string;
-    password?: string;
-  }>({});
+  const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
 
-  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Get redirect info from location state
   const redirectPath = location.state?.redirect || '/studio';
   const planId = location.state?.plan;
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      // If user is authenticated and there's a plan to subscribe to
       if (planId) {
         if (planId === "pro") {
           createCheckout('pro');
@@ -95,46 +60,31 @@ const Auth = () => {
         }
         return;
       }
-      // Otherwise redirect to the specified path
       const from = new URLSearchParams(window.location.search).get('from') || redirectPath;
-      navigate(from, {
-        replace: true
-      });
+      navigate(from, { replace: true });
     }
   }, [user, navigate, redirectPath, planId, createCheckout]);
+
   const validateForm = (isSignUp: boolean) => {
-    const errors: {
-      email?: string;
-      password?: string;
-    } = {};
-    try {
-      emailSchema.parse(email);
-    } catch (e) {
-      errors.email = "Please enter a valid email address";
-    }
-    try {
-      passwordSchema.parse(password);
-    } catch (e) {
-      errors.password = "Password must be at least 6 characters";
-    }
+    const errors: { email?: string; password?: string } = {};
+    try { emailSchema.parse(email); } catch { errors.email = "Please enter a valid email address"; }
+    try { passwordSchema.parse(password); } catch { errors.password = "Password must be at least 6 characters"; }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(true)) return;
     if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive"
-      });
+      toast({ title: "Passwords don't match", description: "Please make sure your passwords match.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     await signUp(email, password);
     setIsLoading(false);
   };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm(false)) return;
@@ -142,6 +92,7 @@ const Auth = () => {
     await signIn(email, password);
     setIsLoading(false);
   };
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -149,46 +100,66 @@ const Auth = () => {
     setIsLoading(false);
     setIsResetMode(false);
   };
-  return <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 -z-10">
-        <motion.div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" animate={{
-        scale: [1, 1.2, 1],
-        opacity: [0.3, 0.5, 0.3]
-      }} transition={{
-        duration: 8,
-        repeat: Infinity
-      }} />
-        <motion.div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl" animate={{
-        scale: [1, 1.3, 1],
-        opacity: [0.3, 0.5, 0.3]
-      }} transition={{
-        duration: 10,
-        repeat: Infinity,
-        delay: 1
-      }} />
+
+  return (
+    <div className="min-h-screen liquid-glass-bg flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background with particles effect */}
+      <div className="fixed inset-0 -z-10">
+        <motion.div
+          className="absolute top-20 left-10 w-72 h-72 bg-primary/15 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3], x: [0, 50, 0] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-10 w-96 h-96 bg-accent/15 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3], y: [0, -50, 0] }}
+          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 12, repeat: Infinity, delay: 2 }}
+        />
+        
+        {/* Floating particles */}
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-primary/30 rounded-full"
+            style={{
+              left: `${15 + i * 15}%`,
+              top: `${20 + (i % 3) * 25}%`,
+            }}
+            animate={{
+              y: [-20, 20, -20],
+              x: [-10, 10, -10],
+              opacity: [0.3, 0.7, 0.3],
+            }}
+            transition={{
+              duration: 4 + i,
+              repeat: Infinity,
+              delay: i * 0.5,
+            }}
+          />
+        ))}
       </div>
       
       <motion.div className="w-full max-w-md space-y-6" variants={containerVariants} initial="hidden" animate="visible">
         {/* Header */}
         <motion.div className="text-center space-y-2" variants={itemVariants}>
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors liquid-glass-button px-3 py-1.5 rounded-full">
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
-          <motion.div className="flex items-center justify-center gap-2 mb-2" whileHover={{
-          scale: 1.02
-        }}>
-            <div className="p-2 rounded-lg bg-gradient-primary shadow-glow-primary">
+          <motion.div className="flex items-center justify-center gap-2 mb-2" whileHover={{ scale: 1.02 }}>
+            <div className="p-2.5 rounded-xl bg-gradient-primary shadow-glow-primary">
               <img 
                 src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" 
                 alt="Hyvo.ai Logo" 
-                className="w-6 h-6 object-contain brightness-0 invert dark:brightness-100 dark:invert-0" 
+                className="w-7 h-7 object-contain brightness-0 invert dark:brightness-100 dark:invert-0" 
               />
             </div>
-            <h1 className="text-2xl font-bold text-gradient-primary">
-              Hyvo.ai
-            </h1>
+            <h1 className="text-2xl font-bold text-gradient-primary">Hyvo.ai</h1>
           </motion.div>
           <p className="text-muted-foreground">
             {isResetMode ? "Reset your password" : planId ? "Sign in to subscribe" : "Access your streaming studio"}
@@ -196,218 +167,205 @@ const Auth = () => {
         </motion.div>
 
         {/* Plan Info */}
-        {planId && <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
+        {planId && (
+          <motion.div 
+            className="liquid-glass-card p-4 liquid-glass-glow-primary"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
             <div className="flex items-center gap-2 mb-2">
               <Crown className="w-5 h-5 text-primary" />
               <h3 className="font-semibold text-primary">
                 {planId === "pro" ? "Pro Monthly Plan" : "Year One Annual Plan"}
               </h3>
-              <Badge variant="secondary" className="bg-primary/10">
+              <Badge variant="secondary" className="liquid-glass-badge">
                 {planId === "pro" ? "$15/month" : "$30/year"}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {planId === "pro" ? "Sign in to start your Pro subscription with advanced streaming features" : "Sign in to get Year One annual plan with 50% savings and exclusive perks"}
+              {planId === "pro" 
+                ? "Sign in to start your Pro subscription with advanced streaming features" 
+                : "Sign in to get Year One annual plan with 50% savings and exclusive perks"}
             </p>
-          </div>}
+          </motion.div>
+        )}
 
         {/* Reset Password Form */}
-        {isResetMode ? <Card>
-            <CardHeader>
-              <CardTitle>Reset Password</CardTitle>
-              <CardDescription>
-                Enter your email address and we'll send you a reset link
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleResetPassword}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">Email</Label>
-                  <Input id="reset-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col space-y-4">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send Reset Link"}
-                </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setIsResetMode(false)}>
-                  Back to Sign In
-                </Button>
-              </CardFooter>
-            </form>
-          </Card> : (/* Auth Tabs */
-      <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        {isResetMode ? (
+          <motion.div variants={itemVariants}>
+            <Card className="liquid-glass-card">
+              <CardHeader>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>Enter your email address and we'll send you a reset link</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleResetPassword}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input id="reset-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required className="liquid-glass-button" />
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                  <Button type="submit" className="w-full btn-glow" disabled={isLoading}>
+                    {isLoading ? "Sending..." : "Send Reset Link"}
+                  </Button>
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setIsResetMode(false)}>
+                    Back to Sign In
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </motion.div>
+        ) : (
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 liquid-glass-panel p-1">
+              <TabsTrigger value="signin" className="data-[state=active]:bg-primary/20">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="data-[state=active]:bg-primary/20">Sign Up</TabsTrigger>
             </TabsList>
             
             {/* Sign In Tab */}
             <TabsContent value="signin" forceMount className="data-[state=inactive]:hidden">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Welcome Back</CardTitle>
-                  <CardDescription>
-                    Sign in to access your streaming studio
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleSignIn}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
-                      <Input id="signin-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required />
-                      {validationErrors.email && <p className="text-sm text-destructive">{validationErrors.email}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
-                      <div className="relative">
-                        <Input id="signin-password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <motion.div variants={itemVariants}>
+                <Card className="liquid-glass-card">
+                  <CardHeader>
+                    <CardTitle>Welcome Back</CardTitle>
+                    <CardDescription>Sign in to access your streaming studio</CardDescription>
+                  </CardHeader>
+                  <form onSubmit={handleSignIn}>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-email">Email</Label>
+                        <Input id="signin-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required className="liquid-glass-button" />
+                        {validationErrors.email && <p className="text-sm text-destructive">{validationErrors.email}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <div className="relative">
+                          <Input id="signin-password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required className="liquid-glass-button" />
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {validationErrors.password && <p className="text-sm text-destructive">{validationErrors.password}</p>}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col space-y-4">
+                      <Button type="submit" className="w-full btn-glow" disabled={isLoading}>
+                        {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing In...</> : "Sign In"}
+                      </Button>
+                      
+                      <div className="relative w-full">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-white/10" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="liquid-glass-badge px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3 w-full">
+                        <Button type="button" variant="outline" onClick={signInWithTwitch} disabled={isLoading} className="liquid-glass-button">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                          </svg>
+                        </Button>
+                        <Button type="button" variant="outline" onClick={signInWithGoogle} disabled={isLoading} className="liquid-glass-button">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                            <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                          </svg>
+                        </Button>
+                        <Button type="button" variant="outline" onClick={signInWithDiscord} disabled={isLoading} className="liquid-glass-button">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z" />
+                          </svg>
                         </Button>
                       </div>
-                      {validationErrors.password && <p className="text-sm text-destructive">{validationErrors.password}</p>}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col space-y-4">
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing In...</> : "Sign In"}
-                    </Button>
-                    
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">
-                          Or continue with
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Button type="button" variant="outline" className="w-full" onClick={signInWithTwitch} disabled={isLoading}>
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-                      </svg>
-                      Sign in with Twitch
-                    </Button>
-
-                    <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle} disabled={isLoading}>
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                      </svg>
-                      Sign in with Google
-                    </Button>
-
-                    <Button type="button" variant="outline" className="w-full" onClick={signInWithDiscord} disabled={isLoading}>
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z" />
-                      </svg>
-                      Sign in with Discord
-                    </Button>
-                    
-                    <Button type="button" variant="ghost" className="w-full text-sm" onClick={() => setIsResetMode(true)}>
-                      Forgot your password?
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
+                      
+                      <Button type="button" variant="ghost" className="w-full text-sm" onClick={() => setIsResetMode(true)}>
+                        Forgot your password?
+                      </Button>
+                    </CardFooter>
+                  </form>
+                </Card>
+              </motion.div>
             </TabsContent>
             
             {/* Sign Up Tab */}
             <TabsContent value="signup" forceMount className="data-[state=inactive]:hidden">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
-                  <CardDescription>
-                    Get started with your free Hyvo.ai account
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleSignUp}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <div className="relative">
-                        <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="Create a password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-                        <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <motion.div variants={itemVariants}>
+                <Card className="liquid-glass-card">
+                  <CardHeader>
+                    <CardTitle>Create Account</CardTitle>
+                    <CardDescription>Get started with your free Hyvo.ai account</CardDescription>
+                  </CardHeader>
+                  <form onSubmit={handleSignUp}>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input id="signup-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required className="liquid-glass-button" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <div className="relative">
+                          <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="Create a password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="liquid-glass-button" />
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm Password</Label>
+                        <Input id="confirm-password" type={showPassword ? "text" : "password"} placeholder="Confirm your password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6} className="liquid-glass-button" />
+                        {password !== confirmPassword && confirmPassword && <p className="text-sm text-destructive">Passwords don't match</p>}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col space-y-4">
+                      <Button type="submit" className="w-full btn-glow" disabled={isLoading || password !== confirmPassword}>
+                        {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating Account...</> : "Create Account"}
+                      </Button>
+                      
+                      <div className="relative w-full">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-white/10" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="liquid-glass-badge px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3 w-full">
+                        <Button type="button" variant="outline" onClick={signInWithTwitch} disabled={isLoading} className="liquid-glass-button">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                          </svg>
+                        </Button>
+                        <Button type="button" variant="outline" onClick={signInWithGoogle} disabled={isLoading} className="liquid-glass-button">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                            <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                          </svg>
+                        </Button>
+                        <Button type="button" variant="outline" onClick={signInWithDiscord} disabled={isLoading} className="liquid-glass-button">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z" />
+                          </svg>
                         </Button>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <Input id="confirm-password" type={showPassword ? "text" : "password"} placeholder="Confirm your password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6} />
-                      {password !== confirmPassword && confirmPassword && <p className="text-sm text-destructive">Passwords don't match</p>}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col space-y-4">
-                    <Button type="submit" className="w-full" disabled={isLoading || password !== confirmPassword}>
-                      {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating Account...</> : "Create Account"}
-                    </Button>
-                    
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">
-                          Or continue with
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Button type="button" variant="outline" className="w-full" onClick={signInWithTwitch} disabled={isLoading}>
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-                      </svg>
-                      Sign up with Twitch
-                    </Button>
-
-                    <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle} disabled={isLoading}>
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                      </svg>
-                      Sign up with Google
-                    </Button>
-
-                    <Button type="button" variant="outline" className="w-full" onClick={signInWithDiscord} disabled={isLoading}>
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z" />
-                      </svg>
-                      Sign up with Discord
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
+                    </CardFooter>
+                  </form>
+                </Card>
+              </motion.div>
             </TabsContent>
-          </Tabs>)}
-
-        <Separator />
-        
-        {/* Footer */}
-        <motion.div className="text-center text-sm text-muted-foreground" variants={itemVariants}>
-          <p>
-            By continuing, you agree to our{" "}
-            <Link to="#" className="underline underline-offset-4 hover:text-foreground">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link to="#" className="underline underline-offset-4 hover:text-foreground">
-              Privacy Policy
-            </Link>
-          </p>
-        </motion.div>
+          </Tabs>
+        )}
       </motion.div>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;
