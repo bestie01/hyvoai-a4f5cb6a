@@ -1,4 +1,5 @@
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { ProBadge } from "@/components/ProFeatureGate";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { ScrollProgress } from "@/components/effects/ScrollProgress";
+import { PricingCalculator } from "@/components/PricingCalculator";
+import { ScrollReveal } from "@/components/animations/ScrollReveal";
+import { ComparisonSlider } from "@/components/ComparisonSlider";
 const Pricing = () => {
   const {
     createCheckout,
@@ -89,6 +94,7 @@ const Pricing = () => {
   };
   return <PageTransition>
       <div className="min-h-screen bg-gradient-hero">
+        <ScrollProgress color="gradient" />
         <Navigation />
         
         {/* Hero Section */}

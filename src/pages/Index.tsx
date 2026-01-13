@@ -7,18 +7,83 @@ import { ParticleSystem } from "@/components/animations/ParticleSystem";
 import { CursorGlow } from "@/components/effects/CursorGlow";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { ScrollProgress } from "@/components/effects/ScrollProgress";
+import { FloatingActions } from "@/components/ui/floating-actions";
+import { InteractiveDemo } from "@/components/InteractiveDemo";
+import { PricingCalculator } from "@/components/PricingCalculator";
+import { ScrollReveal } from "@/components/animations/ScrollReveal";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-background relative scroll-smooth">
-        <CursorGlow />
+        <ScrollProgress color="gradient" />
+        <CursorGlow color="dynamic" magnetic trail />
+        <FloatingActions />
         <Navigation />
         <div className="relative">
           <ParticleSystem count={30} className="opacity-40" />
           <Hero />
         </div>
         <Features />
+        
+        {/* Interactive Demo Section */}
+        <section className="py-24 bg-background relative overflow-hidden">
+          <div className="absolute inset-0 bg-mesh opacity-40" />
+          <motion.div 
+            className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px]"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 10, repeat: Infinity }}
+          />
+          <div className="container mx-auto px-6 relative z-10">
+            <ScrollReveal className="text-center mb-12">
+              <Badge variant="secondary" className="mb-4 inline-flex items-center gap-2 glass-strong rounded-full border-primary/20">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="font-semibold">Try It Yourself</span>
+              </Badge>
+              <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+                Experience the <span className="text-gradient-primary">Power</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Hover over the hotspots to explore our professional streaming features
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.2}>
+              <InteractiveDemo />
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* Pricing Calculator Section */}
+        <section className="py-24 bg-gradient-hero relative overflow-hidden">
+          <div className="absolute inset-0 bg-mesh opacity-40" />
+          <motion.div 
+            className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px]"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.35, 0.2] }}
+            transition={{ duration: 12, repeat: Infinity }}
+          />
+          <div className="container mx-auto px-6 relative z-10">
+            <ScrollReveal className="text-center mb-12">
+              <Badge variant="secondary" className="mb-4 inline-flex items-center gap-2 glass-strong rounded-full border-primary/20">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="font-semibold">Find Your Plan</span>
+              </Badge>
+              <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+                What Do <span className="text-gradient-primary">You Need?</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Answer a few questions and we'll recommend the perfect plan for you
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.2}>
+              <PricingCalculator />
+            </ScrollReveal>
+          </div>
+        </section>
+        
         <CTA />
         <Footer />
         <ScrollToTop />
