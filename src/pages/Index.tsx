@@ -14,8 +14,9 @@ import { PricingCalculator } from "@/components/PricingCalculator";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
 import { PlatformLogos } from "@/components/PlatformLogos";
+import { VideoTestimonials } from "@/components/VideoTestimonials";
 import { motion } from "framer-motion";
-import { Sparkles, Users, MessageSquare } from "lucide-react";
+import { Sparkles, Users, MessageSquare, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
@@ -120,6 +121,9 @@ const Index = () => {
             </ScrollReveal>
           </div>
         </section>
+
+        {/* Video Testimonials Section */}
+        <VideoTestimonials />
         
         <CTA />
         <Footer />
