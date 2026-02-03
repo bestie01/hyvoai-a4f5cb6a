@@ -105,13 +105,13 @@ export function VideoTestimonials() {
     
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        "https://fxvvcyjwgxxxezqzucwm.supabase.co/functions/v1/elevenlabs-tts",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dnZjeWp3Z3h4eGV6cXp1Y3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzExNzEsImV4cCI6MjA3MTEwNzE3MX0.Lv6PT9SfKcNWHmnFHi3Nr7RiPVwe-vurSN3u-82yCg8",
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dnZjeWp3Z3h4eGV6cXp1Y3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MzExNzEsImV4cCI6MjA3MTEwNzE3MX0.Lv6PT9SfKcNWHmnFHi3Nr7RiPVwe-vurSN3u-82yCg8",
           },
           body: JSON.stringify({ 
             text: testimonial.quote, 

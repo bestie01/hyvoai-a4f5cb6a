@@ -146,6 +146,10 @@ export const InteractiveDemo = () => {
               } backdrop-blur-sm border border-border shadow-lg`}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
+              onFocus={() => setActiveFeature(feature.id)}
+              onBlur={() => setActiveFeature(null)}
+              aria-label={feature.label}
+              aria-describedby={`tooltip-${feature.id}`}
             >
               {feature.icon}
               
@@ -161,6 +165,8 @@ export const InteractiveDemo = () => {
             <AnimatePresence>
               {activeFeature === feature.id && (
                 <motion.div
+                  id={`tooltip-${feature.id}`}
+                  role="tooltip"
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
@@ -196,7 +202,7 @@ export const InteractiveDemo = () => {
 
       {/* Instructions */}
       <p className="text-center text-muted-foreground text-sm mt-4">
-        Hover over the buttons to explore features
+        Hover over or focus on the buttons to explore features
       </p>
     </div>
   );
