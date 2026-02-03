@@ -25,49 +25,42 @@ const Footer = () => {
       href: "/download"
     }],
     resources: [{
-      label: "Documentation",
-      href: "/docs"
-    }, {
       label: "Community",
       href: "/community"
     }, {
       label: "Growth Tips",
       href: "/growth"
     }, {
-      label: "API",
-      href: "/api"
+      label: "Schedule",
+      href: "/schedule"
+    }, {
+      label: "Settings",
+      href: "/settings"
     }, {
       label: "Support",
-      href: "/support"
+      href: "mailto:support@hyvo.ai",
+      external: true
     }],
     company: [{
       label: "About",
-      href: "/about"
+      href: "/#features"
     }, {
-      label: "Blog",
-      href: "/blog"
+      label: "Creators",
+      href: "/community"
     }, {
-      label: "Careers",
-      href: "/careers"
-    }, {
-      label: "Press Kit",
-      href: "/press"
+      label: "Native Features",
+      href: "/native"
     }, {
       label: "Contact",
-      href: "/contact"
+      href: "mailto:hello@hyvo.ai",
+      external: true
     }],
     legal: [{
-      label: "Privacy",
-      href: "/privacy"
+      label: "Privacy Policy",
+      href: "/#features"
     }, {
-      label: "Terms",
-      href: "/terms"
-    }, {
-      label: "Security",
-      href: "/security"
-    }, {
-      label: "Cookies",
-      href: "/cookies"
+      label: "Terms of Service",
+      href: "/#features"
     }]
   };
   const socialLinks = [{
@@ -144,11 +137,18 @@ const Footer = () => {
               <div className="space-y-5">
                 <h3 className="font-semibold text-foreground capitalize text-sm tracking-wide">{category}</h3>
                 <ul className="space-y-3.5">
-                  {links.map(link => <li key={link.label}>
-                      <Link to={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 group">
-                        <span className="w-0 h-px bg-primary group-hover:w-3 transition-all duration-300" />
-                        {link.label}
-                      </Link>
+                  {links.map((link: { label: string; href: string; external?: boolean }) => <li key={link.label}>
+                      {link.external ? (
+                        <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 group">
+                          <span className="w-0 h-px bg-primary group-hover:w-3 transition-all duration-300" />
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link to={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 group">
+                          <span className="w-0 h-px bg-primary group-hover:w-3 transition-all duration-300" />
+                          {link.label}
+                        </Link>
+                      )}
                     </li>)}
                 </ul>
               </div>
