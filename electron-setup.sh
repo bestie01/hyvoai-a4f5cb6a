@@ -16,25 +16,42 @@ fi
 echo "✅ Node.js detected: $(node -v)"
 echo ""
 
-# Install dependencies
+# Install dependencies with legacy peer deps to avoid conflicts
 echo "📦 Installing dependencies..."
-npm install
+npm install --legacy-peer-deps
 
-# Add Electron platform if not exists
-if [ ! -d "electron" ]; then
-    echo "🔧 Adding Electron platform..."
-    npx cap add electron
-else
-    echo "✅ Electron platform already exists"
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to install dependencies"
+    exit 1
 fi
 
 # Build web assets
 echo "🏗️  Building web assets..."
 npm run build
 
-# Sync to Electron
-echo "🔄 Syncing to Electron..."
-npx cap sync electron
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to build web assets"
+    exit 1
+fi
+
+# Prepare Electron directory
+echo "📁 Preparing Electron directory..."
+
+# Create electron/app directory if it doesn't exist
+mkdir -p electron/app
+mkdir -p electron/app/icons
+
+# Copy built files to Electron app directory
+cp -r dist/* electron/app/
+
+# Copy app icon if it exists
+if [ -f "public/app-icon-1024.png" ]; then
+    cp public/app-icon-1024.png electron/app/icons/appIcon.png
+elif [ -f "public/hyvo-logo.png" ]; then
+    cp public/hyvo-logo.png electron/app/icons/appIcon.png
+fi
+
+echo "✅ Web build copied to electron/app"
 
 # Navigate to electron directory
 cd electron
@@ -43,17 +60,19 @@ cd electron
 echo "📦 Installing Electron dependencies..."
 npm install
 
-# Install electron-builder
-echo "📦 Installing electron-builder..."
-npm install --save-dev electron-builder
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to install Electron dependencies"
+    exit 1
+fi
 
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. To run in development: cd electron && npm start"
-echo "2. To build Windows: cd electron && npm run build:win"
-echo "3. To build macOS: cd electron && npm run build:mac"
-echo "4. To build Linux: cd electron && npm run build:linux"
+echo "2. To build Windows:      cd electron && npm run build:win"
+echo "3. To build macOS:        cd electron && npm run build:mac"
+echo "4. To build Linux:        cd electron && npm run build:linux"
+echo "5. To build all:          cd electron && npm run build:all"
 echo ""
-echo "📖 See BUILD_RELEASE.md for detailed build instructions"
+echo "📖 See QUICK_START_DESKTOP.md for detailed build instructions"
