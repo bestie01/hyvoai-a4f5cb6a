@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Volume2, VolumeX, Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Star, Quote, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface VideoTestimonial {
   id: string;
@@ -18,6 +20,7 @@ interface VideoTestimonial {
   rating: number;
   followers: string;
   streamHours: string;
+  voiceId: string;
 }
 
 const testimonials: VideoTestimonial[] = [
@@ -33,6 +36,7 @@ const testimonials: VideoTestimonial[] = [
     rating: 5,
     followers: "125K",
     streamHours: "2,400+",
+    voiceId: "TX3LPaxmHKxFdv7VOQHJ", // Liam - energetic male
   },
   {
     id: "2",
@@ -46,6 +50,7 @@ const testimonials: VideoTestimonial[] = [
     rating: 5,
     followers: "89K",
     streamHours: "1,850+",
+    voiceId: "EXAVITQu4vr4xnSDxMaL", // Sarah - warm female
   },
   {
     id: "3",
@@ -59,6 +64,7 @@ const testimonials: VideoTestimonial[] = [
     rating: 5,
     followers: "210K",
     streamHours: "3,200+",
+    voiceId: "nPczCjzI2devNBz1zQrb", // Brian - professional male
   },
   {
     id: "4",
@@ -72,6 +78,7 @@ const testimonials: VideoTestimonial[] = [
     rating: 5,
     followers: "67K",
     streamHours: "980+",
+    voiceId: "pFZP5JQG7iQjIQuC4Bku", // Lily - soft female
   },
 ];
 
@@ -84,16 +91,99 @@ const platformColors = {
 export function VideoTestimonials() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
 
   const activeTestimonial = testimonials[activeIndex];
 
+  const playTestimonialAudio = useCallback(async () => {
+    const testimonial = testimonials[activeIndex];
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            text: testimonial.quote, 
+            voiceId: testimonial.voiceId 
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`TTS request failed: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      
+      // Clean up previous audio URL
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+      }
+      
+      audioUrlRef.current = URL.createObjectURL(audioBlob);
+      
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      audioRef.current = new Audio(audioUrlRef.current);
+      audioRef.current.muted = isMuted;
+      
+      audioRef.current.onended = () => {
+        setIsPlaying(false);
+      };
+      
+      await audioRef.current.play();
+      setIsPlaying(true);
+    } catch (error) {
+      console.error("Error playing testimonial audio:", error);
+      toast.error("Failed to generate audio. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeIndex, isMuted]);
+
+  const togglePlayPause = useCallback(() => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      playTestimonialAudio();
+    }
+  }, [isPlaying, playTestimonialAudio]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => {
+      if (audioRef.current) {
+        audioRef.current.muted = !prev;
+      }
+      return !prev;
+    });
+  }, []);
+
   const nextTestimonial = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     setActiveIndex((prev) => (prev + 1) % testimonials.length);
     setIsPlaying(false);
   };
 
   const prevTestimonial = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
     setIsPlaying(false);
   };
@@ -157,10 +247,15 @@ export function VideoTestimonials() {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.95 }}
-                          onClick={() => setIsPlaying(true)}
-                          className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-glow-primary"
+                          onClick={togglePlayPause}
+                          disabled={isLoading}
+                          className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-glow-primary disabled:opacity-50"
                         >
-                          <Play className="w-8 h-8 text-primary-foreground ml-1" />
+                          {isLoading ? (
+                            <Loader2 className="w-8 h-8 text-primary-foreground animate-spin" />
+                          ) : (
+                            <Play className="w-8 h-8 text-primary-foreground ml-1" />
+                          )}
                         </motion.button>
                       </motion.div>
                     )}
@@ -177,7 +272,7 @@ export function VideoTestimonials() {
                             variant="ghost"
                             size="icon"
                             className="bg-black/50 hover:bg-black/70 text-white"
-                            onClick={() => setIsPlaying(false)}
+                            onClick={togglePlayPause}
                           >
                             <Pause className="w-5 h-5" />
                           </Button>
@@ -185,7 +280,7 @@ export function VideoTestimonials() {
                             variant="ghost"
                             size="icon"
                             className="bg-black/50 hover:bg-black/70 text-white"
-                            onClick={() => setIsMuted(!isMuted)}
+                            onClick={toggleMute}
                           >
                             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                           </Button>
