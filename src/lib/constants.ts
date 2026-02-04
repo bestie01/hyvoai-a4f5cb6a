@@ -17,6 +17,13 @@ export const EXTERNAL_LINKS = {
   contact: "mailto:hello@hyvo.ai",
 } as const;
 
+// GitHub release configuration
+export const GITHUB_CONFIG = {
+  owner: 'hyvo-ai',
+  repo: 'hyvo-stream-studio',
+  apiUrl: 'https://api.github.com/repos/hyvo-ai/hyvo-stream-studio/releases/latest',
+} as const;
+
 // Feature flags
 export const FEATURES = {
   enableTTS: true,

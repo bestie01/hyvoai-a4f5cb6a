@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { GITHUB_CONFIG } from '@/lib/constants';
 
 const CURRENT_VERSION = '1.0.0';
 const DISMISSED_VERSION_KEY = 'hyvo_dismissed_version';
@@ -30,14 +31,21 @@ export function useVersionCheck() {
     try {
       setVersionInfo(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await fetch(
-        'https://api.github.com/repos/AceDZN/stream-studio/releases/latest',
-        {
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-          },
-        }
-      );
+      const response = await fetch(GITHUB_CONFIG.apiUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (response.status === 404) {
+        // No releases yet - this is expected for new repos
+        setVersionInfo(prev => ({
+          ...prev,
+          isLoading: false,
+          hasUpdate: false,
+        }));
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch release info');

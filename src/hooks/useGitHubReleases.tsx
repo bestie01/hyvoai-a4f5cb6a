@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { GITHUB_CONFIG } from '@/lib/constants';
 
 interface ReleaseAsset {
   name: string;
@@ -27,8 +28,7 @@ interface UseGitHubReleasesReturn {
   refresh: () => Promise<void>;
 }
 
-const GITHUB_REPO = 'hyvo-ai/hyvo-stream-studio';
-const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+const GITHUB_API_URL = GITHUB_CONFIG.apiUrl;
 
 export const useGitHubReleases = (): UseGitHubReleasesReturn => {
   const [release, setRelease] = useState<Release | null>(null);
