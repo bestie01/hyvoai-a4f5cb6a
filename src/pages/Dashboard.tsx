@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIPredictiveDashboard } from "@/components/ai/AIPredictiveDashboard";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { ProductTour } from "@/components/onboarding/ProductTour";
+ import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -63,13 +64,19 @@ const Dashboard = () => {
                 </Tabs>
               </main>
               
-              <aside className="w-80 liquid-glass-panel m-4 rounded-2xl overflow-hidden">
+               <aside className="w-80 liquid-glass-panel m-4 rounded-2xl overflow-hidden hidden lg:block">
                 <DashboardRightPanel />
               </aside>
             </div>
           </div>
         </div>
+         
+         {/* Mobile Bottom Navigation */}
+         <MobileBottomNav />
       </SidebarProvider>
+       
+       {/* Bottom padding for mobile to account for bottom nav */}
+       <div className="h-20 md:hidden" />
     </div>
   );
 };
