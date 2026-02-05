@@ -9,6 +9,9 @@ import { UpdateBanner } from "@/components/UpdateBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SkipLink } from "@/components/SkipLink";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+ import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
+ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+ import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -43,9 +46,12 @@ const App = () => (
         <ErrorBoundary>
           <SkipLink />
           <UpdateBanner />
+           <PWAInstallPrompt />
           <Toaster />
           <Sonner />
           <BrowserRouter>
+             <GlobalHotkeysProvider />
+             <KeyboardShortcutsModal />
             <Suspense fallback={<LoadingScreen />}>
               <main id="main-content">
                 <Routes>
