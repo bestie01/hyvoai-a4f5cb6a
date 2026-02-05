@@ -1,88 +1,233 @@
 
-# Fix GitHub Release Fetch Error
+# Comprehensive Improvements Plan
 
-## Problem
-The console shows a 404 error when fetching GitHub releases:
-```
-[network] Failed to load resource: 404
-https://api.github.com/repos/AceDZN/stream-studio/releases/latest
-```
+This plan covers four key enhancements: Dashboard Skeleton Loaders, PWA Support, Mobile Bottom Navigation, and Keyboard Shortcuts Integration.
 
-This is caused by `useVersionCheck.tsx` using an incorrect/outdated GitHub repository name.
+---
 
-## Root Cause
-Two hooks fetch from different repos:
-- `useVersionCheck.tsx` → `AceDZN/stream-studio` (wrong - returns 404)
-- `useGitHubReleases.tsx` → `hyvo-ai/hyvo-stream-studio` (correct)
+## 1. Dashboard Skeleton Loaders
 
-## Solution
+### What We're Building
+Polished loading states for Dashboard stats cards and analytics charts that match the liquid glass aesthetic.
 
-### Step 1: Centralize GitHub Configuration
-Add the GitHub repository constant to `src/lib/constants.ts`:
+### Files to Create/Modify
 
-```typescript
-// GitHub release configuration
-export const GITHUB_CONFIG = {
-  owner: 'hyvo-ai',
-  repo: 'hyvo-stream-studio',
-  apiUrl: 'https://api.github.com/repos/hyvo-ai/hyvo-stream-studio/releases/latest',
-} as const;
-```
+**Create: `src/components/ui/dashboard-skeleton.tsx`**
+- `StatCardSkeleton`: Matches the 4 stat cards layout with icon placeholder, text lines
+- `ChartSkeleton`: Matches the Recharts containers with animated gradient
+- `FeatureCardSkeleton`: Matches AI features cards
+- All components use liquid glass styling with shimmer animation
 
-### Step 2: Update useVersionCheck.tsx
-Replace the hardcoded wrong URL with the centralized constant:
+**Modify: `src/components/dashboard/DashboardMain.tsx`**
+- Replace `"..."` text loading state with proper skeleton components
+- Wrap stat cards grid with conditional skeleton rendering when `loading` is true
+- Add skeleton fallbacks for AI features and schedule sections
 
-**Before:**
-```typescript
-const response = await fetch(
-  'https://api.github.com/repos/AceDZN/stream-studio/releases/latest',
-```
+**Modify: `src/components/dashboard/ProStreamAnalytics.tsx`**
+- Add loading prop passed from parent
+- Show chart skeletons during data fetch
 
-**After:**
-```typescript
-import { GITHUB_CONFIG } from '@/lib/constants';
-// ...
-const response = await fetch(GITHUB_CONFIG.apiUrl, {
+### Implementation Details
+```text
++---------------------------------------------+
+|  LOADING STATE                              |
+|  +--------+ +--------+ +--------+ +--------+|
+|  |shimmer | |shimmer | |shimmer | |shimmer ||
+|  |  card  | |  card  | |  card  | |  card  ||
+|  +--------+ +--------+ +--------+ +--------+|
+|                                             |
+|  +------------------------------------------+
+|  |  Chart Skeleton (gradient shimmer)       |
+|  +------------------------------------------+
++---------------------------------------------+
 ```
 
-### Step 3: Update useGitHubReleases.tsx
-Use the centralized constant instead of hardcoding:
+---
 
-**Before:**
-```typescript
-const GITHUB_REPO = 'hyvo-ai/hyvo-stream-studio';
-const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+## 2. PWA Support
+
+### What We're Building
+Full Progressive Web App with service worker, offline capability, and install prompt.
+
+### Files to Create/Modify
+
+**Modify: `vite.config.ts`**
+- Import and configure `vite-plugin-pwa` (already installed)
+- Add manifest configuration with app icons, theme colors, and display settings
+- Configure service worker with workbox for caching strategies
+
+**Create: `public/pwa-192x192.png` and `public/pwa-512x512.png`**
+- Required PWA icon sizes (can use existing app-icon-1024.png as source)
+
+**Modify: `index.html`**
+- Add PWA meta tags (`theme-color`, `apple-mobile-web-app-capable`)
+- Add apple touch icon link
+
+**Create: `src/components/PWAInstallPrompt.tsx`**
+- Capture `beforeinstallprompt` event
+- Show install banner/button for eligible users
+- Track installation state
+
+**Create: `src/hooks/usePWA.tsx`**
+- Handle service worker registration
+- Detect if app is installed
+- Manage install prompt flow
+- Handle offline/online status
+
+**Modify: `src/App.tsx`**
+- Add PWAInstallPrompt component
+- Add offline indicator when connection is lost
+
+### PWA Manifest Configuration
+```text
+Name: Hyvo.ai
+Short Name: Hyvo
+Theme Color: #8b5cf6 (primary purple)
+Background: #0A0A0F (dark theme)
+Display: standalone
+Orientation: portrait
+Start URL: /dashboard
 ```
 
-**After:**
-```typescript
-import { GITHUB_CONFIG } from '@/lib/constants';
-const GITHUB_API_URL = GITHUB_CONFIG.apiUrl;
+---
+
+## 3. Mobile Bottom Navigation
+
+### What We're Building
+A fixed bottom navigation bar for mobile Dashboard users, appearing only on screens < 768px.
+
+### Files to Create/Modify
+
+**Create: `src/components/dashboard/MobileBottomNav.tsx`**
+- Fixed bottom navigation bar (height: 64px)
+- 5 nav items: Home, Studio, Analytics, Community, More
+- Active state indicator with liquid glass styling
+- Haptic feedback on tap (using existing useHaptics hook)
+- Safe area padding for iOS notch devices
+
+**Modify: `src/pages/Dashboard.tsx`**
+- Import and render MobileBottomNav
+- Add bottom padding to main content on mobile to prevent overlap
+
+**Modify: `src/components/dashboard/DashboardSidebar.tsx`**
+- Hide sidebar completely on mobile (already partially done)
+- Ensure no conflict with bottom nav
+
+### Layout
+```text
+Mobile View (< 768px):
++---------------------------+
+|  Header                   |
++---------------------------+
+|                           |
+|  Main Content             |
+|  (with bottom padding)    |
+|                           |
++---------------------------+
+| Home | Studio | + | Chat | More |  <- Bottom Nav
++---------------------------+
 ```
 
-### Step 4: Add Graceful Error Handling
-Both hooks should handle 404 gracefully without logging errors to console (since no releases may exist yet):
+### Features
+- Subtle backdrop blur effect
+- Bounce animation on tap
+- Badge indicators for notifications
+- "Go Live" center button with pulse effect
 
-```typescript
-if (response.status === 404) {
-  // No releases yet - this is expected for new repos
-  return;
-}
-```
+---
 
-## Files to Modify
-1. `src/lib/constants.ts` - Add GITHUB_CONFIG
-2. `src/hooks/useVersionCheck.tsx` - Use centralized config
-3. `src/hooks/useGitHubReleases.tsx` - Use centralized config
+## 4. Keyboard Shortcuts Integration
 
-## Expected Outcome
-- No more 404 errors in console for existing repos
-- Graceful handling when no releases exist
-- Single source of truth for GitHub configuration
-- Easy to update repo name in one place if needed
+### Current State
+- `KeyboardShortcutsModal.tsx` exists with shortcuts defined
+- Has internal keyboard listener for `?` key
+- Has floating button in bottom-left corner
+- `useHotkeys.tsx` exists for registering custom hotkeys
+
+### What We're Improving
+Make shortcuts work globally across the app, integrate with existing hotkeys system.
+
+### Files to Modify
+
+**Modify: `src/App.tsx`**
+- Import and render `KeyboardShortcutsModal` globally (move from individual pages)
+- Ensure it's available on all routes
+
+**Create: `src/hooks/useGlobalHotkeys.tsx`**
+- Centralized hook that registers all app-wide shortcuts
+- Uses existing `useHotkeys` system
+- Implements actual actions for each shortcut:
+  - `Ctrl+H`: Navigate to Dashboard
+  - `Ctrl+,`: Navigate to Settings
+  - `Ctrl+Shift+L`: Toggle streaming (navigate to /studio)
+  - `Esc`: Close any open modal
+
+**Modify: `src/components/KeyboardShortcutsModal.tsx`**
+- Keep the `?` key listener
+- Add visual indicator showing currently pressed keys
+- Improve accessibility with proper focus management
+
+**Modify: `src/pages/Dashboard.tsx`**
+- Remove any duplicate KeyboardShortcutsModal if present
+- Register Dashboard-specific hotkeys
+
+### Global Shortcuts Summary
+| Shortcut | Action |
+|----------|--------|
+| ? | Show shortcuts modal |
+| Esc | Close modal/cancel |
+| Ctrl+H | Go to Dashboard |
+| Ctrl+, | Open Settings |
+| Ctrl+Shift+L | Go to Studio |
+| 1-9 | Switch scenes (in Studio) |
+
+---
+
+## Implementation Priority
+
+| Feature | Effort | Impact | Priority |
+|---------|--------|--------|----------|
+| Dashboard Skeletons | Low | High | 1st |
+| Keyboard Shortcuts | Low | Medium | 2nd |
+| PWA Support | Medium | High | 3rd |
+| Mobile Bottom Nav | Medium | High | 4th |
+
+---
 
 ## Technical Notes
-- The GitHub API returns 404 when a repo doesn't exist OR has no releases
-- The `useGitHubReleases.tsx` already handles 404 gracefully (line 49-53)
-- The `useVersionCheck.tsx` throws an error on 404 (line 42-44) - needs fix
-- Both hooks will now use the same repo, eliminating inconsistency
+
+### Dependencies
+- `vite-plugin-pwa`: Already installed, needs configuration
+- No new dependencies required
+
+### Browser Support
+- PWA: Chrome, Edge, Safari (iOS 11.3+), Firefox
+- Service Worker: All modern browsers
+- Bottom Nav: All browsers, uses CSS safe-area-inset
+
+### Testing Recommendations
+1. Test skeleton loaders with network throttling
+2. Test PWA install on mobile Chrome/Safari
+3. Test bottom nav on various mobile devices
+4. Test keyboard shortcuts with screen readers
+
+---
+
+## Files Summary
+
+### New Files (6)
+1. `src/components/ui/dashboard-skeleton.tsx`
+2. `src/components/PWAInstallPrompt.tsx`
+3. `src/hooks/usePWA.tsx`
+4. `src/components/dashboard/MobileBottomNav.tsx`
+5. `src/hooks/useGlobalHotkeys.tsx`
+6. `public/pwa-192x192.png` (asset)
+
+### Modified Files (7)
+1. `src/components/dashboard/DashboardMain.tsx`
+2. `src/components/dashboard/ProStreamAnalytics.tsx`
+3. `vite.config.ts`
+4. `index.html`
+5. `src/App.tsx`
+6. `src/pages/Dashboard.tsx`
+7. `src/components/KeyboardShortcutsModal.tsx`
