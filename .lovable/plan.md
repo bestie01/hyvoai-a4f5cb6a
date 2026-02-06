@@ -1,233 +1,258 @@
 
-# Comprehensive Improvements Plan
+# Complete Landing Page Redesign & Vercel Optimization
 
-This plan covers four key enhancements: Dashboard Skeleton Loaders, PWA Support, Mobile Bottom Navigation, and Keyboard Shortcuts Integration.
-
----
-
-## 1. Dashboard Skeleton Loaders
-
-### What We're Building
-Polished loading states for Dashboard stats cards and analytics charts that match the liquid glass aesthetic.
-
-### Files to Create/Modify
-
-**Create: `src/components/ui/dashboard-skeleton.tsx`**
-- `StatCardSkeleton`: Matches the 4 stat cards layout with icon placeholder, text lines
-- `ChartSkeleton`: Matches the Recharts containers with animated gradient
-- `FeatureCardSkeleton`: Matches AI features cards
-- All components use liquid glass styling with shimmer animation
-
-**Modify: `src/components/dashboard/DashboardMain.tsx`**
-- Replace `"..."` text loading state with proper skeleton components
-- Wrap stat cards grid with conditional skeleton rendering when `loading` is true
-- Add skeleton fallbacks for AI features and schedule sections
-
-**Modify: `src/components/dashboard/ProStreamAnalytics.tsx`**
-- Add loading prop passed from parent
-- Show chart skeletons during data fetch
-
-### Implementation Details
-```text
-+---------------------------------------------+
-|  LOADING STATE                              |
-|  +--------+ +--------+ +--------+ +--------+|
-|  |shimmer | |shimmer | |shimmer | |shimmer ||
-|  |  card  | |  card  | |  card  | |  card  ||
-|  +--------+ +--------+ +--------+ +--------+|
-|                                             |
-|  +------------------------------------------+
-|  |  Chart Skeleton (gradient shimmer)       |
-|  +------------------------------------------+
-+---------------------------------------------+
-```
+## Overview
+This plan covers two major areas:
+1. **Vercel Build Optimization** - Ensure the application builds and runs successfully on Vercel
+2. **Landing Page Redesign** - Complete restructure to focus on streamer problems and Hyvo.ai as the AI co-pilot solution
 
 ---
 
-## 2. PWA Support
-
-### What We're Building
-Full Progressive Web App with service worker, offline capability, and install prompt.
-
-### Files to Create/Modify
-
-**Modify: `vite.config.ts`**
-- Import and configure `vite-plugin-pwa` (already installed)
-- Add manifest configuration with app icons, theme colors, and display settings
-- Configure service worker with workbox for caching strategies
-
-**Create: `public/pwa-192x192.png` and `public/pwa-512x512.png`**
-- Required PWA icon sizes (can use existing app-icon-1024.png as source)
-
-**Modify: `index.html`**
-- Add PWA meta tags (`theme-color`, `apple-mobile-web-app-capable`)
-- Add apple touch icon link
-
-**Create: `src/components/PWAInstallPrompt.tsx`**
-- Capture `beforeinstallprompt` event
-- Show install banner/button for eligible users
-- Track installation state
-
-**Create: `src/hooks/usePWA.tsx`**
-- Handle service worker registration
-- Detect if app is installed
-- Manage install prompt flow
-- Handle offline/online status
-
-**Modify: `src/App.tsx`**
-- Add PWAInstallPrompt component
-- Add offline indicator when connection is lost
-
-### PWA Manifest Configuration
-```text
-Name: Hyvo.ai
-Short Name: Hyvo
-Theme Color: #8b5cf6 (primary purple)
-Background: #0A0A0F (dark theme)
-Display: standalone
-Orientation: portrait
-Start URL: /dashboard
-```
-
----
-
-## 3. Mobile Bottom Navigation
-
-### What We're Building
-A fixed bottom navigation bar for mobile Dashboard users, appearing only on screens < 768px.
-
-### Files to Create/Modify
-
-**Create: `src/components/dashboard/MobileBottomNav.tsx`**
-- Fixed bottom navigation bar (height: 64px)
-- 5 nav items: Home, Studio, Analytics, Community, More
-- Active state indicator with liquid glass styling
-- Haptic feedback on tap (using existing useHaptics hook)
-- Safe area padding for iOS notch devices
-
-**Modify: `src/pages/Dashboard.tsx`**
-- Import and render MobileBottomNav
-- Add bottom padding to main content on mobile to prevent overlap
-
-**Modify: `src/components/dashboard/DashboardSidebar.tsx`**
-- Hide sidebar completely on mobile (already partially done)
-- Ensure no conflict with bottom nav
-
-### Layout
-```text
-Mobile View (< 768px):
-+---------------------------+
-|  Header                   |
-+---------------------------+
-|                           |
-|  Main Content             |
-|  (with bottom padding)    |
-|                           |
-+---------------------------+
-| Home | Studio | + | Chat | More |  <- Bottom Nav
-+---------------------------+
-```
-
-### Features
-- Subtle backdrop blur effect
-- Bounce animation on tap
-- Badge indicators for notifications
-- "Go Live" center button with pulse effect
-
----
-
-## 4. Keyboard Shortcuts Integration
+## Part 1: Vercel Build Optimization
 
 ### Current State
-- `KeyboardShortcutsModal.tsx` exists with shortcuts defined
-- Has internal keyboard listener for `?` key
-- Has floating button in bottom-left corner
-- `useHotkeys.tsx` exists for registering custom hotkeys
+- `vercel.json` is properly configured with SPA routing and build commands
+- The project uses `@capacitor/electron` which can cause build issues
+- All essential secrets are configured (Stripe, OpenAI, Elevenlabs, etc.)
 
-### What We're Improving
-Make shortcuts work globally across the app, integrate with existing hotkeys system.
+### Issue
+The `@capacitor/electron` package (v2.5.0) in dependencies can cause Vercel build failures as it's meant for desktop builds, not web deployment.
+
+### Solution
+
+**File: `package.json`**
+- Move `@capacitor/electron` from `dependencies` to `devDependencies` to prevent it from being bundled in production
+- This follows the existing pattern documented in project memory
+
+**File: `vercel.json`**
+- Already configured correctly, but ensure `installCommand` uses `--legacy-peer-deps` (already set)
+- No changes needed
+
+---
+
+## Part 2: Landing Page Complete Redesign
+
+### New Page Structure
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Navigation (existing)                               │
+├─────────────────────────────────────────────────────┤
+│  HERO SECTION (updated)                              │
+│  "Streaming is hard when you're doing it alone"     │
+│  + "Meet your AI co-pilot"                          │
+├─────────────────────────────────────────────────────┤
+│  PROBLEM SECTION (NEW)                               │
+│  - Fast-moving chat                                  │
+│  - Unclear growth metrics                            │
+│  - No real-time feedback                             │
+│  - Slow progress                                     │
+├─────────────────────────────────────────────────────┤
+│  SOLUTION SECTION (NEW)                              │
+│  Hyvo.ai as AI co-pilot with 4 benefits             │
+├─────────────────────────────────────────────────────┤
+│  FEATURES SECTION (updated)                          │
+│  Feature cards with icons:                           │
+│  - AI Stream Assistant                               │
+│  - Chat & Engagement Insights                        │
+│  - Clip & Highlight Suggestions                      │
+│  - Growth Analytics                                  │
+│  - Stream Coaching Tips                              │
+├─────────────────────────────────────────────────────┤
+│  HOW IT WORKS SECTION (NEW)                          │
+│  3 steps: Connect → Go Live → Get AI Insights        │
+├─────────────────────────────────────────────────────┤
+│  WHO IT'S FOR SECTION (NEW)                          │
+│  - Twitch Streamers                                  │
+│  - YouTube Live Creators                             │
+│  - Kick Streamers                                    │
+│  - Growing Content Creators                          │
+├─────────────────────────────────────────────────────┤
+│  CTA SECTION (updated)                               │
+│  "Stop guessing. Start growing."                     │
+│  Button: "Start Streaming with AI"                   │
+├─────────────────────────────────────────────────────┤
+│  FOOTER (updated)                                    │
+│  Hyvo.ai © 2026                                      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Files to Create
+
+**1. `src/components/ProblemSection.tsx`** (NEW)
+- Headline: "Streaming is overwhelming"
+- 4 pain point cards with icons:
+  - Fast-moving chat you can't keep up with
+  - Unclear which content drives growth
+  - No real-time feedback on what's working
+  - Slow progress despite hours of streaming
+
+**2. `src/components/SolutionSection.tsx`** (NEW)
+- Headline: "Meet your AI streaming co-pilot"
+- Description: Hyvo.ai watches your stream in real-time
+- 4 benefit cards:
+  - Real-time AI assistance during streams
+  - Post-stream insights and recommendations
+  - Better viewer engagement metrics
+  - Built for streamers, by streamers
+
+**3. `src/components/HowItWorksSection.tsx`** (NEW)
+- 3-step horizontal flow with animated connections:
+  - Step 1: Connect your stream (Twitch/YouTube icons)
+  - Step 2: Go live with AI assistant
+  - Step 3: Get AI-powered insights
+
+**4. `src/components/WhoItsForSection.tsx`** (NEW)
+- Grid of 4 audience cards:
+  - Twitch Streamers (purple accent)
+  - YouTube Live Creators (red accent)
+  - Kick Streamers (green accent)
+  - Growing Content Creators (gradient accent)
 
 ### Files to Modify
 
-**Modify: `src/App.tsx`**
-- Import and render `KeyboardShortcutsModal` globally (move from individual pages)
-- Ensure it's available on all routes
+**5. `src/pages/Index.tsx`**
+- Remove: InteractiveDemo, TestimonialCarousel, VideoTestimonials, PricingCalculator sections
+- Add: ProblemSection, SolutionSection, HowItWorksSection, WhoItsForSection
+- Reorder: Hero → Problem → Solution → Features → HowItWorks → WhoItsFor → CTA → Footer
 
-**Create: `src/hooks/useGlobalHotkeys.tsx`**
-- Centralized hook that registers all app-wide shortcuts
-- Uses existing `useHotkeys` system
-- Implements actual actions for each shortcut:
-  - `Ctrl+H`: Navigate to Dashboard
-  - `Ctrl+,`: Navigate to Settings
-  - `Ctrl+Shift+L`: Toggle streaming (navigate to /studio)
-  - `Esc`: Close any open modal
+**6. `src/components/Hero.tsx`**
+- Update headline from "Stream Like A Pro With AI" to:
+  - Main: "Streaming is hard."
+  - Subtext: "Your AI co-pilot makes it easier."
+- Keep: Badge, feature pills, CTA buttons
+- Update: Subheadline to focus on streamer struggles
+- Keep: Dashboard preview image
 
-**Modify: `src/components/KeyboardShortcutsModal.tsx`**
-- Keep the `?` key listener
-- Add visual indicator showing currently pressed keys
-- Improve accessibility with proper focus management
+**7. `src/components/Features.tsx`**
+- Replace current 6 features with new 5:
+  - AI Stream Assistant
+  - Chat & Engagement Insights
+  - Clip & Highlight Suggestions
+  - Growth & Performance Analytics
+  - Stream Coaching Tips
+- Keep: AI Features subsection
 
-**Modify: `src/pages/Dashboard.tsx`**
-- Remove any duplicate KeyboardShortcutsModal if present
-- Register Dashboard-specific hotkeys
+**8. `src/components/CTA.tsx`**
+- Update headline: "Stop guessing. Start growing."
+- Update description: Focus on ending the struggle
+- Change button: "Start Streaming with AI"
+- Keep: Stats section (can update labels)
 
-### Global Shortcuts Summary
-| Shortcut | Action |
-|----------|--------|
-| ? | Show shortcuts modal |
-| Esc | Close modal/cancel |
-| Ctrl+H | Go to Dashboard |
-| Ctrl+, | Open Settings |
-| Ctrl+Shift+L | Go to Studio |
-| 1-9 | Switch scenes (in Studio) |
+**9. `src/components/Footer.tsx`**
+- Update copyright: "Hyvo.ai © 2026"
+- Simplify footer structure if needed
 
----
-
-## Implementation Priority
-
-| Feature | Effort | Impact | Priority |
-|---------|--------|--------|----------|
-| Dashboard Skeletons | Low | High | 1st |
-| Keyboard Shortcuts | Low | Medium | 2nd |
-| PWA Support | Medium | High | 3rd |
-| Mobile Bottom Nav | Medium | High | 4th |
+**10. `package.json`**
+- Move `@capacitor/electron` to devDependencies
 
 ---
 
-## Technical Notes
+## Implementation Details
 
-### Dependencies
-- `vite-plugin-pwa`: Already installed, needs configuration
-- No new dependencies required
+### ProblemSection Component
+```typescript
+// Pain points with icons
+const painPoints = [
+  { icon: MessageSquare, title: "Fast-moving chat", desc: "Miss important messages while gaming" },
+  { icon: TrendingDown, title: "Unclear growth", desc: "No idea what content performs best" },
+  { icon: AlertCircle, title: "No feedback", desc: "Flying blind without real-time data" },
+  { icon: Clock, title: "Slow progress", desc: "Hours of streaming, minimal growth" }
+];
+```
 
-### Browser Support
-- PWA: Chrome, Edge, Safari (iOS 11.3+), Firefox
-- Service Worker: All modern browsers
-- Bottom Nav: All browsers, uses CSS safe-area-inset
+### SolutionSection Component
+```typescript
+// Benefits with icons
+const benefits = [
+  { icon: Zap, title: "Real-time assistance", desc: "AI monitors chat and highlights important moments" },
+  { icon: BarChart3, title: "Post-stream insights", desc: "Detailed analytics on what worked" },
+  { icon: Users, title: "Better engagement", desc: "Know exactly how viewers are responding" },
+  { icon: Heart, title: "Streamer-first design", desc: "Built by streamers, for streamers" }
+];
+```
 
-### Testing Recommendations
-1. Test skeleton loaders with network throttling
-2. Test PWA install on mobile Chrome/Safari
-3. Test bottom nav on various mobile devices
-4. Test keyboard shortcuts with screen readers
+### HowItWorksSection Component
+```typescript
+// 3-step flow
+const steps = [
+  { number: "1", title: "Connect", desc: "Link your Twitch, YouTube, or Kick account" },
+  { number: "2", title: "Go Live", desc: "Start streaming with AI assistant active" },
+  { number: "3", title: "Get Insights", desc: "Receive real-time and post-stream AI analysis" }
+];
+```
+
+### WhoItsForSection Component
+```typescript
+// Audience personas
+const audiences = [
+  { name: "Twitch Streamers", icon: Twitch, color: "purple" },
+  { name: "YouTube Live Creators", icon: Youtube, color: "red" },
+  { name: "Kick Streamers", icon: Zap, color: "green" },
+  { name: "Growing Content Creators", icon: TrendingUp, color: "gradient" }
+];
+```
+
+---
+
+## Design Consistency
+
+### Styling (following existing patterns)
+- Use `liquid-glass` aesthetic throughout
+- Maintain `ScrollReveal` animations for sections
+- Use `motion.div` from framer-motion for micro-interactions
+- Follow existing color scheme: primary (purple), accent, success, warning
+- Use `Badge` components for section headers
+- Maintain `glass-strong` card styling
+
+### Typography
+- Section titles: `text-4xl lg:text-5xl font-bold`
+- Section subtitles: `text-xl text-muted-foreground`
+- Card titles: `text-xl font-semibold`
+- Body text: `text-muted-foreground`
 
 ---
 
 ## Files Summary
 
-### New Files (6)
-1. `src/components/ui/dashboard-skeleton.tsx`
-2. `src/components/PWAInstallPrompt.tsx`
-3. `src/hooks/usePWA.tsx`
-4. `src/components/dashboard/MobileBottomNav.tsx`
-5. `src/hooks/useGlobalHotkeys.tsx`
-6. `public/pwa-192x192.png` (asset)
+### New Files (4)
+1. `src/components/ProblemSection.tsx`
+2. `src/components/SolutionSection.tsx`
+3. `src/components/HowItWorksSection.tsx`
+4. `src/components/WhoItsForSection.tsx`
 
-### Modified Files (7)
-1. `src/components/dashboard/DashboardMain.tsx`
-2. `src/components/dashboard/ProStreamAnalytics.tsx`
-3. `vite.config.ts`
-4. `index.html`
-5. `src/App.tsx`
-6. `src/pages/Dashboard.tsx`
-7. `src/components/KeyboardShortcutsModal.tsx`
+### Modified Files (6)
+1. `package.json` - Move @capacitor/electron to devDependencies
+2. `src/pages/Index.tsx` - New page structure
+3. `src/components/Hero.tsx` - Updated messaging
+4. `src/components/Features.tsx` - New feature set
+5. `src/components/CTA.tsx` - Updated messaging
+6. `src/components/Footer.tsx` - Copyright update
+
+---
+
+## Technical Notes
+
+### Vercel Build
+- Moving `@capacitor/electron` to devDependencies prevents bundling
+- Vercel only installs production dependencies by default
+- The `--legacy-peer-deps` flag handles any remaining peer dependency conflicts
+
+### Local Development
+- Run `npm install` to update dependencies
+- `npm run dev` starts development server on port 8080
+- All existing features (payment, studio, etc.) remain functional
+
+### Payment & Studio
+- Payment integration via Stripe is fully configured and functional
+- Studio at `/studio` requires authentication and subscription
+- All edge functions are deployed and working
+
+### Testing Checklist
+After implementation, verify:
+1. Vercel build succeeds without errors
+2. All new sections render correctly
+3. Animations work smoothly
+4. Mobile responsiveness maintained
+5. Navigation to /studio, /pricing, /dashboard works
+6. Payment flow remains functional
