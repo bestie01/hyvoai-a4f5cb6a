@@ -6,7 +6,6 @@ import { Github, Twitter, Linkedin, Youtube, Mail, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { FadeIn } from "@/components/animations/FadeIn";
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
   const footerLinks = {
     product: [{
       label: "Features",
@@ -161,7 +160,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <FadeIn delay={0.4}>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>© {currentYear} Hyvo.ai. All rights reserved.</span>
+              <span>Hyvo.ai © 2026. All rights reserved.</span>
               <span className="hidden md:inline text-border">•</span>
               <span className="flex items-center gap-1.5">
                 Made with <Heart className="w-3.5 h-3.5 text-destructive animate-pulse" /> and AI
