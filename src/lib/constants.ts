@@ -18,10 +18,17 @@ export const EXTERNAL_LINKS = {
 } as const;
 
 // GitHub release configuration
+// IMPORTANT: Update these values after exporting to GitHub
+// 1. Export this project to GitHub using Lovable's "Export to GitHub" feature
+// 2. Replace 'YOUR_GITHUB_USERNAME' with your actual GitHub username
+// 3. Replace 'YOUR_REPO_NAME' with your actual repository name
+// 4. Create a release: git tag v1.0.0 && git push origin v1.0.0
 export const GITHUB_CONFIG = {
-  owner: 'hyvo-ai',
-  repo: 'hyvo-stream-studio',
-  apiUrl: 'https://api.github.com/repos/hyvo-ai/hyvo-stream-studio/releases/latest',
+  owner: 'YOUR_GITHUB_USERNAME',  // TODO: Update after GitHub export
+  repo: 'YOUR_REPO_NAME',         // TODO: Update after GitHub export
+  get apiUrl() {
+    return `https://api.github.com/repos/${this.owner}/${this.repo}/releases/latest`;
+  },
 } as const;
 
 // Feature flags

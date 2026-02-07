@@ -5,9 +5,11 @@ import { PageTransition } from "@/components/animations/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, Monitor, Smartphone, Shield, Zap, Check, Globe, ExternalLink, Loader2, AlertCircle, Github, Sparkles, Apple, Terminal } from "lucide-react";
+import { Download, Monitor, Smartphone, Shield, Zap, Check, Globe, ExternalLink, Loader2, AlertCircle, Github, Sparkles, Apple, Terminal, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGitHubReleases } from "@/hooks/useGitHubReleases";
+import { BuildStatusCard } from "@/components/BuildStatusCard";
+import { GITHUB_CONFIG } from "@/lib/constants";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -370,16 +372,14 @@ const DownloadPage = () => {
               </motion.div>
             )}
 
+            {/* Build Status Card - shown when no releases or not configured */}
             {!hasReleases && !isLoading && (
               <motion.div 
-                className="text-center mt-8"
+                className="max-w-2xl mx-auto mt-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <div className="inline-flex items-center gap-2 text-muted-foreground bg-muted/50 px-6 py-3 rounded-lg">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>Desktop builds are being prepared. Use the Web App for now!</span>
-                </div>
+                <BuildStatusCard onUseWebApp={handleLaunchWebApp} />
               </motion.div>
             )}
           </motion.div>
