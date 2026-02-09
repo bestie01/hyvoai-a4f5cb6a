@@ -24,8 +24,8 @@ export const EXTERNAL_LINKS = {
 // 3. Replace 'YOUR_REPO_NAME' with your actual repository name
 // 4. Create a release: git tag v1.0.0 && git push origin v1.0.0
 export const GITHUB_CONFIG = {
-  owner: 'YOUR_GITHUB_USERNAME',  // TODO: Update after GitHub export
-  repo: 'YOUR_REPO_NAME',         // TODO: Update after GitHub export
+  owner: 'bestie01Your',
+  repo: 'hyvoai-89ce887a',
   get apiUrl() {
     return `https://api.github.com/repos/${this.owner}/${this.repo}/releases/latest`;
   },
