@@ -12,6 +12,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
  import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
  import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
  import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -82,6 +83,7 @@ const App = () => (
               </main>
             </Suspense>
           </BrowserRouter>
+          <Analytics />
         </ErrorBoundary>
       </TooltipProvider>
     </ThemeProvider>
