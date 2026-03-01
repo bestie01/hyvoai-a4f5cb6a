@@ -40,22 +40,11 @@ const DownloadPage = () => {
     navigate('/studio');
   };
 
-  // Fallback download URLs when GitHub releases aren't available
-  const fallbackUrls: Record<string, string> = {
-    "Windows": "/downloads/Hyvo-Stream-Studio-Setup-1.0.0.exe",
-    "macOS (Intel)": "/downloads/Hyvo-Stream-Studio-1.0.0.dmg",
-    "macOS (Apple Silicon)": "/downloads/Hyvo-Stream-Studio-1.0.0-arm64.dmg",
-    "Linux (AppImage)": "/downloads/Hyvo-Stream-Studio-1.0.0.AppImage",
-    "Linux (Debian)": "/downloads/Hyvo-Stream-Studio-1.0.0.deb",
-  };
-
   const handleDownload = (platform: string, downloadUrl: string | null) => {
-    const url = downloadUrl || fallbackUrls[platform];
-    
-    if (!url) {
+    if (!downloadUrl) {
       toast({
         title: "Download Not Available",
-        description: `The ${platform} installer is not yet available. Use the Web App instead!`,
+        description: `The ${platform} installer is not yet available. Use the Web App instead, or check GitHub Actions for build status.`,
         variant: "destructive",
       });
       return;
@@ -66,17 +55,7 @@ const DownloadPage = () => {
       description: `Downloading Hyvo Stream Studio for ${platform}...`,
     });
 
-    // Use window.location for local files, window.open for external URLs
-    if (url.startsWith('/')) {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = url.split('/').pop() || 'download';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      window.open(url, '_blank');
-    }
+    window.open(downloadUrl, '_blank');
   };
 
   const platforms = [
