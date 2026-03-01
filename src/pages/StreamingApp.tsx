@@ -69,6 +69,7 @@ import { ProFeatureGate } from "@/components/ProFeatureGate";
 import { LiveChatPanel } from "@/components/streaming/LiveChatPanel";
 import { useLiveChat } from "@/hooks/useLiveChat";
 import { HotkeyManager } from "@/components/streaming/HotkeyManager";
+import { useStudioConfig } from "@/hooks/useStudioConfig";
 
 const StreamingApp = () => {
   const navigate = useNavigate();
@@ -104,25 +105,9 @@ const StreamingApp = () => {
     fps: 30
   });
 
-  const [scenes, setScenes] = useState([
-    { id: 1, name: "Gaming Scene", active: true },
-    { id: 2, name: "Just Chatting", active: false },
-    { id: 3, name: "BRB Screen", active: false },
-    { id: 4, name: "Starting Soon", active: false }
-  ]);
-  
-  const [sources, setSources] = useState([
-    { id: 1, name: "Desktop Capture", type: "display", enabled: true },
-    { id: 2, name: "Webcam", type: "camera", enabled: true },
-    { id: 3, name: "Microphone", type: "audio", enabled: true },
-    { id: 4, name: "Game Audio", type: "audio", enabled: true },
-    { id: 5, name: "Chat Overlay", type: "overlay", enabled: false }
-  ]);
-
-  // AI feature states
-  const [aiAutoHighlights, setAiAutoHighlights] = useState(false);
-  const [aiChatAnalysis, setAiChatAnalysis] = useState(true);
-  const [aiSmartOverlays, setAiSmartOverlays] = useState(false);
+  // Persisted studio config (scenes, sources, AI toggles)
+  const studioConfig = useStudioConfig();
+  const { scenes, sources, aiToggles, updateScenes: setScenes, updateSources: setSources, updateAIToggle } = studioConfig;
 
   // Recording handlers
   const handleStartRecording = async () => {
@@ -582,15 +567,15 @@ const StreamingApp = () => {
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Auto Highlights</span>
-                    <Switch checked={aiAutoHighlights} onCheckedChange={setAiAutoHighlights} />
+                    <Switch checked={aiToggles.autoHighlights} onCheckedChange={(v) => updateAIToggle('autoHighlights', v)} />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Chat Analysis</span>
-                    <Switch checked={aiChatAnalysis} onCheckedChange={setAiChatAnalysis} />
+                    <Switch checked={aiToggles.chatAnalysis} onCheckedChange={(v) => updateAIToggle('chatAnalysis', v)} />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Smart Overlays</span>
-                    <Switch checked={aiSmartOverlays} onCheckedChange={setAiSmartOverlays} />
+                    <Switch checked={aiToggles.smartOverlays} onCheckedChange={(v) => updateAIToggle('smartOverlays', v)} />
                   </div>
                   <Button size="sm" className="w-full liquid-glass-button">
                     AI Settings

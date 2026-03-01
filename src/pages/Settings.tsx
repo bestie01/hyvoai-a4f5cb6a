@@ -13,7 +13,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import { User, Settings2, Bell, CreditCard, Crown, ExternalLink, Video, Key, Calendar } from 'lucide-react';
+import { User, Settings2, Bell, CreditCard, Crown, ExternalLink, Video, Key, Calendar, Eye, EyeOff } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { LiquidGlassCard } from '@/components/ui/liquid-glass-card';
 import Footer from '@/components/Footer';
@@ -41,6 +41,8 @@ const Settings = () => {
   const [youtubeKey, setYoutubeKey] = useState('');
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
+  const [showTwitchKey, setShowTwitchKey] = useState(false);
+  const [showYoutubeKey, setShowYoutubeKey] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -189,14 +191,25 @@ const Settings = () => {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="twitch">Twitch Stream Key</Label>
-                    <Input
-                      id="twitch"
-                      type="password"
-                      value={twitchKey}
-                      onChange={(e) => setTwitchKey(e.target.value)}
-                      placeholder="Enter your Twitch stream key"
-                      className="liquid-glass-button"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="twitch"
+                        type={showTwitchKey ? "text" : "password"}
+                        value={twitchKey}
+                        onChange={(e) => setTwitchKey(e.target.value)}
+                        placeholder="Enter your Twitch stream key"
+                        className="liquid-glass-button pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowTwitchKey(!showTwitchKey)}
+                      >
+                        {showTwitchKey ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Find this in your Twitch Creator Dashboard → Settings → Stream
                     </p>
@@ -204,14 +217,25 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="youtube">YouTube Stream Key</Label>
-                    <Input
-                      id="youtube"
-                      type="password"
-                      value={youtubeKey}
-                      onChange={(e) => setYoutubeKey(e.target.value)}
-                      placeholder="Enter your YouTube stream key"
-                      className="liquid-glass-button"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="youtube"
+                        type={showYoutubeKey ? "text" : "password"}
+                        value={youtubeKey}
+                        onChange={(e) => setYoutubeKey(e.target.value)}
+                        placeholder="Enter your YouTube stream key"
+                        className="liquid-glass-button pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowYoutubeKey(!showYoutubeKey)}
+                      >
+                        {showYoutubeKey ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Find this in YouTube Studio → Go Live → Stream Settings
                     </p>

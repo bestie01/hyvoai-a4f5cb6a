@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Github, Twitter, Linkedin, Youtube, Mail, Heart } from "lucide-react";
+import { Github, Youtube, Mail, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { FadeIn } from "@/components/animations/FadeIn";
 const Footer = () => {
@@ -63,17 +63,9 @@ const Footer = () => {
     }]
   };
   const socialLinks = [{
-    icon: Twitter,
-    href: "https://twitter.com/hyvoai",
-    label: "Twitter"
-  }, {
     icon: Github,
-    href: "https://github.com/hyvoai",
+    href: "https://github.com/bestie01Your/hyvoai-89ce887a",
     label: "GitHub"
-  }, {
-    icon: Linkedin,
-    href: "https://linkedin.com/company/hyvoai",
-    label: "LinkedIn"
   }, {
     icon: Youtube,
     href: "https://youtube.com/@hyvoai",
