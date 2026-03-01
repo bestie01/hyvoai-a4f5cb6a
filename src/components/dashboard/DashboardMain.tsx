@@ -212,17 +212,25 @@ export function DashboardMain() {
               <h3 className="font-semibold text-white">Upcoming Streams</h3>
             </div>
             <div className="space-y-3">
-              {["Gaming Session - Tonight 8 PM", "IRL Stream - Tomorrow 3 PM", "Collab Stream - Friday 7 PM"].map((stream, index) => (
-                <div key={index} className="flex items-center justify-between p-3 liquid-glass-panel rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <span className="text-sm text-white">{stream}</span>
-                  </div>
-                  <LiquidGlassBadge className="bg-transparent border border-white/20">
-                    Scheduled
-                  </LiquidGlassBadge>
+              {metrics?.totalStreams === 0 ? (
+                <div className="text-center py-6">
+                  <Calendar className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-white/60">No streams yet</p>
+                  <p className="text-xs text-white/40 mt-1">Go live from the Studio to see your history here</p>
                 </div>
-              ))}
+              ) : (
+                ["Gaming Session - Tonight 8 PM", "IRL Stream - Tomorrow 3 PM", "Collab Stream - Friday 7 PM"].map((stream, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 liquid-glass-panel rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      <span className="text-sm text-white">{stream}</span>
+                    </div>
+                    <LiquidGlassBadge className="bg-transparent border border-white/20">
+                      Scheduled
+                    </LiquidGlassBadge>
+                  </div>
+                ))
+              )}
             </div>
           </LiquidGlassCard>
         );
