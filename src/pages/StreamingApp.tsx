@@ -595,6 +595,11 @@ const StreamingApp = () => {
               <TabsTrigger value="chat" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Chat
+                <span className={`w-2 h-2 rounded-full ${
+                  liveChat.isConnected ? 'bg-green-500' : 
+                  liveChat.isLoading ? 'bg-yellow-500 animate-pulse' : 
+                  'bg-muted-foreground/40'
+                }`} />
               </TabsTrigger>
               <TabsTrigger value="ai" className="gap-2">
                 <Zap className="w-4 h-4" />
