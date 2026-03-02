@@ -1,91 +1,41 @@
 
 
-# Improvements to Make Hyvo a Real Helping App
+# Fix Capacitor Peer Dependency Conflict + Improvements
 
-## Current State
+## Root Cause Confirmed
 
-The app has extensive UI across landing, dashboard, studio, settings, and download pages. However, much of the functionality is simulated or disconnected. Here are the highest-impact improvements organized by priority.
+In `package.json`, two Capacitor packages are on major version 8 while the rest are on 7:
 
----
+- `@capacitor/device`: `^8.0.0` (requires `@capacitor/core >=8.0.0`)
+- `@capacitor/geolocation`: `^8.0.0` (requires `@capacitor/core >=8.0.0`)
+- `@capacitor/core`: `^7.4.2`
 
-## Priority 1: Persist User Settings and Scene Configuration
+This creates an unresolvable peer dependency tree, causing `npm ci` to fail.
 
-**Problem**: Scenes, sources, and AI feature toggles in `/studio` reset on every page load -- they're only in React state.
+## Fix
 
-**Changes**:
-- Store scenes, sources, and AI toggle preferences in Supabase (via the existing `useSettings` hook or a new `useStudioConfig` hook)
-- Load saved configuration on mount, save on change
-- Files: `src/pages/StreamingApp.tsx`, possibly new `src/hooks/useStudioConfig.tsx`
+Downgrade the two v8 packages to v7 to align with all other Capacitor packages:
 
----
+**File: `package.json`**
+- Line 18: `"@capacitor/device": "^8.0.0"` → `"@capacitor/device": "^7.0.0"`
+- Line 21: `"@capacitor/geolocation": "^8.0.0"` → `"@capacitor/geolocation": "^7.0.0"`
 
-## Priority 2: Replace Simulated Chat with Real Twitch IRC
+No other changes needed. All Capacitor packages will then be on major version 7.
 
-**Problem**: `useLiveChat` Twitch integration is a placeholder (comment on line 113: "Twitch chat requires IRC WebSocket - this is a placeholder"). The `useTwitchIRC` hook exists but needs verification.
+## Improvements (from previous plan, not yet done)
 
-**Changes**:
-- Verify `useTwitchIRC` hook works end-to-end with real WebSocket connection
-- Ensure `LiveChatPanel` displays real messages when a Twitch channel is connected via OAuth
-- File: `src/hooks/useTwitchIRC.tsx`, `src/hooks/useLiveChat.tsx`, `src/components/streaming/LiveChatPanel.tsx`
+Additionally, the following quick improvements will be applied alongside the fix:
 
----
+1. **Twitch IRC reconnection logic** -- Add automatic reconnect with exponential backoff in `src/hooks/useTwitchIRC.tsx` when the WebSocket disconnects
+2. **Connection status indicator** in `src/pages/StreamingApp.tsx` -- Show a small colored dot (green/yellow/red) next to the chat panel header indicating WebSocket connection state
+3. **CTA update** in `src/components/CTA.tsx` -- Change the primary CTA button to link to `/studio` for a "Try the Studio" action instead of a generic signup
 
-## Priority 3: Stream Key Encryption and Security
-
-**Problem**: Stream keys entered in Settings are stored as plain text. These are sensitive credentials.
-
-**Changes**:
-- Encrypt stream keys before storing in Supabase
-- Only decrypt server-side when needed for RTMP connections
-- Add a "show/hide" toggle for stream key fields
-- Files: `src/pages/Settings.tsx`, `src/hooks/useSettings.tsx`, potentially a new edge function
-
----
-
-## Priority 4: Dashboard with Real Data
-
-**Problem**: `DashboardMain` likely shows static/demo analytics data rather than real stream history.
-
-**Changes**:
-- Query actual stream records from Supabase `streams` table
-- Show real stream history (duration, peak viewers, platform)
-- Display "No streams yet -- go live from the Studio" empty state
-- Files: `src/components/dashboard/DashboardMain.tsx`
-
----
-
-## Priority 5: Error Handling and Offline Support
-
-**Problem**: Network failures during streaming could cause silent data loss.
-
-**Changes**:
-- Add reconnection logic to `useLiveChat` and `useTwitchIRC` when WebSocket disconnects
-- Show connection status indicators in the Studio UI
-- Queue analytics events locally when offline (use localStorage), flush when back online
-- Files: `src/hooks/useLiveChat.tsx`, `src/hooks/useTwitchIRC.tsx`, `src/pages/StreamingApp.tsx`
-
----
-
-## Priority 6: Landing Page Polish
-
-**Problem**: Minor UX issues -- social links point to placeholder URLs, some sections could have better CTAs.
-
-**Changes**:
-- Update Footer social links to real URLs or remove them
-- Add a "Try the Studio" CTA that links to `/studio` for logged-in users or `/auth` for guests
-- Files: `src/components/Footer.tsx`, `src/components/CTA.tsx`
-
----
-
-## Implementation Plan (Files to Modify)
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useStudioConfig.tsx` | **New** -- persist scenes, sources, AI toggles to Supabase |
-| `src/pages/StreamingApp.tsx` | Use `useStudioConfig` instead of local state for scenes/sources/AI toggles |
-| `src/hooks/useTwitchIRC.tsx` | Verify and fix real WebSocket IRC connection |
-| `src/hooks/useLiveChat.tsx` | Remove placeholder comment, integrate real Twitch messages |
-| `src/components/dashboard/DashboardMain.tsx` | Query real stream records, show empty state |
-| `src/pages/Settings.tsx` | Add show/hide toggle for stream keys |
-| `src/components/Footer.tsx` | Fix placeholder social URLs |
+| `package.json` | Downgrade `@capacitor/device` and `@capacitor/geolocation` to `^7.0.0` |
+| `src/hooks/useTwitchIRC.tsx` | Add reconnection logic with backoff |
+| `src/pages/StreamingApp.tsx` | Add connection status indicator |
+| `src/components/CTA.tsx` | Update CTA to link to `/studio` |
 
