@@ -32,6 +32,8 @@ export const useTwitchIRC = (): UseTwitchIRCReturn => {
   const wsRef = useRef<WebSocket | null>(null);
   const channelRef = useRef<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 10;
 
   const parseIRCMessage = useCallback((raw: string): TwitchMessage | null => {
     try {
@@ -119,6 +121,7 @@ export const useTwitchIRC = (): UseTwitchIRCReturn => {
         if (line.includes('366') || line.includes('End of /NAMES list')) {
           setIsConnected(true);
           setIsConnecting(false);
+          reconnectAttemptsRef.current = 0; // Reset backoff on successful join
           console.log('[TwitchIRC] Joined channel:', channelRef.current);
           continue;
         }
@@ -148,12 +151,16 @@ export const useTwitchIRC = (): UseTwitchIRCReturn => {
       setIsConnected(false);
       setIsConnecting(false);
       
-      // Auto-reconnect after 5 seconds if we were connected
-      if (channelRef.current) {
+      // Auto-reconnect with exponential backoff
+      if (channelRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+        reconnectAttemptsRef.current += 1;
+        console.log(`[TwitchIRC] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('[TwitchIRC] Attempting reconnect...');
           connect(channelRef.current!, accessToken);
-        }, 5000);
+        }, delay);
+      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        setError('Max reconnection attempts reached. Please reconnect manually.');
       }
     };
   }, [parseIRCMessage]);
