@@ -107,8 +107,8 @@
   },
   "publish": {
     "provider": "github",
-    "owner": "bestie01Your",
-    "repo": "hyvoai-89ce887a",
+    "owner": "bestie01",
+    "repo": "hyvoai-a4f5cb6a",
     "releaseType": "release"
   },
 }
