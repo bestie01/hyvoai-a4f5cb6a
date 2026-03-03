@@ -2,8 +2,12 @@
   "name": "hyvo-stream-studio",
   "version": "1.0.0",
   "description": "AI-powered streaming assistant for professional broadcasters",
+  "homepage": "https://github.com/bestie01/hyvoai-a4f5cb6a",
   "main": "src/index.js",
-  "author": "Hyvo",
+  "author": {
+    "name": "Hyvo",
+    "email": "support@hyvo.app"
+  },
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -35,8 +39,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "bestie01Your",
-      "repo": "hyvoai-89ce887a",
+      "owner": "bestie01",
+      "repo": "hyvoai-a4f5cb6a",
       "releaseType": "release"
     },
     "win": {
@@ -46,7 +50,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "app/icons/appIcon.png"
+      "icon": "app/icons/appIcon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -67,7 +71,8 @@
         }
       ],
       "icon": "app/icons/appIcon.png",
-      "category": "public.app-category.video"
+      "category": "public.app-category.video",
+      "identity": null
     },
     "linux": {
       "target": [
@@ -75,7 +80,8 @@
         "deb"
       ],
       "icon": "app/icons/appIcon.png",
-      "category": "AudioVideo"
+      "category": "AudioVideo",
+      "maintainer": "Hyvo <support@hyvo.app>"
     }
   }
 }

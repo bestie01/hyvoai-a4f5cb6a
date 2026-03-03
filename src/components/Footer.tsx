@@ -64,7 +64,7 @@ const Footer = () => {
   };
   const socialLinks = [{
     icon: Github,
-    href: "https://github.com/bestie01Your/hyvoai-89ce887a",
+    href: "https://github.com/bestie01/hyvoai-a4f5cb6a",
     label: "GitHub"
   }, {
     icon: Youtube,
