@@ -35,8 +35,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "YOUR_USERNAME",
-      "repo": "hyvo-stream-studio",
+      "owner": "bestie01Your",
+      "repo": "hyvoai-89ce887a",
       "releaseType": "release"
     },
     "win": {

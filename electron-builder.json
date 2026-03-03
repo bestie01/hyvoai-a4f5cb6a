@@ -107,9 +107,8 @@
   },
   "publish": {
     "provider": "github",
-    "owner": "hyvo-app",
-    "repo": "hyvo-stream-studio",
+    "owner": "bestie01Your",
+    "repo": "hyvoai-89ce887a",
     "releaseType": "release"
   },
-  "afterSign": "scripts/notarize.js"
 }
