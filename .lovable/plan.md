@@ -1,45 +1,44 @@
 
 
-# Improvements: Electron Workflows, Release Config, and Verification
+# Fix: Desktop Release Workflow YAML Indentation
 
-## Current Issues Found
+## Problem
+The `.github/workflows/desktop-release.yml` file has broken YAML indentation in the **macOS** and **Linux** build jobs. Specifically:
+- Lines 89-94 (macOS): The `- name: Install Electron dependencies` and `- name: Build macOS app` steps have mixed indentation (some lines use 7 spaces instead of 6, and some use 8 instead of 8). This makes the YAML invalid.
+- Lines 138-144 (Linux): Same indentation issue.
 
-1. **`electron/package.json`** has placeholder GitHub publish config (`"owner": "YOUR_USERNAME"`, `"repo": "hyvo-stream-studio"`) -- must match actual repo `bestie01Your/hyvoai-89ce887a`
-2. **`electron-builder.json`** (root) also has wrong publish config (`"owner": "hyvo-app"`) and references a nonexistent `scripts/notarize.js` in `afterSign`
-3. **Two duplicate workflows** (`electron-build.yml` and `desktop-release.yml`) do the same thing -- the `desktop-release.yml` uses `npm ci` for the electron dir which will fail since `electron/package-lock.json` likely doesn't exist; should use `npm install`
-4. **Chat connection indicator** is already implemented (lines 598-601 in `StreamingApp.tsx`) -- just needs visual verification
+GitHub Actions silently rejects invalid YAML — the workflow appears but has "no workload to run."
 
-## Plan
+## Fix
+Rewrite the entire workflow file with consistent 2-space indentation throughout. All step blocks must align at exactly 6 spaces (3 levels: jobs → job-name → steps → step items).
 
-### 1. Fix `electron/package.json` publish config
-Update the `publish` section to use the real GitHub repo:
-```json
-"owner": "bestie01Your",
-"repo": "hyvoai-89ce887a"
-```
-
-### 2. Fix root `electron-builder.json` publish config and remove broken `afterSign`
-- Update `publish.owner` to `bestie01Your` and `publish.repo` to `hyvoai-89ce887a`
-- Remove `"afterSign": "scripts/notarize.js"` (file doesn't exist, will crash the build)
-
-### 3. Consolidate and fix the desktop-release workflow
-Keep `desktop-release.yml` as the primary workflow and fix it:
-- Change `npm ci` to `npm install` in the electron directory steps (no lock file there)
-- Add `--legacy-peer-deps` only for the electron subdirectory if needed (separate dependency tree)
-- Add `latest*.yml` to artifact uploads (required for electron-updater auto-updates)
-
-### 4. Remove redundant `electron-build.yml`
-Delete `.github/workflows/electron-build.yml` since `desktop-release.yml` covers the same functionality with a cleaner structure.
-
-### 5. Verify chat indicator
-Navigate to `/studio` in the browser to confirm the green/yellow/gray dot appears next to the Chat tab.
-
-## Files to Modify
+## File to Modify
 
 | File | Change |
 |------|--------|
-| `electron/package.json` | Fix `publish.owner` and `publish.repo` to match real GitHub repo |
-| `electron-builder.json` | Fix `publish` config, remove `afterSign` |
-| `.github/workflows/desktop-release.yml` | Fix `npm ci` → `npm install` for electron dir, add `latest*.yml` artifacts |
-| `.github/workflows/electron-build.yml` | Delete (redundant) |
+| `.github/workflows/desktop-release.yml` | Fix indentation on lines 89-95 (macOS) and 139-144 (Linux) to use consistent spacing |
+
+### Specific fixes:
+
+**macOS section (lines 88-96)** — normalize indentation:
+```yaml
+      - name: Copy web build to electron
+        run: |
+          mkdir -p electron/app
+          mkdir -p electron/app/icons
+          cp -r dist/* electron/app/
+          cp public/app-icon-1024.png electron/app/icons/appIcon.png
+
+      - name: Install Electron dependencies
+        working-directory: ./electron
+        run: npm install
+
+      - name: Build macOS app
+        working-directory: ./electron
+        run: npx electron-builder --mac --publish always
+```
+
+**Linux section (lines 138-146)** — same fix, normalize indentation.
+
+No other files need changes. This is purely a whitespace/formatting fix that will make the workflow parseable by GitHub Actions.
 
