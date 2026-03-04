@@ -1,44 +1,26 @@
 
 
-# Fix: Desktop Release Workflow YAML Indentation
+# Fix: Invalid `public/app-icon-1024.png` for Windows Build
 
 ## Problem
-The `.github/workflows/desktop-release.yml` file has broken YAML indentation in the **macOS** and **Linux** build jobs. Specifically:
-- Lines 89-94 (macOS): The `- name: Install Electron dependencies` and `- name: Build macOS app` steps have mixed indentation (some lines use 7 spaces instead of 6, and some use 8 instead of 8). This makes the YAML invalid.
-- Lines 138-144 (Linux): Same indentation issue.
-
-GitHub Actions silently rejects invalid YAML — the workflow appears but has "no workload to run."
+The Windows build fails because `public/app-icon-1024.png` exists but is not a valid PNG file. The `png-to-ico` tool cannot convert it, causing the NSIS installer build to fail. The file is likely corrupt or in the wrong format despite having a `.png` extension.
 
 ## Fix
-Rewrite the entire workflow file with consistent 2-space indentation throughout. All step blocks must align at exactly 6 spaces (3 levels: jobs → job-name → steps → step items).
 
-## File to Modify
+### Option A: Replace the icon file
+Replace `public/app-icon-1024.png` with a valid 1024×1024 PNG image. You can:
+1. Re-export your app icon from your design tool as a proper PNG
+2. Upload a new valid PNG file to `public/app-icon-1024.png`
 
-| File | Change |
-|------|--------|
-| `.github/workflows/desktop-release.yml` | Fix indentation on lines 89-95 (macOS) and 139-144 (Linux) to use consistent spacing |
+### Option B: Add a validation step to the workflow
+Add a file validation step before the conversion in `.github/workflows/desktop-release.yml` to catch this early and provide a clear error:
 
-### Specific fixes:
-
-**macOS section (lines 88-96)** — normalize indentation:
 ```yaml
-      - name: Copy web build to electron
-        run: |
-          mkdir -p electron/app
-          mkdir -p electron/app/icons
-          cp -r dist/* electron/app/
-          cp public/app-icon-1024.png electron/app/icons/appIcon.png
-
-      - name: Install Electron dependencies
-        working-directory: ./electron
-        run: npm install
-
-      - name: Build macOS app
-        working-directory: ./electron
-        run: npx electron-builder --mac --publish always
+- name: Validate icon file
+  run: file public/app-icon-1024.png
+  shell: bash
 ```
 
-**Linux section (lines 138-146)** — same fix, normalize indentation.
-
-No other files need changes. This is purely a whitespace/formatting fix that will make the workflow parseable by GitHub Actions.
+## Recommendation
+The simplest fix is to **re-upload a valid 1024×1024 PNG icon** to `public/app-icon-1024.png`. Once the file is a real PNG, the `png-to-ico` conversion and the full Windows build will succeed. You can upload a new image directly in Lovable or commit one via Git.
 
