@@ -33,6 +33,10 @@ jobs:
       - name: Build web app
         run: npm run build
         
+      - name: Validate icon file
+        run: file public/app-icon-1024.png
+        shell: bash
+
       - name: Copy web build to electron
         run: |
           mkdir -p electron/app
