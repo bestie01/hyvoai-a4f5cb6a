@@ -33,22 +33,40 @@ jobs:
       - name: Build web app
         run: npm run build
         
-      - name: Validate icon file
-        run: file public/app-icon-1024.png
-        shell: bash
-
       - name: Copy web build to electron
         run: |
           mkdir -p electron/app
           mkdir -p electron/app/icons
           cp -r dist/* electron/app/
-          cp public/app-icon-1024.png electron/app/icons/appIcon.png
+
+          echo "Source icon format:"
+          file public/app-icon-1024.png
+
+          # Install sharp-cli to convert any image format to true PNG
+          npm install --global sharp-cli
+
+          # Convert source to guaranteed PNG (handles JPEG, WebP, etc.)
+          npx sharp -i public/app-icon-1024.png -o electron/app/icons/appIcon.png --format png
+
+          # Convert true PNG to ICO for Windows/NSIS
           npm install --global png-to-ico
-          png-to-ico public/app-icon-1024.png > electron/app/icons/appIcon.ico || {
-            echo "png-to-ico failed, generating fallback ico via magick"
-            magick -size 256x256 xc:"#6366f1" -fill white -gravity center \
-              -pointsize 80 -annotate 0 "H" electron/app/icons/appIcon.ico
-          }
+          png-to-ico electron/app/icons/appIcon.png > electron/app/icons/appIcon.ico
+
+          echo "Generated icon files:"
+          file electron/app/icons/appIcon.png
+          file electron/app/icons/appIcon.ico
+        shell: bash
+
+      - name: Verify icon files exist
+        run: |
+          if [ ! -f electron/app/icons/appIcon.ico ]; then
+            echo "ERROR: appIcon.ico was not generated. Cannot build Windows installer."
+            exit 1
+          fi
+          if [ ! -f electron/app/icons/appIcon.png ]; then
+            echo "ERROR: appIcon.png was not generated."
+            exit 1
+          fi
         shell: bash
         
       - name: Install Electron dependencies
@@ -93,7 +111,20 @@ jobs:
           mkdir -p electron/app
           mkdir -p electron/app/icons
           cp -r dist/* electron/app/
-          cp public/app-icon-1024.png electron/app/icons/appIcon.png
+
+          npm install --global sharp-cli
+          npx sharp -i public/app-icon-1024.png -o electron/app/icons/appIcon.png --format png
+
+          echo "Generated icon:"
+          file electron/app/icons/appIcon.png
+
+      - name: Verify icon file
+        run: |
+          if [ ! -f electron/app/icons/appIcon.png ]; then
+            echo "ERROR: appIcon.png was not generated."
+            exit 1
+          fi
+        shell: bash
 
       - name: Install Electron dependencies
         working-directory: ./electron
@@ -143,7 +174,20 @@ jobs:
           mkdir -p electron/app
           mkdir -p electron/app/icons
           cp -r dist/* electron/app/
-          cp public/app-icon-1024.png electron/app/icons/appIcon.png
+
+          npm install --global sharp-cli
+          npx sharp -i public/app-icon-1024.png -o electron/app/icons/appIcon.png --format png
+
+          echo "Generated icon:"
+          file electron/app/icons/appIcon.png
+
+      - name: Verify icon file
+        run: |
+          if [ ! -f electron/app/icons/appIcon.png ]; then
+            echo "ERROR: appIcon.png was not generated."
+            exit 1
+          fi
+        shell: bash
 
       - name: Install Electron dependencies
         working-directory: ./electron
