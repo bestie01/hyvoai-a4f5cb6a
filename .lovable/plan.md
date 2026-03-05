@@ -1,20 +1,20 @@
 
 
-# Fix: Windows Build — Two Remaining Issues
+# Fix: Windows Build — JPEG Masquerading as PNG
 
-## Problems (from build log screenshot)
+## Root Cause
 
-1. **Invalid PNG file**: `public/app-icon-1024.png` is still not a valid PNG, so the `png-to-ico` path is skipped and the fallback runs
-2. **ImageMagick `convert` fails on Windows**: The fallback uses `convert` which on Windows runners either doesn't exist or conflicts with a Windows system utility (`convert.exe` is a disk conversion tool). Error: `Invalid Parameter - 256x256`
-3. **NSIS config references `.png`**: In `electron/package.json` lines 58-60, `installerIcon`, `uninstallerIcon`, and `installerHeaderIcon` all point to `app/icons/appIcon.png` — NSIS requires `.ico`
+The file `public/app-icon-1024.png` has a `.png` extension but is actually a **JPEG** file. The `file` command on CI detects it as "JPEG image data", so `png-to-ico` fails, the `magick` fallback fails on Windows (ImageMagick not reliably available), and the build exits with code 4.
 
-## Fixes
+Lovable's text-based file tools cannot create valid binary PNG files. The icon visible in the preview looks correct visually, but the underlying format is JPEG, not PNG.
 
-### 1. Workflow: Replace ImageMagick fallback with `magick` (modern ImageMagick on Windows)
+## Plan
 
-On `windows-latest` runners, ImageMagick 7 is installed as `magick`, not `convert`. But more reliably, we should use PowerShell to download a simple `.ico` or generate one via npm. The simplest fix: use `npx png-to-ico` with the uploaded user image, and if that fails, download a generic icon.
+### 1. Fix the workflow to convert JPEG-to-PNG first, then PNG-to-ICO
 
-**File: `.github/workflows/desktop-release.yml`** — Replace the "Copy web build to electron" step (lines 40-54) with:
+Instead of relying on a valid PNG being committed, add a step that uses ImageMagick (`magick` on Windows runners) to **re-encode** the source file as a true PNG before converting to ICO. This handles both JPEG and PNG inputs. If `magick` is unavailable, use `npx sharp-cli` (a Node.js image tool) as fallback.
+
+**File: `.github/workflows/desktop-release.yml`** — Replace the "Copy web build to electron" step (lines 40-51):
 
 ```yaml
       - name: Copy web build to electron
@@ -22,41 +22,57 @@ On `windows-latest` runners, ImageMagick 7 is installed as `magick`, not `conver
           mkdir -p electron/app
           mkdir -p electron/app/icons
           cp -r dist/* electron/app/
-          cp public/app-icon-1024.png electron/app/icons/appIcon.png
+
+          # Ensure we have a valid PNG regardless of source format
+          echo "Source icon format:"
+          file public/app-icon-1024.png
+
+          # Install sharp-cli to handle any image format
+          npm install --global sharp-cli
+
+          # Convert source to guaranteed PNG (works for JPEG, WebP, etc.)
+          npx sharp -i public/app-icon-1024.png -o electron/app/icons/appIcon.png --format png
+
+          # Convert PNG to ICO for Windows
           npm install --global png-to-ico
-          png-to-ico public/app-icon-1024.png > electron/app/icons/appIcon.ico || {
-            echo "png-to-ico failed, generating fallback ico via magick"
-            magick -size 256x256 xc:"#6366f1" -fill white -gravity center \
-              -pointsize 80 -annotate 0 "H" electron/app/icons/appIcon.ico
-          }
+          png-to-ico electron/app/icons/appIcon.png > electron/app/icons/appIcon.ico
+
+          echo "Generated icon files:"
+          file electron/app/icons/appIcon.png
+          file electron/app/icons/appIcon.ico
+        shell: bash
+
+      - name: Verify icon files exist
+        run: |
+          if [ ! -f electron/app/icons/appIcon.ico ]; then
+            echo "ERROR: appIcon.ico was not generated. Cannot build Windows installer."
+            exit 1
+          fi
+          if [ ! -f electron/app/icons/appIcon.png ]; then
+            echo "ERROR: appIcon.png was not generated."
+            exit 1
+          fi
         shell: bash
 ```
 
-Key change: use `magick` instead of `convert` for Windows compatibility, and use `||` fallback instead of `if/grep`.
+### 2. Remove the "Validate icon file" step (line 36-38)
 
-### 2. Fix NSIS icon references in `electron/package.json`
+Replace it with the verification step above which is more actionable.
 
-**File: `electron/package.json`** — Change lines 58-60 from `.png` to `.ico`:
+### 3. No changes needed to `electron/package.json`
 
-```json
-"nsis": {
-  "oneClick": false,
-  "allowToChangeInstallationDirectory": true,
-  "installerIcon": "app/icons/appIcon.ico",
-  "uninstallerIcon": "app/icons/appIcon.ico",
-  "installerHeaderIcon": "app/icons/appIcon.ico"
-}
-```
-
-### 3. Save uploaded logo as `public/app-icon-1024.png`
-
-The user uploaded a valid Hyvo logo PNG (`ChatGPT_Image_Mar_5_2026_05_21_01_PM-2.png`). Copy it to `public/app-icon-1024.png` so the build has a real PNG to convert.
+The NSIS icon references already point to `.ico` (fixed in prior edit). Mac/Linux still use `.png` which will now be a real PNG after the `sharp` conversion.
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `public/app-icon-1024.png` | Replace with uploaded Hyvo logo |
-| `electron/package.json` | Change NSIS icon refs from `.png` to `.ico` |
-| `.github/workflows/desktop-release.yml` | Fix fallback: use `magick` instead of `convert`, simplify logic |
+| `.github/workflows/desktop-release.yml` | Replace icon copy/convert step with `sharp-cli` conversion + `png-to-ico`, add verification step, remove old validate step |
+
+## Why This Works
+
+- `sharp-cli` is a Node.js tool (no OS dependency) that reads JPEG/PNG/WebP and outputs a guaranteed-format PNG
+- `png-to-ico` then gets a real PNG and produces a valid `.ico`
+- Build fails fast with a clear error if either step fails
+- macOS and Linux builds are unaffected (they only need the `.png` which is also fixed)
 
