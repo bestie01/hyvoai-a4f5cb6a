@@ -55,9 +55,9 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "app/icons/appIcon.png",
-      "uninstallerIcon": "app/icons/appIcon.png",
-      "installerHeaderIcon": "app/icons/appIcon.png"
+      "installerIcon": "app/icons/appIcon.ico",
+      "uninstallerIcon": "app/icons/appIcon.ico",
+      "installerHeaderIcon": "app/icons/appIcon.ico"
     },
     "mac": {
       "target": [

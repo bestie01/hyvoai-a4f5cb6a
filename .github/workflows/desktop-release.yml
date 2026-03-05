@@ -43,14 +43,12 @@ jobs:
           mkdir -p electron/app/icons
           cp -r dist/* electron/app/
           cp public/app-icon-1024.png electron/app/icons/appIcon.png
-          if file public/app-icon-1024.png | grep -q "PNG image"; then
-            npm install --global png-to-ico
-            png-to-ico public/app-icon-1024.png > electron/app/icons/appIcon.ico
-          else
-            echo "WARNING: app-icon-1024.png is not a valid PNG, generating fallback icon"
-            convert -size 256x256 xc:"#6366f1" -fill white -gravity center \
+          npm install --global png-to-ico
+          png-to-ico public/app-icon-1024.png > electron/app/icons/appIcon.ico || {
+            echo "png-to-ico failed, generating fallback ico via magick"
+            magick -size 256x256 xc:"#6366f1" -fill white -gravity center \
               -pointsize 80 -annotate 0 "H" electron/app/icons/appIcon.ico
-          fi
+          }
         shell: bash
         
       - name: Install Electron dependencies
