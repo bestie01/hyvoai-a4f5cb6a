@@ -1,33 +1,62 @@
 
 
-# Fix: Windows Build — Invalid Icon File
+# Fix: Windows Build — Two Remaining Issues
 
-## Problem
-The `public/app-icon-1024.png` file is still not a valid PNG image. Text-based editing tools cannot create valid binary image files, so previous attempts to "replace" it produced an invalid file.
+## Problems (from build log screenshot)
 
-## Solution
+1. **Invalid PNG file**: `public/app-icon-1024.png` is still not a valid PNG, so the `png-to-ico` path is skipped and the fallback runs
+2. **ImageMagick `convert` fails on Windows**: The fallback uses `convert` which on Windows runners either doesn't exist or conflicts with a Windows system utility (`convert.exe` is a disk conversion tool). Error: `Invalid Parameter - 256x256`
+3. **NSIS config references `.png`**: In `electron/package.json` lines 58-60, `installerIcon`, `uninstallerIcon`, and `installerHeaderIcon` all point to `app/icons/appIcon.png` — NSIS requires `.ico`
 
-**You need to manually upload a valid 1024×1024 PNG icon.** Here's how:
+## Fixes
 
-1. **Create or obtain** a valid 1024×1024 PNG image for your app icon (use any image editor like Figma, Photoshop, or an online tool)
-2. **Upload it** to `public/app-icon-1024.png` — you can drag and drop a PNG file directly into the Lovable chat, or commit it via Git
+### 1. Workflow: Replace ImageMagick fallback with `magick` (modern ImageMagick on Windows)
 
-**Alternative (no upload needed):** I can modify the GitHub Actions workflow to skip the `png-to-ico` conversion and instead generate a simple valid `.ico` file using ImageMagick (which is pre-installed on GitHub runners):
+On `windows-latest` runners, ImageMagick 7 is installed as `magick`, not `convert`. But more reliably, we should use PowerShell to download a simple `.ico` or generate one via npm. The simplest fix: use `npx png-to-ico` with the uploaded user image, and if that fails, download a generic icon.
+
+**File: `.github/workflows/desktop-release.yml`** — Replace the "Copy web build to electron" step (lines 40-54) with:
 
 ```yaml
-- name: Convert icon to ICO
-  run: |
-    if file public/app-icon-1024.png | grep -q "PNG image"; then
-      npm install --global png-to-ico
-      png-to-ico public/app-icon-1024.png > electron/app/icons/appIcon.ico
-    else
-      # Generate a fallback 256x256 icon if PNG is invalid
-      convert -size 256x256 xc:"#6366f1" -fill white -gravity center \
-        -pointsize 80 -annotate 0 "H" electron/app/icons/appIcon.ico
-    fi
-  shell: bash
+      - name: Copy web build to electron
+        run: |
+          mkdir -p electron/app
+          mkdir -p electron/app/icons
+          cp -r dist/* electron/app/
+          cp public/app-icon-1024.png electron/app/icons/appIcon.png
+          npm install --global png-to-ico
+          png-to-ico public/app-icon-1024.png > electron/app/icons/appIcon.ico || {
+            echo "png-to-ico failed, generating fallback ico via magick"
+            magick -size 256x256 xc:"#6366f1" -fill white -gravity center \
+              -pointsize 80 -annotate 0 "H" electron/app/icons/appIcon.ico
+          }
+        shell: bash
 ```
 
-## Recommendation
-The best fix is to **upload a real PNG file**. You can drag a `.png` image into the Lovable chat and I'll place it at `public/app-icon-1024.png`. The fallback approach above would unblock the build but produce a generic placeholder icon.
+Key change: use `magick` instead of `convert` for Windows compatibility, and use `||` fallback instead of `if/grep`.
+
+### 2. Fix NSIS icon references in `electron/package.json`
+
+**File: `electron/package.json`** — Change lines 58-60 from `.png` to `.ico`:
+
+```json
+"nsis": {
+  "oneClick": false,
+  "allowToChangeInstallationDirectory": true,
+  "installerIcon": "app/icons/appIcon.ico",
+  "uninstallerIcon": "app/icons/appIcon.ico",
+  "installerHeaderIcon": "app/icons/appIcon.ico"
+}
+```
+
+### 3. Save uploaded logo as `public/app-icon-1024.png`
+
+The user uploaded a valid Hyvo logo PNG (`ChatGPT_Image_Mar_5_2026_05_21_01_PM-2.png`). Copy it to `public/app-icon-1024.png` so the build has a real PNG to convert.
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `public/app-icon-1024.png` | Replace with uploaded Hyvo logo |
+| `electron/package.json` | Change NSIS icon refs from `.png` to `.ico` |
+| `.github/workflows/desktop-release.yml` | Fix fallback: use `magick` instead of `convert`, simplify logic |
 
