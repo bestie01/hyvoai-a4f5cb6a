@@ -4,6 +4,7 @@ import { GITHUB_CONFIG } from '@/lib/constants';
 interface ReleaseAsset {
   name: string;
   size: number;
+  download_count: number;
   download_url: string;
   browser_download_url: string;
 }
@@ -11,6 +12,7 @@ interface ReleaseAsset {
 interface Release {
   tag_name: string;
   name: string;
+  body: string;
   published_at: string;
   html_url: string;
   assets: ReleaseAsset[];
@@ -19,12 +21,15 @@ interface Release {
 interface UseGitHubReleasesReturn {
   latestVersion: string | null;
   releaseUrl: string | null;
+  releaseDate: string | null;
+  releaseNotes: string | null;
   assets: ReleaseAsset[];
   isLoading: boolean;
   error: string | null;
   hasReleases: boolean;
   getAssetUrl: (pattern: string) => string | null;
   getAssetSize: (pattern: string) => string | null;
+  getAssetDownloads: (pattern: string) => number | null;
   refresh: () => Promise<void>;
 }
 
@@ -93,15 +98,26 @@ export const useGitHubReleases = (): UseGitHubReleasesReturn => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }, [release]);
 
+  const getAssetDownloads = useCallback((pattern: string): number | null => {
+    if (!release?.assets) return null;
+    const asset = release.assets.find(a => 
+      a.name.toLowerCase().includes(pattern.toLowerCase())
+    );
+    return asset?.download_count ?? null;
+  }, [release]);
+
   return {
     latestVersion: release?.tag_name?.replace('v', '') || null,
     releaseUrl: release?.html_url || null,
+    releaseDate: release?.published_at || null,
+    releaseNotes: release?.body || null,
     assets: release?.assets || [],
     isLoading,
     error,
     hasReleases: !!release,
     getAssetUrl,
     getAssetSize,
+    getAssetDownloads,
     refresh: fetchLatestRelease,
   };
 };
