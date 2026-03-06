@@ -1,15 +1,19 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Download, Monitor, Smartphone, Shield, Zap, Check, Globe, ExternalLink, Loader2, AlertCircle, Github, Sparkles, Apple, Terminal, Package } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Download, Monitor, Shield, Zap, Check, Globe, ExternalLink, Loader2, Github, Sparkles, Apple, Terminal, ChevronDown, Clock, FileDown, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGitHubReleases } from "@/hooks/useGitHubReleases";
 import { BuildStatusCard } from "@/components/BuildStatusCard";
 import { GITHUB_CONFIG } from "@/lib/constants";
+import { format } from "date-fns";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -24,17 +28,32 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
+type DetectedOS = "windows" | "macos" | "linux" | "unknown";
+
+function detectOS(): DetectedOS {
+  const ua = navigator.userAgent.toLowerCase();
+  if (ua.includes("win")) return "windows";
+  if (ua.includes("mac")) return "macos";
+  if (ua.includes("linux") || ua.includes("x11")) return "linux";
+  return "unknown";
+}
+
 const DownloadPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { 
     latestVersion, 
-    releaseUrl, 
+    releaseUrl,
+    releaseDate,
+    releaseNotes,
     isLoading, 
     hasReleases, 
     getAssetUrl, 
-    getAssetSize 
+    getAssetSize,
+    getAssetDownloads,
   } = useGitHubReleases();
+
+  const userOS = useMemo(() => detectOS(), []);
 
   const handleLaunchWebApp = () => {
     navigate('/studio');
@@ -65,7 +84,7 @@ const DownloadPage = () => {
       requirements: "Windows 10/11 (64-bit)",
       patterns: [".exe"],
       fileExt: ".exe",
-      primary: true,
+      osKey: "windows" as DetectedOS,
       color: "from-blue-500/20 to-cyan-500/20",
     },
     {
@@ -74,7 +93,7 @@ const DownloadPage = () => {
       requirements: "macOS 11.0+ (Intel)",
       patterns: ["-x64.dmg", "x64.dmg", "-intel.dmg"],
       fileExt: ".dmg",
-      primary: true,
+      osKey: "macos" as DetectedOS,
       color: "from-gray-500/20 to-zinc-500/20",
     },
     {
@@ -83,7 +102,7 @@ const DownloadPage = () => {
       requirements: "macOS 11.0+ (M1/M2/M3)",
       patterns: ["-arm64.dmg", "arm64.dmg", "-universal.dmg"],
       fileExt: ".dmg",
-      primary: true,
+      osKey: "macos" as DetectedOS,
       color: "from-purple-500/20 to-pink-500/20",
     },
     {
@@ -92,7 +111,7 @@ const DownloadPage = () => {
       requirements: "Any Linux distro",
       patterns: [".AppImage"],
       fileExt: ".AppImage",
-      primary: true,
+      osKey: "linux" as DetectedOS,
       color: "from-orange-500/20 to-amber-500/20",
     },
     {
@@ -101,10 +120,20 @@ const DownloadPage = () => {
       requirements: "Ubuntu/Debian",
       patterns: [".deb"],
       fileExt: ".deb",
-      primary: false,
+      osKey: "linux" as DetectedOS,
       color: "from-red-500/20 to-rose-500/20",
     },
   ];
+
+  // Sort platforms: user's OS first
+  const sortedPlatforms = useMemo(() => {
+    if (userOS === "unknown") return platforms;
+    return [...platforms].sort((a, b) => {
+      const aMatch = a.osKey === userOS ? 0 : 1;
+      const bMatch = b.osKey === userOS ? 0 : 1;
+      return aMatch - bMatch;
+    });
+  }, [userOS]);
 
   const features = [
     "Real-time stream monitoring",
@@ -115,6 +144,8 @@ const DownloadPage = () => {
     "Automated clip generation",
   ];
 
+  const formattedDate = releaseDate ? format(new Date(releaseDate), "MMM d, yyyy") : null;
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-hero">
@@ -122,7 +153,6 @@ const DownloadPage = () => {
         
         {/* Hero Section */}
         <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-          {/* Animated background */}
           <div className="absolute inset-0 -z-10">
             <motion.div 
               className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
@@ -169,11 +199,17 @@ const DownloadPage = () => {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3 }}
+                  className="flex flex-col items-center gap-2 mb-8"
                 >
-                  <Badge className="mb-8 bg-gradient-primary text-primary-foreground px-4 py-2 text-sm">
+                  <Badge className="bg-gradient-primary text-primary-foreground px-4 py-2 text-sm">
                     <Github className="w-4 h-4 mr-2" />
                     Version {latestVersion} • Available Now
                   </Badge>
+                  {formattedDate && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Released {formattedDate}
+                    </span>
+                  )}
                 </motion.div>
               ) : (
                 <Badge className="mb-8 bg-gradient-primary text-primary-foreground px-4 py-2 text-sm">
@@ -253,14 +289,16 @@ const DownloadPage = () => {
             </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {platforms.map((platform, index) => {
+              {sortedPlatforms.map((platform) => {
                 let downloadUrl: string | null = null;
                 let size: string | null = null;
+                let downloads: number | null = null;
                 
                 for (const pattern of platform.patterns) {
                   downloadUrl = getAssetUrl(pattern);
                   if (downloadUrl) {
                     size = getAssetSize(pattern);
+                    downloads = getAssetDownloads(pattern);
                     break;
                   }
                 }
@@ -268,9 +306,11 @@ const DownloadPage = () => {
                 if (!downloadUrl) {
                   downloadUrl = getAssetUrl(platform.fileExt);
                   size = getAssetSize(platform.fileExt);
+                  downloads = getAssetDownloads(platform.fileExt);
                 }
                 
                 const isAvailable = !!downloadUrl;
+                const isRecommended = platform.osKey === userOS;
 
                 return (
                   <motion.div
@@ -278,13 +318,21 @@ const DownloadPage = () => {
                     variants={itemVariants}
                     whileHover={{ scale: 1.02, y: -5 }}
                   >
-                    <Card className={`relative h-full transition-all ${!isAvailable ? 'opacity-60' : 'hover:shadow-lg hover:border-primary/50'} bg-gradient-to-br ${platform.color}`}>
-                      {isAvailable && (
-                        <Badge className="absolute -top-2 -right-2 bg-success text-success-foreground shadow-lg">
-                          <Check className="w-3 h-3 mr-1" />
-                          Ready
-                        </Badge>
-                      )}
+                    <Card className={`relative h-full transition-all ${!isAvailable ? 'opacity-60' : 'hover:shadow-lg hover:border-primary/50'} bg-gradient-to-br ${platform.color} ${isRecommended && isAvailable ? 'ring-2 ring-primary/50' : ''}`}>
+                      <div className="absolute -top-2 -right-2 flex gap-1">
+                        {isRecommended && (
+                          <Badge className="bg-primary text-primary-foreground shadow-lg text-[10px]">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            For You
+                          </Badge>
+                        )}
+                        {isAvailable && !isRecommended && (
+                          <Badge className="bg-success text-success-foreground shadow-lg">
+                            <Check className="w-3 h-3 mr-1" />
+                            Ready
+                          </Badge>
+                        )}
+                      </div>
                       
                       <CardHeader className="text-center pb-3">
                         <motion.div
@@ -309,6 +357,15 @@ const DownloadPage = () => {
                             <span>Requires:</span>
                             <span className="text-right text-xs">{platform.requirements}</span>
                           </div>
+                          {downloads !== null && downloads > 0 && (
+                            <div className="flex justify-between">
+                              <span>Downloads:</span>
+                              <span className="flex items-center gap-1 font-mono">
+                                <FileDown className="w-3 h-3" />
+                                {downloads.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -351,16 +408,62 @@ const DownloadPage = () => {
               </motion.div>
             )}
 
-            {/* Build Status Card - shown when no releases or not configured */}
-            {!hasReleases && !isLoading && (
-              <motion.div 
-                className="max-w-2xl mx-auto mt-8"
+            {/* Release Notes */}
+            {hasReleases && releaseNotes && (
+              <motion.div
+                className="max-w-3xl mx-auto mt-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
               >
-                <BuildStatusCard onUseWebApp={handleLaunchWebApp} />
+                <Collapsible>
+                  <Card>
+                    <CollapsibleTrigger className="w-full">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            What's New in v{latestVersion}
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
+                        </CardTitle>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent>
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground whitespace-pre-wrap text-sm">
+                          {releaseNotes}
+                        </div>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               </motion.div>
             )}
+
+            {/* Build Status Card - collapsible, always available */}
+            <motion.div 
+              className="max-w-2xl mx-auto mt-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              {!hasReleases && !isLoading ? (
+                <BuildStatusCard onUseWebApp={handleLaunchWebApp} />
+              ) : (
+                <Collapsible>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
+                      <Info className="w-4 h-4" />
+                      Build & Release Info
+                      <ChevronDown className="w-3 h-3" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <BuildStatusCard onUseWebApp={handleLaunchWebApp} />
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </motion.div>
           </motion.div>
         </section>
 
@@ -385,7 +488,7 @@ const DownloadPage = () => {
             </motion.div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {features.map((feature, i) => (
+              {features.map((feature) => (
                 <motion.div 
                   key={feature} 
                   className="flex items-center gap-3 p-4 bg-background rounded-lg border hover:border-primary/50 transition-all"
@@ -405,7 +508,7 @@ const DownloadPage = () => {
         {/* Installation Instructions */}
         <section className="py-16 px-6">
           <motion.div 
-            className="container mx-auto max-w-4xl"
+            className="container mx-auto max-w-5xl"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -418,7 +521,7 @@ const DownloadPage = () => {
               </p>
             </motion.div>
             
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-3 gap-8">
               <motion.div variants={itemVariants}>
                 <Card className="h-full hover:shadow-lg transition-all">
                   <CardHeader>
@@ -439,7 +542,7 @@ const DownloadPage = () => {
                         <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center shrink-0">
                           {i + 1}
                         </Badge>
-                        <span>{step}</span>
+                        <span className="text-sm">{step}</span>
                       </motion.div>
                     ))}
                   </CardContent>
@@ -466,7 +569,34 @@ const DownloadPage = () => {
                         <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center shrink-0">
                           {i + 1}
                         </Badge>
-                        <span>{step}</span>
+                        <span className="text-sm">{step}</span>
+                      </motion.div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Card className="h-full hover:shadow-lg transition-all">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Terminal className="w-5 h-5 text-primary" />
+                      Linux
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {["Download .AppImage or .deb", "chmod +x *.AppImage (AppImage)", "Run ./HyvoStreamStudio.AppImage", "Or: sudo dpkg -i *.deb"].map((step, i) => (
+                      <motion.div 
+                        key={step} 
+                        className="flex gap-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center shrink-0">
+                          {i + 1}
+                        </Badge>
+                        <span className="text-sm font-mono text-xs">{step}</span>
                       </motion.div>
                     ))}
                   </CardContent>
@@ -494,8 +624,20 @@ const DownloadPage = () => {
                       Secure & Trusted
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="text-muted-foreground">
+                  <CardContent className="text-muted-foreground space-y-2">
                     <p>Open source and auditable. Your stream keys stay local, data encrypted end-to-end.</p>
+                    <p className="text-xs">
+                      <Info className="w-3 h-3 inline mr-1" />
+                      Verify downloads by checking file hashes on the{" "}
+                      <a 
+                        href={`https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-foreground"
+                      >
+                        GitHub Releases page
+                      </a>.
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -516,6 +658,8 @@ const DownloadPage = () => {
             </div>
           </motion.div>
         </section>
+
+        <Footer />
       </div>
     </PageTransition>
   );
