@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -433,6 +433,13 @@ const DownloadPage = () => {
                       <CardContent>
                         <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground whitespace-pre-wrap text-sm">
                           {releaseNotes}
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-border">
+                          <Button variant="ghost" size="sm" asChild className="text-primary">
+                            <Link to="/changelog">
+                              View Full Changelog →
+                            </Link>
+                          </Button>
                         </div>
                       </CardContent>
                     </CollapsibleContent>

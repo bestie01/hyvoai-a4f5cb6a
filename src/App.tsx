@@ -37,6 +37,7 @@ const NotificationFeatures = React.lazy(() => import("./pages/native/Notificatio
 const DisplayFeatures = React.lazy(() => import("./pages/native/DisplayFeatures"));
 const GeolocationFeatures = React.lazy(() => import("./pages/native/GeolocationFeatures"));
 const DeviceFeatures = React.lazy(() => import("./pages/native/DeviceFeatures"));
+const Changelog = React.lazy(() => import("./pages/Changelog"));
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
                   <Route path="/growth" element={<Growth />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/create" element={<StreamCreator />} />
+                  <Route path="/changelog" element={<Changelog />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

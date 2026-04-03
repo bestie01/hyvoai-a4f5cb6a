@@ -36,6 +36,9 @@ const Footer = () => {
       label: "Settings",
       href: "/settings"
     }, {
+      label: "Changelog",
+      href: "/changelog"
+    }, {
       label: "Support",
       href: "mailto:support@hyvo.ai",
       external: true
