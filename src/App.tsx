@@ -37,6 +37,7 @@ const NotificationFeatures = React.lazy(() => import("./pages/native/Notificatio
 const DisplayFeatures = React.lazy(() => import("./pages/native/DisplayFeatures"));
 const GeolocationFeatures = React.lazy(() => import("./pages/native/GeolocationFeatures"));
 const DeviceFeatures = React.lazy(() => import("./pages/native/DeviceFeatures"));
+const Changelog = React.lazy(() => import("./pages/Changelog"));
 
 const queryClient = new QueryClient();
 
