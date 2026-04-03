@@ -78,6 +78,7 @@ const App = () => (
                   <Route path="/growth" element={<Growth />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/create" element={<StreamCreator />} />
+                  <Route path="/changelog" element={<Changelog />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
