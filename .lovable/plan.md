@@ -1,46 +1,46 @@
 
 
-# Fix: Download Page — GitHub API Returns 404 (Private Repo)
+# Verify & Improve Download + Changelog Pages
 
-## Problem
+## Verification Status
+The GitHub API now returns **200** with v2.0.0 release data including 7+ assets (Windows .exe, macOS .dmg/.zip, Linux .deb/.AppImage). Both pages should be fully functional.
 
-The download page fetches release data from `https://api.github.com/repos/bestie01/hyvoai-a4f5cb6a/releases/latest`, but this returns **404** because the repository is private. Without access to the API, the page shows "No releases found" and no download buttons work — even though the desktop release build succeeded.
+## Design Improvements
 
-## Solution Options
+### Download Page (`src/pages/Download.tsx`)
 
-### Option A: Make the GitHub repo public (Recommended — simplest)
+1. **Bigger, bolder primary download button** — For the user's detected OS, show a large hero-style download button above the platform grid (not just a sorted card). Include version, file size, and a one-click download.
 
-1. Go to GitHub → `bestie01/hyvoai-a4f5cb6a` → Settings → General
-2. Scroll to "Danger Zone" → Change visibility → Make public
-3. The download page will immediately start working — no code changes needed
+2. **Cleaner platform cards** — Simplify card layout: remove gradient backgrounds, use cleaner borders, larger icons, and more whitespace. Show platform icon + name + version + size + download button only.
 
-### Option B: Add a GitHub token for API access (if repo must stay private)
+3. **System requirements section** — Move requirements out of cards into a compact table/grid below the download section.
 
-This requires code changes:
+4. **Total download count** — Show aggregated download count across all assets in the hero section.
+
+5. **Remove "Web App Recommended" card prominence** — Keep it but make it secondary (outline card below downloads), since the user wants desktop downloads front-and-center.
+
+6. **Better release notes rendering** — Parse markdown bullet points from release body into proper list items instead of raw `whitespace-pre-wrap`.
+
+### Changelog Page (`src/pages/Changelog.tsx`)
+
+7. **Better markdown rendering** — Parse release body markdown (headers, bullets, bold) into proper HTML elements instead of plain text with `whitespace-pre-wrap`.
+
+8. **Total downloads per release** — Show sum of all asset downloads next to the release date.
+
+9. **Sticky "Back to top" button** — For long changelogs.
+
+10. **Platform icons on assets** — Show Windows/macOS/Linux icons next to each downloadable file based on file extension.
+
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useGitHubReleases.tsx` | Add `Authorization: Bearer <token>` header to API fetch calls |
-| `src/hooks/useAllGitHubReleases.tsx` | Same token header addition |
+| `src/pages/Download.tsx` | Hero download CTA for detected OS, cleaner card design, markdown parsing, reorder sections |
+| `src/pages/Changelog.tsx` | Markdown rendering, platform icons on assets, download count badges, back-to-top |
 
-The token would need to be stored as a Supabase secret and proxied through an edge function (to avoid exposing it client-side), or the releases would need to be proxied.
+## Technical Details
 
-### Option C: Proxy releases through a Supabase edge function
-
-Create a `github-releases` edge function that:
-1. Fetches from the GitHub API using a server-side token (stored as a Supabase secret)
-2. Returns the release data to the client
-3. Update the hooks to call this edge function instead of GitHub directly
-
-| File | Change |
-|------|--------|
-| `supabase/functions/github-releases/index.ts` | New edge function that fetches releases with auth |
-| `src/hooks/useGitHubReleases.tsx` | Point API URL to edge function |
-| `src/hooks/useAllGitHubReleases.tsx` | Point API URL to edge function |
-
-## Recommendation
-
-**Option A** is by far the simplest. Making the repo public lets the existing code work perfectly — download counts, release notes, asset URLs, and the changelog page all come to life with zero code changes. The desktop release you already built will show up immediately.
-
-If the repo must stay private, Option C (edge function proxy) is the most secure approach since it keeps the GitHub token server-side.
+- Parse markdown release notes using simple regex (split on `\n`, detect `##`, `- `, `**`) — no new dependencies needed.
+- Detect platform from asset filename: `.exe` = Windows, `.dmg`/`mac` = macOS, `.deb`/`.AppImage` = Linux.
+- Hero CTA: detect OS → find matching asset → show "Download for [OS]" button with size badge.
 
