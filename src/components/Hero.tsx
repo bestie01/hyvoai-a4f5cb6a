@@ -97,13 +97,7 @@ const Hero = () => {
                 <span className="font-semibold tracking-wide text-sm">AI-Powered Streaming Assistant</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Badge>
-              <Badge
-                variant="outline"
-                className="py-1.5 px-3 rounded-full text-xs font-mono cursor-pointer hover:bg-primary/10 transition-colors border-border/60"
-                onClick={() => navigate("/changelog")}
-              >
-                v2.0.0
-              </Badge>
+              <VersionBadge />
             </motion.div>
 
             <div className="space-y-8">
