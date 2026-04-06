@@ -214,7 +214,7 @@ const DownloadPage = () => {
               <motion.div variants={itemVariants} className="mb-4">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-7 rounded-xl shadow-lg"
+                  className="text-lg px-10 py-7 rounded-2xl shadow-lg bg-gradient-primary hover:shadow-glow-primary-strong transition-all duration-500 font-bold text-primary-foreground"
                   onClick={() => handleDownload(heroAsset.name, heroAsset.url)}
                 >
                   <Download className="w-5 h-5 mr-2" />
@@ -229,6 +229,22 @@ const DownloadPage = () => {
               <Button variant="outline" size="lg" onClick={handleLaunchWebApp} className="gap-2">
                 <Globe className="w-4 h-4" /> Launch Web App — no download needed
               </Button>
+            </motion.div>
+
+            {/* Trust badges */}
+            <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-primary" />
+                <span>Auto-updates included</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-primary" />
+                <span>Lightweight & fast</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-primary" />
+                <span>Free to use</span>
+              </div>
             </motion.div>
           </motion.div>
         </section>
@@ -309,29 +325,20 @@ const DownloadPage = () => {
               </Button>
             </div>
 
-            {/* Release Notes */}
+            {/* Release Notes — always visible */}
             {hasReleases && releaseNotes && (
               <motion.div className="max-w-3xl mx-auto mt-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-                <Collapsible>
-                  <Card>
-                    <CollapsibleTrigger className="w-full">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-primary" />
-                            What's New in v{latestVersion}
-                          </span>
-                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                        </CardTitle>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="space-y-2">
-                        {renderMarkdown(releaseNotes)}
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
+                <Card className="border-primary/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      What's New in v{latestVersion}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {renderMarkdown(releaseNotes)}
+                  </CardContent>
+                </Card>
               </motion.div>
             )}
 

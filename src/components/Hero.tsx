@@ -3,12 +3,28 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Radio, ArrowRight, Download, Zap, Monitor, Mic, Video, Layers, Wand2, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useGitHubReleases } from "@/hooks/useGitHubReleases";
 import heroImage from "@/assets/hero-dashboard.jpg";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SlideIn } from "@/components/animations/SlideIn";
 import { MagneticButton } from "@/components/animations/MagneticButton";
 import { RippleEffect } from "@/components/effects/RippleEffect";
 import { motion } from "framer-motion";
+
+const VersionBadge = () => {
+  const { latestVersion, isLoading } = useGitHubReleases();
+  const navigate = useNavigate();
+  if (isLoading || !latestVersion) return null;
+  return (
+    <Badge
+      variant="outline"
+      className="py-1.5 px-3 rounded-full text-xs font-mono cursor-pointer hover:bg-primary/10 transition-colors border-border/60"
+      onClick={() => navigate("/changelog")}
+    >
+      v{latestVersion}
+    </Badge>
+  );
+};
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -96,13 +112,7 @@ const Hero = () => {
                 <span className="font-semibold tracking-wide text-sm">AI-Powered Streaming Assistant</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Badge>
-              <Badge
-                variant="outline"
-                className="py-1.5 px-3 rounded-full text-xs font-mono cursor-pointer hover:bg-primary/10 transition-colors border-border/60"
-                onClick={() => navigate("/changelog")}
-              >
-                v2.0.0
-              </Badge>
+              <VersionBadge />
             </motion.div>
 
             <div className="space-y-8">

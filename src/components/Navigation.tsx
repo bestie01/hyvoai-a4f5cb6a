@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { Menu, X, User, Settings, LogOut, Crown } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,7 @@ const Navigation = () => {
     subscription
   } = useSubscription();
   const navigate = useNavigate();
+  const location = useLocation();
   const navItems = [{
     label: "Dashboard",
     href: "/dashboard"
@@ -35,14 +36,14 @@ const Navigation = () => {
     label: "Community",
     href: "/community"
   }, {
-    label: "Native",
-    href: "/native"
-  }, {
     label: "Pricing",
     href: "/pricing"
   }, {
     label: "Download",
     href: "/download"
+  }, {
+    label: "Changelog",
+    href: "/changelog"
   }];
   const handleNavClick = (href: string) => {
     if (href.startsWith('/#')) {
@@ -89,9 +90,9 @@ const Navigation = () => {
           }} transition={{
             delay: index * 0.05
           }}>
-                {item.href.startsWith('/') ? <Link to={item.href} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group">
+                {item.href.startsWith('/') ? <Link to={item.href} className={`text-sm font-medium transition-colors relative group ${location.pathname === item.href ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
                     {item.label}
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+                    <span className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all duration-300 ${location.pathname === item.href ? "w-full" : "w-0 group-hover:w-full"}`} />
                   </Link> : <a href={item.href} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group" onClick={e => {
               if (item.href.startsWith('/#')) {
                 e.preventDefault();
