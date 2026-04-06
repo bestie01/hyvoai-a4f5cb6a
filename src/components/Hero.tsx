@@ -11,6 +11,21 @@ import { MagneticButton } from "@/components/animations/MagneticButton";
 import { RippleEffect } from "@/components/effects/RippleEffect";
 import { motion } from "framer-motion";
 
+const VersionBadge = () => {
+  const { latestVersion, isLoading } = useGitHubReleases();
+  const navigate = useNavigate();
+  if (isLoading || !latestVersion) return null;
+  return (
+    <Badge
+      variant="outline"
+      className="py-1.5 px-3 rounded-full text-xs font-mono cursor-pointer hover:bg-primary/10 transition-colors border-border/60"
+      onClick={() => navigate("/changelog")}
+    >
+      v{latestVersion}
+    </Badge>
+  );
+};
+
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
