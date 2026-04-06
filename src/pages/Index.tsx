@@ -29,23 +29,32 @@ const Index = () => {
         </div>
 
         {/* Platform Logos Section */}
-        <section className="py-8 bg-background relative overflow-hidden border-t border-border/30">
+        <section className="py-12 bg-background relative overflow-hidden border-t border-border/20">
           <div className="container mx-auto px-6">
             <PlatformLogos />
           </div>
         </section>
 
-        {/* Problem Section - The struggle is real */}
-        <ProblemSection />
+        {/* Problem Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background pointer-events-none" />
+          <ProblemSection />
+        </div>
 
-        {/* Solution Section - Meet your AI co-pilot */}
-        <SolutionSection />
+        {/* Solution Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.03] to-background pointer-events-none" />
+          <SolutionSection />
+        </div>
 
         {/* Features Section */}
         <Features />
 
         {/* How It Works Section */}
-        <HowItWorksSection />
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background pointer-events-none" />
+          <HowItWorksSection />
+        </div>
 
         {/* Who It's For Section */}
         <WhoItsForSection />

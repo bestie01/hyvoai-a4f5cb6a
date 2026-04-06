@@ -80,6 +80,7 @@ const Hero = () => {
           <FadeIn className="text-center lg:text-left space-y-10">
             {/* Badge */}
             <motion.div
+              className="flex items-center gap-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -94,6 +95,13 @@ const Hero = () => {
                 </span>
                 <span className="font-semibold tracking-wide text-sm">AI-Powered Streaming Assistant</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </Badge>
+              <Badge
+                variant="outline"
+                className="py-1.5 px-3 rounded-full text-xs font-mono cursor-pointer hover:bg-primary/10 transition-colors border-border/60"
+                onClick={() => navigate("/changelog")}
+              >
+                v2.0.0
               </Badge>
             </motion.div>
 
