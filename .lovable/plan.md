@@ -1,46 +1,63 @@
 
 
-# Verify & Improve Download + Changelog Pages
+# Fix Black Screen in Desktop App + Design Improvements
 
-## Verification Status
-The GitHub API now returns **200** with v2.0.0 release data including 7+ assets (Windows .exe, macOS .dmg/.zip, Linux .deb/.AppImage). Both pages should be fully functional.
+## Problem 1: Black Screen in Electron Desktop App
 
-## Design Improvements
+The screenshot shows the Electron app displaying a completely black/empty window. The root cause is that **Vite's `base` config defaults to `/`**, which produces absolute asset paths like `/assets/index-abc123.js`. When Electron loads the built files via `file://` protocol, these absolute paths resolve to the filesystem root and fail silently, resulting in a blank screen.
 
-### Download Page (`src/pages/Download.tsx`)
+**Fix**: Set `base: './'` in `vite.config.ts` so all asset paths become relative (e.g., `./assets/index-abc123.js`), which works correctly under `file://`.
 
-1. **Bigger, bolder primary download button** — For the user's detected OS, show a large hero-style download button above the platform grid (not just a sorted card). Include version, file size, and a one-click download.
+Additionally, the Electron main process loads from `../app/index.html` but the GitHub Actions workflow copies `dist/*` into `electron/app/`. This path is correct, but without `base: './'`, the HTML file references broken absolute paths.
 
-2. **Cleaner platform cards** — Simplify card layout: remove gradient backgrounds, use cleaner borders, larger icons, and more whitespace. Show platform icon + name + version + size + download button only.
+## Problem 2: Design Clarity Improvements
 
-3. **System requirements section** — Move requirements out of cards into a compact table/grid below the download section.
+Enhance the overall design for both web and desktop with cleaner layouts, better visual hierarchy, and polished UI.
 
-4. **Total download count** — Show aggregated download count across all assets in the hero section.
+## Changes
 
-5. **Remove "Web App Recommended" card prominence** — Keep it but make it secondary (outline card below downloads), since the user wants desktop downloads front-and-center.
+### 1. Fix Electron Black Screen (`vite.config.ts`)
 
-6. **Better release notes rendering** — Parse markdown bullet points from release body into proper list items instead of raw `whitespace-pre-wrap`.
+Add `base: './'` to the Vite config. This single change fixes the blank window in the packaged Electron app while remaining compatible with the web deployment (Vercel handles relative paths fine).
 
-### Changelog Page (`src/pages/Changelog.tsx`)
+### 2. Improve Index/Landing Page (`src/pages/Index.tsx`)
 
-7. **Better markdown rendering** — Parse release body markdown (headers, bullets, bold) into proper HTML elements instead of plain text with `whitespace-pre-wrap`.
+- Add a subtle gradient background overlay for depth
+- Improve section spacing and transitions between sections
 
-8. **Total downloads per release** — Show sum of all asset downloads next to the release date.
+### 3. Improve Navigation (`src/components/Navigation.tsx`)
 
-9. **Sticky "Back to top" button** — For long changelogs.
+- Ensure nav has proper backdrop blur and contrast for readability on both light/dark themes
+- Add "Download" link to main nav if not already present
 
-10. **Platform icons on assets** — Show Windows/macOS/Linux icons next to each downloadable file based on file extension.
+### 4. Improve Hero Section (`src/components/Hero.tsx`)
+
+- Tighten copy, improve button contrast and sizing
+- Add version badge linking to changelog
+
+### 5. Electron Main Process Polish (`electron/src/index.js`)
+
+- Add `show: false` + `ready-to-show` pattern (already exists, good)
+- Add a fallback: if `loadFile` fails, show an error dialog instead of a black screen
+- Log the actual file path being loaded for easier debugging
+
+### 6. Desktop Release Workflow Update (`.github/workflows/desktop-release.yml`)
+
+- Ensure `npm run build` uses the new `base: './'` (automatic from vite.config.ts change)
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/Download.tsx` | Hero download CTA for detected OS, cleaner card design, markdown parsing, reorder sections |
-| `src/pages/Changelog.tsx` | Markdown rendering, platform icons on assets, download count badges, back-to-top |
+| `vite.config.ts` | Add `base: './'` to fix Electron blank screen |
+| `electron/src/index.js` | Add error handling for loadFile failure, log loaded path |
+| `src/pages/Index.tsx` | Improve section spacing and visual flow |
+| `src/components/Navigation.tsx` | Add Download link, improve backdrop styling |
+| `src/components/Hero.tsx` | Add version badge, improve CTA button design |
 
-## Technical Details
+## Impact
 
-- Parse markdown release notes using simple regex (split on `\n`, detect `##`, `- `, `**`) — no new dependencies needed.
-- Detect platform from asset filename: `.exe` = Windows, `.dmg`/`mac` = macOS, `.deb`/`.AppImage` = Linux.
-- Hero CTA: detect OS → find matching asset → show "Download for [OS]" button with size badge.
+- **Desktop app**: Black screen is fixed — the app will load correctly when packaged
+- **Web app**: No negative impact — relative paths work on Vercel
+- **Next release**: After merging and tagging a new version, the rebuilt desktop app will display the full UI
 
