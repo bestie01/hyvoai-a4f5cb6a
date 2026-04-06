@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { Menu, X, User, Settings, LogOut, Crown } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,7 @@ const Navigation = () => {
     subscription
   } = useSubscription();
   const navigate = useNavigate();
+  const location = useLocation();
   const navItems = [{
     label: "Dashboard",
     href: "/dashboard"
@@ -35,14 +36,14 @@ const Navigation = () => {
     label: "Community",
     href: "/community"
   }, {
-    label: "Native",
-    href: "/native"
-  }, {
     label: "Pricing",
     href: "/pricing"
   }, {
     label: "Download",
     href: "/download"
+  }, {
+    label: "Changelog",
+    href: "/changelog"
   }];
   const handleNavClick = (href: string) => {
     if (href.startsWith('/#')) {

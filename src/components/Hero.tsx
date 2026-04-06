@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Radio, ArrowRight, Download, Zap, Monitor, Mic, Video, Layers, Wand2, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useGitHubReleases } from "@/hooks/useGitHubReleases";
 import heroImage from "@/assets/hero-dashboard.jpg";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SlideIn } from "@/components/animations/SlideIn";

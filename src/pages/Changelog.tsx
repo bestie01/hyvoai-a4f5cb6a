@@ -155,9 +155,9 @@ const Changelog = () => {
                   return (
                     <motion.div key={release.tag_name} variants={itemVariants} className="relative md:pl-12">
                       {/* Timeline dot */}
-                      <div className="absolute left-[14px] top-7 w-[11px] h-[11px] rounded-full border-2 border-primary bg-background hidden md:block" />
+                      <div className={`absolute left-[14px] top-7 w-[11px] h-[11px] rounded-full border-2 border-primary bg-background hidden md:block ${index === 0 ? "animate-pulse shadow-glow-primary" : ""}`} />
 
-                      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                      <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 border-l-4 ${index === 0 ? "border-l-primary" : "border-l-transparent hover:border-l-primary/40"}`}>
                         <CardHeader className="pb-3">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge variant={index === 0 ? "default" : "secondary"} className={index === 0 ? "bg-primary text-primary-foreground" : ""}>
@@ -192,7 +192,7 @@ const Changelog = () => {
 
                           {/* Download assets */}
                           {release.assets.length > 0 && (
-                            <Collapsible>
+                            <Collapsible defaultOpen={index === 0}>
                               <CollapsibleTrigger className="w-full">
                                 <div className="flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors py-2 border-t border-border pt-4">
                                   <span className="flex items-center gap-2">
