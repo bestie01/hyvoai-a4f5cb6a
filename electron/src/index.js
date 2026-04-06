@@ -41,8 +41,16 @@ function createWindow() {
   });
 
   // Load the app
+  const indexPath = path.join(__dirname, '../app/index.html');
   if (app.isPackaged) {
-    mainWindow.loadFile(path.join(__dirname, '../app/index.html'));
+    console.log('[Electron] Loading file:', indexPath);
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('[Electron] Failed to load index.html:', err);
+      dialog.showErrorBox(
+        'Failed to Load App',
+        `Could not load the application.\n\nExpected file: ${indexPath}\n\nError: ${err.message}`
+      );
+    });
   } else {
     // In development, load from localhost
     mainWindow.loadURL('http://localhost:5173');
