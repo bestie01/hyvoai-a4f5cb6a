@@ -1,63 +1,57 @@
 
 
-# Fix Black Screen in Desktop App + Design Improvements
+# Post-Release Improvements
 
-## Problem 1: Black Screen in Electron Desktop App
-
-The screenshot shows the Electron app displaying a completely black/empty window. The root cause is that **Vite's `base` config defaults to `/`**, which produces absolute asset paths like `/assets/index-abc123.js`. When Electron loads the built files via `file://` protocol, these absolute paths resolve to the filesystem root and fail silently, resulting in a blank screen.
-
-**Fix**: Set `base: './'` in `vite.config.ts` so all asset paths become relative (e.g., `./assets/index-abc123.js`), which works correctly under `file://`.
-
-Additionally, the Electron main process loads from `../app/index.html` but the GitHub Actions workflow copies `dist/*` into `electron/app/`. This path is correct, but without `base: './'`, the HTML file references broken absolute paths.
-
-## Problem 2: Design Clarity Improvements
-
-Enhance the overall design for both web and desktop with cleaner layouts, better visual hierarchy, and polished UI.
+Now that the desktop release is successful and downloads are live, here are targeted improvements to polish the app across web and desktop.
 
 ## Changes
 
-### 1. Fix Electron Black Screen (`vite.config.ts`)
+### 1. Download Page — Auto-expand release notes and improve hero
 
-Add `base: './'` to the Vite config. This single change fixes the blank window in the packaged Electron app while remaining compatible with the web deployment (Vercel handles relative paths fine).
+**File**: `src/pages/Download.tsx`
 
-### 2. Improve Index/Landing Page (`src/pages/Index.tsx`)
+- Auto-expand the "What's New" release notes section by default (remove the collapsible wrapper) so users see what they're downloading
+- Add a subtle animated gradient border on the hero download button for more visual impact
+- Show "Auto-updates included" trust badge below the hero CTA
+- Add a "Latest release" timestamp next to the version badge for clarity
 
-- Add a subtle gradient background overlay for depth
-- Improve section spacing and transitions between sections
+### 2. Changelog Page — Better visual design
 
-### 3. Improve Navigation (`src/components/Navigation.tsx`)
+**File**: `src/pages/Changelog.tsx`
 
-- Ensure nav has proper backdrop blur and contrast for readability on both light/dark themes
-- Add "Download" link to main nav if not already present
+- Auto-expand download assets for the latest release (index 0) instead of requiring a click
+- Add a "scroll to top" floating button when scrolled past the first release
+- Improve timeline dot styling with a pulsing animation on the latest release dot
+- Add subtle card hover effects with a left border accent color
 
-### 4. Improve Hero Section (`src/components/Hero.tsx`)
+### 3. Navigation — Add Changelog link and active state
 
-- Tighten copy, improve button contrast and sizing
-- Add version badge linking to changelog
+**File**: `src/components/Navigation.tsx`
 
-### 5. Electron Main Process Polish (`electron/src/index.js`)
+- Add "Changelog" to the nav items list
+- Add active state highlighting — bold/underline the current route's nav link using `useLocation()`
 
-- Add `show: false` + `ready-to-show` pattern (already exists, good)
-- Add a fallback: if `loadFile` fails, show an error dialog instead of a black screen
-- Log the actual file path being loaded for easier debugging
+### 4. Hero — Dynamic version from GitHub API
 
-### 6. Desktop Release Workflow Update (`.github/workflows/desktop-release.yml`)
+**File**: `src/components/Hero.tsx`
 
-- Ensure `npm run build` uses the new `base: './'` (automatic from vite.config.ts change)
+- Replace hardcoded `v2.0.0` badge with a dynamic version fetched via `useGitHubReleases` hook
+- This ensures the hero always shows the latest release version without manual updates
 
-## Files to Modify
+### 5. Landing Page — Add download CTA to the CTA section
+
+**File**: `src/components/CTA.tsx`
+
+- Add a secondary "Download Desktop App" button alongside the existing primary CTA
+- This gives visitors a direct path to the download page from the bottom of the landing page
+
+## Summary of Files
 
 | File | Change |
 |------|--------|
-| `vite.config.ts` | Add `base: './'` to fix Electron blank screen |
-| `electron/src/index.js` | Add error handling for loadFile failure, log loaded path |
-| `src/pages/Index.tsx` | Improve section spacing and visual flow |
-| `src/components/Navigation.tsx` | Add Download link, improve backdrop styling |
-| `src/components/Hero.tsx` | Add version badge, improve CTA button design |
-
-## Impact
-
-- **Desktop app**: Black screen is fixed — the app will load correctly when packaged
-- **Web app**: No negative impact — relative paths work on Vercel
-- **Next release**: After merging and tagging a new version, the rebuilt desktop app will display the full UI
+| `src/pages/Download.tsx` | Auto-expand release notes, add trust badge, improve hero CTA |
+| `src/pages/Changelog.tsx` | Auto-expand latest assets, scroll-to-top button, timeline polish |
+| `src/components/Navigation.tsx` | Add Changelog link, add active route highlighting |
+| `src/components/Hero.tsx` | Dynamic version badge from GitHub API |
+| `src/components/CTA.tsx` | Add "Download Desktop App" secondary button |
 
