@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Zap, Users, Trophy, Radio, Sparkles } from "lucide-react";
+import { ArrowRight, Zap, Users, Trophy, Radio, Sparkles, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
@@ -152,6 +152,17 @@ const CTA = () => {
                     onClick={() => navigate("/pricing")}
                   >
                     View Pricing
+                  </Button>
+                </MagneticButton>
+                <MagneticButton>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="text-lg px-10 py-7 glass-strong rounded-2xl font-bold border-border/60 hover:border-primary/50"
+                    onClick={() => navigate("/download")}
+                  >
+                    <Download className="w-5 h-5 mr-2.5" />
+                    Download Desktop App
                   </Button>
                 </MagneticButton>
               </div>

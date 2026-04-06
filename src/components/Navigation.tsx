@@ -93,7 +93,6 @@ const Navigation = () => {
                 {item.href.startsWith('/') ? <Link to={item.href} className={`text-sm font-medium transition-colors relative group ${location.pathname === item.href ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
                     {item.label}
                     <span className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all duration-300 ${location.pathname === item.href ? "w-full" : "w-0 group-hover:w-full"}`} />
-                  </Link>
                   </Link> : <a href={item.href} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group" onClick={e => {
               if (item.href.startsWith('/#')) {
                 e.preventDefault();
