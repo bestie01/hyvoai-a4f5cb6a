@@ -1,57 +1,39 @@
 
 
-# Post-Release Improvements
+# Fix Desktop App 404 + Verify Web Pages
 
-Now that the desktop release is successful and downloads are live, here are targeted improvements to polish the app across web and desktop.
+## Problem
+
+The screenshot shows the Electron desktop app displaying "Oops! Page not found" (404). This happens because the app uses `BrowserRouter`, which relies on the browser history API. Under Electron's `file://` protocol, the initial pathname is something like `/C:/Users/.../app/index.html` instead of `/`, so no route matches and it falls through to the catch-all 404 route.
+
+The `base: './'` fix from earlier solved asset loading (no more black screen), but routing still breaks because `BrowserRouter` cannot resolve paths under `file://`.
+
+## Solution
+
+Use `HashRouter` when running inside Electron and `BrowserRouter` for the web. Hash-based routing (`/#/`, `/#/download`, etc.) works correctly under `file://` because the hash is handled entirely client-side.
 
 ## Changes
 
-### 1. Download Page — Auto-expand release notes and improve hero
+### 1. Detect Electron environment (`src/App.tsx`)
 
-**File**: `src/pages/Download.tsx`
+- Check `navigator.userAgent` for "Electron" string
+- Conditionally render `HashRouter` (Electron) or `BrowserRouter` (web)
+- Extract route definitions into a shared component to avoid duplication
 
-- Auto-expand the "What's New" release notes section by default (remove the collapsible wrapper) so users see what they're downloading
-- Add a subtle animated gradient border on the hero download button for more visual impact
-- Show "Auto-updates included" trust badge below the hero CTA
-- Add a "Latest release" timestamp next to the version badge for clarity
+### 2. Update version constant (`src/hooks/useVersionCheck.tsx`)
 
-### 2. Changelog Page — Better visual design
+- Change `CURRENT_VERSION` from `'1.0.0'` to `'2.1.0'` so the update banner doesn't show for users already on the latest version. This also fixes the misleading "Current: v1.0.0" display in the desktop app's update banner.
 
-**File**: `src/pages/Changelog.tsx`
-
-- Auto-expand download assets for the latest release (index 0) instead of requiring a click
-- Add a "scroll to top" floating button when scrolled past the first release
-- Improve timeline dot styling with a pulsing animation on the latest release dot
-- Add subtle card hover effects with a left border accent color
-
-### 3. Navigation — Add Changelog link and active state
-
-**File**: `src/components/Navigation.tsx`
-
-- Add "Changelog" to the nav items list
-- Add active state highlighting — bold/underline the current route's nav link using `useLocation()`
-
-### 4. Hero — Dynamic version from GitHub API
-
-**File**: `src/components/Hero.tsx`
-
-- Replace hardcoded `v2.0.0` badge with a dynamic version fetched via `useGitHubReleases` hook
-- This ensures the hero always shows the latest release version without manual updates
-
-### 5. Landing Page — Add download CTA to the CTA section
-
-**File**: `src/components/CTA.tsx`
-
-- Add a secondary "Download Desktop App" button alongside the existing primary CTA
-- This gives visitors a direct path to the download page from the bottom of the landing page
-
-## Summary of Files
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/Download.tsx` | Auto-expand release notes, add trust badge, improve hero CTA |
-| `src/pages/Changelog.tsx` | Auto-expand latest assets, scroll-to-top button, timeline polish |
-| `src/components/Navigation.tsx` | Add Changelog link, add active route highlighting |
-| `src/components/Hero.tsx` | Dynamic version badge from GitHub API |
-| `src/components/CTA.tsx` | Add "Download Desktop App" secondary button |
+| `src/App.tsx` | Use `HashRouter` when `navigator.userAgent` contains "Electron", otherwise `BrowserRouter` |
+| `src/hooks/useVersionCheck.tsx` | Update `CURRENT_VERSION` to `'2.1.0'` |
+
+## Impact
+
+- Desktop app: Routes will work correctly, landing page loads instead of 404
+- Web app: No change, continues using `BrowserRouter` as before
+- Update banner: Won't falsely show "v2.1.0 available" when user is already on v2.1.0
 
