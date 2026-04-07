@@ -1,22 +1,22 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SkipLink } from "@/components/SkipLink";
 import { LoadingScreen } from "@/components/ui/loading-screen";
- import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
- import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
- import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
+import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-// Lazy load heavy pages for better initial load performance
+// Lazy load heavy pages
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const StreamingApp = React.lazy(() => import("./pages/StreamingApp"));
 const Download = React.lazy(() => import("./pages/Download"));
@@ -41,39 +41,64 @@ const Changelog = React.lazy(() => import("./pages/Changelog"));
 
 const queryClient = new QueryClient();
 
-const isElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron');
+// Robust Electron detection
+const isElectron = typeof window !== 'undefined' && (
+  (window as any).electronAPI?.isElectron === true ||
+  navigator.userAgent.includes('Electron')
+);
 const Router = isElectron ? HashRouter : BrowserRouter;
+
+// Guard component: redirect stale/empty paths to home in Electron
+function ElectronRouteGuard({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isElectron && location.pathname !== '/' && !VALID_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'))) {
+      navigate('/', { replace: true });
+    }
+  }, []);
+
+  return <>{children}</>;
+}
+
+const VALID_PATHS = [
+  '/', '/download', '/pricing', '/dashboard', '/studio', '/native',
+  '/auth', '/profile', '/subscription-success', '/settings', '/schedule',
+  '/growth', '/community', '/create', '/changelog'
+];
 
 const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
-    <main id="main-content">
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/download" element={<Download />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/studio" element={<StreamingApp />} />
-        <Route path="/native" element={<NativeHub />} />
-        <Route path="/native/camera" element={<CameraFeatures />} />
-        <Route path="/native/haptics" element={<HapticsFeatures />} />
-        <Route path="/native/storage" element={<StorageFeatures />} />
-        <Route path="/native/notifications" element={<NotificationFeatures />} />
-        <Route path="/native/display" element={<DisplayFeatures />} />
-        <Route path="/native/geolocation" element={<GeolocationFeatures />} />
-        <Route path="/native/device" element={<DeviceFeatures />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/schedule" element={<Schedule />} />
-        <Route path="/growth" element={<Growth />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/create" element={<StreamCreator />} />
-        <Route path="/changelog" element={<Changelog />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </main>
+    <ElectronRouteGuard>
+      <main id="main-content">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/download" element={<Download />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/studio" element={<StreamingApp />} />
+          <Route path="/native" element={<NativeHub />} />
+          <Route path="/native/camera" element={<CameraFeatures />} />
+          <Route path="/native/haptics" element={<HapticsFeatures />} />
+          <Route path="/native/storage" element={<StorageFeatures />} />
+          <Route path="/native/notifications" element={<NotificationFeatures />} />
+          <Route path="/native/display" element={<DisplayFeatures />} />
+          <Route path="/native/geolocation" element={<GeolocationFeatures />} />
+          <Route path="/native/device" element={<DeviceFeatures />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/growth" element={<Growth />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/create" element={<StreamCreator />} />
+          <Route path="/changelog" element={<Changelog />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+    </ElectronRouteGuard>
   </Suspense>
 );
 
