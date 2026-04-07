@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getRedirectUrl } from '@/lib/routes';
 
 interface PlatformConnection {
   platform: string;
@@ -8,6 +9,7 @@ interface PlatformConnection {
   username: string | null;
   accessToken: string | null;
   expiresAt: Date | null;
+  needsReconnect: boolean;
 }
 
 interface UsePlatformOAuthReturn {
@@ -20,11 +22,116 @@ interface UsePlatformOAuthReturn {
   refreshConnections: () => Promise<void>;
 }
 
+function makeConnection(platform: string, row: any): PlatformConnection {
+  const expiresAt = row.token_expires_at ? new Date(row.token_expires_at) : null;
+  const needsReconnect = expiresAt ? expiresAt < new Date() : false;
+  return {
+    platform,
+    isConnected: true,
+    username: row.platform_username,
+    accessToken: row.access_token,
+    expiresAt,
+    needsReconnect,
+  };
+}
+
 export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
   const { toast } = useToast();
   const [twitchConnection, setTwitchConnection] = useState<PlatformConnection | null>(null);
   const [youtubeConnection, setYoutubeConnection] = useState<PlatformConnection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Persist provider tokens into social_connections after OAuth sign-in
+  const persistProviderTokens = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const provider = session.user.app_metadata?.provider;
+      const providerToken = session.provider_token;
+      const providerRefreshToken = session.provider_refresh_token;
+
+      if (!providerToken || !provider) return;
+
+      let platform: string;
+      if (provider === 'twitch') platform = 'twitch';
+      else if (provider === 'google') platform = 'youtube';
+      else return;
+
+      const identity = session.user.identities?.find(i => i.provider === provider);
+      const platformUsername = identity?.identity_data?.name || 
+                               identity?.identity_data?.preferred_username ||
+                               identity?.identity_data?.full_name ||
+                               session.user.email;
+      const platformUserId = identity?.identity_data?.provider_id || identity?.id;
+
+      // Upsert into social_connections
+      const { error } = await supabase
+        .from('social_connections')
+        .upsert({
+          user_id: session.user.id,
+          platform,
+          access_token: providerToken,
+          refresh_token: providerRefreshToken || null,
+          platform_username: platformUsername,
+          platform_user_id: platformUserId || null,
+          is_active: true,
+          token_expires_at: session.expires_at 
+            ? new Date(session.expires_at * 1000).toISOString() 
+            : null,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,platform',
+          ignoreDuplicates: false,
+        });
+
+      if (error) {
+        // If upsert on conflict fails (no unique constraint), try insert/update manually
+        console.warn('Upsert failed, trying manual approach:', error.message);
+        
+        const { data: existing } = await supabase
+          .from('social_connections')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('platform', platform)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('social_connections')
+            .update({
+              access_token: providerToken,
+              refresh_token: providerRefreshToken || null,
+              platform_username: platformUsername,
+              platform_user_id: platformUserId || null,
+              is_active: true,
+              token_expires_at: session.expires_at
+                ? new Date(session.expires_at * 1000).toISOString()
+                : null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('social_connections')
+            .insert({
+              user_id: session.user.id,
+              platform,
+              access_token: providerToken,
+              refresh_token: providerRefreshToken || null,
+              platform_username: platformUsername,
+              platform_user_id: platformUserId || null,
+              is_active: true,
+              token_expires_at: session.expires_at
+                ? new Date(session.expires_at * 1000).toISOString()
+                : null,
+            });
+        }
+      }
+    } catch (err) {
+      console.error('Error persisting provider tokens:', err);
+    }
+  }, []);
 
   const refreshConnections = useCallback(async () => {
     setIsLoading(true);
@@ -43,29 +150,8 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
       const twitch = connections?.find(c => c.platform === 'twitch');
       const youtube = connections?.find(c => c.platform === 'youtube');
 
-      if (twitch) {
-        setTwitchConnection({
-          platform: 'twitch',
-          isConnected: true,
-          username: twitch.platform_username,
-          accessToken: twitch.access_token,
-          expiresAt: twitch.token_expires_at ? new Date(twitch.token_expires_at) : null,
-        });
-      } else {
-        setTwitchConnection(null);
-      }
-
-      if (youtube) {
-        setYoutubeConnection({
-          platform: 'youtube',
-          isConnected: true,
-          username: youtube.platform_username,
-          accessToken: youtube.access_token,
-          expiresAt: youtube.token_expires_at ? new Date(youtube.token_expires_at) : null,
-        });
-      } else {
-        setYoutubeConnection(null);
-      }
+      setTwitchConnection(twitch ? makeConnection('twitch', twitch) : null);
+      setYoutubeConnection(youtube ? makeConnection('youtube', youtube) : null);
     } catch (error) {
       console.error('Error refreshing connections:', error);
     } finally {
@@ -75,61 +161,36 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
 
   const connectTwitch = useCallback(async () => {
     try {
-      const redirectUrl = `${window.location.origin}/studio`;
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'twitch',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: getRedirectUrl('/studio'),
           scopes: 'user:read:email channel:read:stream_key analytics:read:extensions analytics:read:games channel:read:subscriptions',
         },
       });
-
       if (error) throw error;
-      
-      toast({
-        title: "Redirecting to Twitch",
-        description: "Please authorize Hyvo.ai to access your Twitch account",
-      });
+      toast({ title: "Redirecting to Twitch", description: "Please authorize Hyvo.ai to access your Twitch account" });
     } catch (error) {
       console.error('Twitch OAuth error:', error);
-      toast({
-        title: "Connection Failed",
-        description: "Could not connect to Twitch. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Connection Failed", description: "Could not connect to Twitch. Please try again.", variant: "destructive" });
     }
   }, [toast]);
 
   const connectYouTube = useCallback(async () => {
     try {
-      const redirectUrl = `${window.location.origin}/studio`;
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: getRedirectUrl('/studio'),
           scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
-
       if (error) throw error;
-      
-      toast({
-        title: "Redirecting to Google",
-        description: "Please authorize Hyvo.ai to access your YouTube account",
-      });
+      toast({ title: "Redirecting to Google", description: "Please authorize Hyvo.ai to access your YouTube account" });
     } catch (error) {
       console.error('YouTube OAuth error:', error);
-      toast({
-        title: "Connection Failed",
-        description: "Could not connect to YouTube. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Connection Failed", description: "Could not connect to YouTube. Please try again.", variant: "destructive" });
     }
   }, [toast]);
 
@@ -147,11 +208,8 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
 
       if (error) throw error;
 
-      if (platform === 'twitch') {
-        setTwitchConnection(null);
-      } else {
-        setYoutubeConnection(null);
-      }
+      if (platform === 'twitch') setTwitchConnection(null);
+      else setYoutubeConnection(null);
 
       toast({
         title: "Disconnected",
@@ -159,27 +217,16 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
       });
     } catch (error) {
       console.error('Disconnect error:', error);
-      toast({
-        title: "Error",
-        description: "Could not disconnect account",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Could not disconnect account", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
+  // On mount: persist tokens if returning from OAuth, then refresh
   useEffect(() => {
-    refreshConnections();
-  }, [refreshConnections]);
+    persistProviderTokens().then(() => refreshConnections());
+  }, [persistProviderTokens, refreshConnections]);
 
-  return {
-    twitchConnection,
-    youtubeConnection,
-    isLoading,
-    connectTwitch,
-    connectYouTube,
-    disconnectPlatform,
-    refreshConnections,
-  };
+  return { twitchConnection, youtubeConnection, isLoading, connectTwitch, connectYouTube, disconnectPlatform, refreshConnections };
 };
