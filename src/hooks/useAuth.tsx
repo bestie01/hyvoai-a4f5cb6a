@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getRedirectUrl } from '@/lib/routes';
 
 interface UseAuthReturn {
   user: User | null;
@@ -23,7 +24,6 @@ export const useAuth = (): UseAuthReturn => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -32,7 +32,6 @@ export const useAuth = (): UseAuthReturn => {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -43,51 +42,25 @@ export const useAuth = (): UseAuthReturn => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
+      email, password,
+      options: { emailRedirectTo: getRedirectUrl('/') }
     });
-
     if (error) {
-      toast({
-        title: "Sign Up Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Sign Up Failed", description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: "Sign Up Successful",
-        description: "Please check your email to confirm your account",
-      });
+      toast({ title: "Sign Up Successful", description: "Please check your email to confirm your account" });
     }
-
     return { error };
   }, [toast]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({
-        title: "Sign In Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Sign In Failed", description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: "Welcome back!",
-        description: "Successfully signed in",
-      });
+      toast({ title: "Welcome back!", description: "Successfully signed in" });
     }
-
     return { error };
   }, [toast]);
 
@@ -95,108 +68,52 @@ export const useAuth = (): UseAuthReturn => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'twitch',
       options: {
-        redirectTo: `${window.location.origin}/studio`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        }
+        redirectTo: getRedirectUrl('/studio'),
+        queryParams: { access_type: 'offline', prompt: 'consent' }
       }
     });
-
-    if (error) {
-      toast({
-        title: "Twitch Sign In Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-
+    if (error) toast({ title: "Twitch Sign In Failed", description: error.message, variant: "destructive" });
     return { error };
   }, [toast]);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
+      options: { redirectTo: getRedirectUrl('/dashboard') }
     });
-    if (error) {
-      toast({
-        title: "Google Sign In Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    if (error) toast({ title: "Google Sign In Failed", description: error.message, variant: "destructive" });
     return { error };
   }, [toast]);
 
   const signInWithDiscord = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
+      options: { redirectTo: getRedirectUrl('/dashboard') }
     });
-    if (error) {
-      toast({
-        title: "Discord Sign In Failed", 
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    if (error) toast({ title: "Discord Sign In Failed", description: error.message, variant: "destructive" });
     return { error };
   }, [toast]);
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast({
-        title: "Sign Out Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Sign Out Failed", description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: "Signed Out",
-        description: "Successfully signed out",
-      });
+      toast({ title: "Signed Out", description: "Successfully signed out" });
     }
   }, [toast]);
 
   const resetPassword = useCallback(async (email: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
+      redirectTo: getRedirectUrl('/'),
     });
-
     if (error) {
-      toast({
-        title: "Password Reset Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Password Reset Failed", description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: "Password Reset Sent",
-        description: "Check your email for reset instructions",
-      });
+      toast({ title: "Password Reset Sent", description: "Check your email for reset instructions" });
     }
-
     return { error };
   }, [toast]);
 
-  return {
-    user,
-    session,
-    loading,
-    signUp,
-    signIn,
-    signInWithTwitch,
-    signInWithGoogle,
-    signInWithDiscord,
-    signOut,
-    resetPassword,
-  };
+  return { user, session, loading, signUp, signIn, signInWithTwitch, signInWithGoogle, signInWithDiscord, signOut, resetPassword };
 };
