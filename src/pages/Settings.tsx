@@ -280,8 +280,8 @@ const Settings = () => {
                     )}
 
                     {(updateStatus === 'idle' || updateStatus === 'error') && (
-                      <Button onClick={checkForUpdates} variant="outline" className="liquid-glass-button w-full" disabled={updateStatus === 'checking'}>
-                        <RefreshCw className={`w-4 h-4 mr-2 ${updateStatus === 'checking' ? 'animate-spin' : ''}`} />
+                      <Button onClick={checkForUpdates} variant="outline" className="liquid-glass-button w-full">
+                        <RefreshCw className="w-4 h-4 mr-2" />
                         Check for Updates
                       </Button>
                     )}
