@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GITHUB_CONFIG } from '@/lib/constants';
 
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = '2.1.0';
 const DISMISSED_VERSION_KEY = 'hyvo_dismissed_version';
 
 interface VersionInfo {
