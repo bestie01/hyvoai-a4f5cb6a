@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useLiveChat, ChatMessage } from "@/hooks/useLiveChat";
 import { useTwitchIRC } from "@/hooks/useTwitchIRC";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { ChatModerationControls } from "./ChatModerationControls";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   MessageSquare, 
   Tv, 
@@ -21,10 +22,12 @@ import {
   Shield,
   Loader2,
   Radio,
-  Settings2
+  Settings2,
+  Send
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface LiveChatPanelProps {
   isStreaming?: boolean;
@@ -50,6 +53,8 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [moderationEnabled, setModerationEnabled] = useState(true);
   const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(new Set());
+  const [chatInput, setChatInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   // Combine messages from both sources
   const allMessages: ChatMessage[] = [
@@ -80,16 +85,12 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
   }, [allMessages, autoScroll]);
 
   const handleConnect = async () => {
-    // Connect YouTube if available
     if (youtubeConnection?.isConnected) {
       await connectYtChat(['youtube']);
     }
-    
-    // Connect Twitch IRC if channel is set
     if (twitchChannel.trim()) {
       twitchIRC.connect(twitchChannel.trim());
     }
-    
     setSettingsOpen(false);
   };
 
@@ -104,6 +105,43 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
     setHiddenMessages(new Set());
   };
 
+  const handleSendMessage = useCallback(async () => {
+    const msg = chatInput.trim();
+    if (!msg || isSending) return;
+
+    setIsSending(true);
+    try {
+      let sent = false;
+
+      // Send to Twitch if connected
+      if (twitchIRC.isConnected && twitchConnection?.isConnected) {
+        // We need broadcaster_id and sender_id — for now use channel name as placeholder
+        const success = await twitchIRC.sendMessage(msg, twitchChannel, twitchChannel);
+        if (success) sent = true;
+        else toast.error("Failed to send Twitch message");
+      }
+
+      // Send to YouTube if connected
+      if (isYtConnected && youtubeConnection?.isConnected) {
+        const { error } = await supabase.functions.invoke('live-chat', {
+          body: { action: 'send_message', platform: 'youtube', message: msg },
+        });
+        if (error) toast.error("Failed to send YouTube message");
+        else sent = true;
+      }
+
+      if (sent) {
+        setChatInput("");
+      } else if (!twitchIRC.isConnected && !isYtConnected) {
+        toast.error("No chat connection active");
+      }
+    } catch (e) {
+      toast.error("Failed to send message");
+    } finally {
+      setIsSending(false);
+    }
+  }, [chatInput, isSending, twitchIRC, twitchConnection, isYtConnected, youtubeConnection, twitchChannel]);
+
   const handleModerationAction = (action: string, username: string, messageId?: string) => {
     if (action === 'delete' && messageId) {
       setHiddenMessages(prev => new Set(prev).add(messageId));
@@ -111,9 +149,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
   };
 
   const getPlatformIcon = (platform: 'twitch' | 'youtube') => {
-    if (platform === 'twitch') {
-      return <Tv className="h-3 w-3 text-[#9146FF]" />;
-    }
+    if (platform === 'twitch') return <Tv className="h-3 w-3 text-[#9146FF]" />;
     return <Youtube className="h-3 w-3 text-[#FF0000]" />;
   };
 
@@ -131,16 +167,9 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          {msg.isModerator && (
-            <Shield className="h-3 w-3 text-green-500" />
-          )}
-          {msg.isSubscriber && (
-            <Crown className="h-3 w-3 text-yellow-500" />
-          )}
-          <span 
-            className="font-semibold text-sm"
-            style={{ color: msg.color || 'inherit' }}
-          >
+          {msg.isModerator && <Shield className="h-3 w-3 text-green-500" />}
+          {msg.isSubscriber && <Crown className="h-3 w-3 text-yellow-500" />}
+          <span className="font-semibold text-sm" style={{ color: msg.color || 'inherit' }}>
             {msg.displayName}
           </span>
           <span className="text-xs text-muted-foreground">
@@ -161,6 +190,9 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
       )}
     </div>
   );
+
+  const canSend = isConnected && (twitchConnection?.isConnected || youtubeConnection?.isConnected);
+  const maxChars = 500;
 
   return (
     <Card className="h-full flex flex-col">
@@ -183,12 +215,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
           </CardTitle>
           <div className="flex items-center gap-1">
             {isConnected && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClear}
-                title="Clear messages"
-              >
+              <Button variant="ghost" size="icon" onClick={handleClear} title="Clear messages">
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
@@ -217,6 +244,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
                     />
                     <p className="text-xs text-muted-foreground">
                       Real-time chat via Twitch IRC WebSocket. No authentication required for reading.
+                      {twitchConnection?.isConnected && " Sending enabled via connected account."}
                     </p>
                   </div>
                   
@@ -232,7 +260,6 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
                     </p>
                   </div>
 
-                  {/* Moderation Settings */}
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-muted-foreground" />
@@ -319,7 +346,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {twitchIRC.isConnected 
-                ? `Connected to #${twitchChannel} via IRC`
+                ? `Connected to #${twitchIRC.channelName} via IRC`
                 : "Make sure you have an active livestream"}
             </p>
           </div>
@@ -337,6 +364,36 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
               {allMessages.map(renderMessage)}
             </div>
           </ScrollArea>
+        )}
+
+        {/* Message input */}
+        {isConnected && (
+          <div className="flex-shrink-0 px-3 py-2 border-t border-border">
+            <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  placeholder={canSend ? "Send a message..." : "Connect account to send"}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value.slice(0, maxChars))}
+                  disabled={!canSend || isSending}
+                  className="pr-12 text-sm"
+                />
+                {chatInput.length > 0 && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                    {chatInput.length}/{maxChars}
+                  </span>
+                )}
+              </div>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!canSend || !chatInput.trim() || isSending}
+                className="flex-shrink-0"
+              >
+                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </form>
+          </div>
         )}
 
         {/* Connection status footer */}
@@ -357,7 +414,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
                 {twitchIRC.isConnected && (
                   <Badge variant="outline" className="text-xs py-0">
                     <Tv className="h-3 w-3 mr-1 text-[#9146FF]" />
-                    {twitchChannel}
+                    {twitchIRC.channelName}
                   </Badge>
                 )}
                 {isYtConnected && (
