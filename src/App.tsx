@@ -1,9 +1,9 @@
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, HashRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -48,16 +48,20 @@ const isElectron = typeof window !== 'undefined' && (
 );
 const Router = isElectron ? HashRouter : BrowserRouter;
 
-// Guard component: redirect stale/empty paths to home in Electron
+// Synchronous guard: redirect invalid paths in Electron without useEffect flash
 function ElectronRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isElectron && location.pathname !== '/' && !VALID_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'))) {
-      navigate('/', { replace: true });
+  if (isElectron) {
+    const path = location.pathname;
+    // Redirect file:// artifacts or invalid paths synchronously
+    const isFilePath = path.includes('C:') || path.includes('.html') || path.includes('\\');
+    const isValidRoute = path === '/' || VALID_PATHS.some(p => path === p || path.startsWith(p + '/'));
+    
+    if (isFilePath || !isValidRoute) {
+      return <Navigate to="/" replace />;
     }
-  }, []);
+  }
 
   return <>{children}</>;
 }
