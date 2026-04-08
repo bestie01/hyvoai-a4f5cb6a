@@ -13,6 +13,7 @@ import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -122,6 +123,7 @@ const App = () => (
             <AppRoutes />
           </Router>
           <Analytics />
+          <SpeedInsights />
         </ErrorBoundary>
       </TooltipProvider>
     </ThemeProvider>
