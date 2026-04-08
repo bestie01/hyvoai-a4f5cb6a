@@ -20,11 +20,12 @@ interface ChatMessage {
 }
 
 interface ChatRequest {
-  action: 'get_messages' | 'get_live_chat_id';
+  action: 'get_messages' | 'get_live_chat_id' | 'send_message';
   platform: 'twitch' | 'youtube';
   channelId?: string;
   liveChatId?: string;
   pageToken?: string;
+  message?: string;
 }
 
 serve(async (req) => {
@@ -51,16 +52,21 @@ serve(async (req) => {
       );
     }
 
-    const { action, platform, channelId, liveChatId, pageToken } = await req.json() as ChatRequest;
+    const { action, platform, channelId, liveChatId, pageToken, message } = await req.json() as ChatRequest;
 
-    // Get the user's connection for this platform
-    const { data: connection, error: connError } = await supabaseClient
-      .from('social_connections')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('platform', platform === 'youtube' ? 'google' : platform)
-      .eq('is_active', true)
-      .maybeSingle();
+    // Get the user's connection for this platform — try both 'youtube' and 'google' for compat
+    const platformNames = platform === 'youtube' ? ['youtube', 'google'] : [platform];
+    let connection = null;
+    for (const pName of platformNames) {
+      const { data, error: connError } = await supabaseClient
+        .from('social_connections')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('platform', pName)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (!connError && data) { connection = data; break; }
+    }
 
     if (connError) {
       console.error('[live-chat] Connection error:', connError);
@@ -71,7 +77,11 @@ serve(async (req) => {
     if (platform === 'twitch') {
       result = await handleTwitchChat(connection?.access_token, channelId, action);
     } else if (platform === 'youtube') {
-      result = await handleYouTubeChat(connection?.access_token, action, liveChatId, pageToken);
+      if (action === 'send_message') {
+        result = await handleYouTubeSendMessage(connection?.access_token, liveChatId, message);
+      } else {
+        result = await handleYouTubeChat(connection?.access_token, action, liveChatId, pageToken);
+      }
     }
 
     console.log(`[live-chat] ${platform} ${action} result:`, result?.messages?.length || 0, 'messages');
@@ -231,5 +241,49 @@ async function handleYouTubeChat(
   } catch (error) {
     console.error('[live-chat] YouTube error:', error);
     return { messages: [] };
+  }
+}
+
+async function handleYouTubeSendMessage(
+  accessToken: string | null,
+  liveChatId?: string,
+  message?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!accessToken) {
+    return { success: false, error: 'No YouTube access token' };
+  }
+  if (!liveChatId || !message) {
+    return { success: false, error: 'Missing liveChatId or message' };
+  }
+
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          snippet: {
+            liveChatId,
+            type: 'textMessageEvent',
+            textMessageDetails: { messageText: message },
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[live-chat] YouTube send error:', errorText);
+      return { success: false, error: `YouTube API error: ${response.status}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[live-chat] YouTube send error:', error);
+    return { success: false, error: error.message };
   }
 }
