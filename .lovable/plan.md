@@ -1,88 +1,86 @@
 
+Goal: make YouTube account linking real, make chat usable end-to-end, and stop the desktop app from getting stuck on the 404/Oops screen.
 
-# Real-Time Twitch/YouTube Chat + Fix Desktop App
+What is actually broken
+- The desktop screenshot is from an old packaged app: it shows current version `1.0.0` while the app code expects newer releases. That means fixes are likely not reaching the installed app yet.
+- The Electron route guard is still too weak for packaged startup edge cases. It validates `pathname`, but Electron routing problems usually come from the hash/file boot URL.
+- Auto-update UI is only half wired: `preload.js` listens for update events, but `auto-updater.js` never forwards those events to the renderer.
+- The YouTube “connect” flow is not a true platform-link flow yet. `usePlatformOAuth` uses `signInWithOAuth`, which risks replacing the user session instead of linking Google/YouTube to the current account.
+- Current Google scopes are not enough for full YouTube live chat sending. Reading may work, sending needs stronger YouTube scope(s).
+- YouTube chat send is currently incomplete in the UI: `LiveChatPanel` calls `send_message` without passing `liveChatId`, so sending can fail even if OAuth succeeds.
+- Twitch chat send is also incomplete: it sends channel names as `broadcaster_id` / `sender_id`, but the API expects real IDs.
+- `social_connections` still only allows `youtube` in its DB check constraint, not `twitch`, so connection persistence is structurally inconsistent.
 
-## Two problems to solve
+Implementation plan
 
-1. **Desktop app still shows "Oops" 404** — The `ElectronRouteGuard` runs `useEffect` which fires after the first render, meaning `NotFound` flashes before the redirect. Also, any issue with the hash not being set correctly on cold boot causes the guard to fail.
+1. Fix the desktop app properly
+- Harden Electron boot routing in `src/App.tsx` so invalid hash/file startup states redirect before route rendering.
+- Update `electron/src/index.js` to always load the packaged app with a normalized home hash and avoid stale file-path route states.
+- Add an Electron-safe fallback route strategy so packaged launches do not land on `NotFound`.
+- Sync app versioning across root app, Electron package, and release workflow so the desktop app stops shipping as `1.0.0`.
+- Wire `electron/src/auto-updater.js` to emit update events to the renderer so desktop update status is real.
 
-2. **Chat integration is partially wired** — Twitch IRC WebSocket works for *reading* anonymous chat, but there's no way to *send* messages. YouTube chat polls via edge function but isn't integrated with the Twitch connector gateway for sending. The Twitch connector is available but not linked.
+2. Build a real YouTube account-link flow
+- Change YouTube platform connection in `src/hooks/usePlatformOAuth.tsx` to use account linking behavior for signed-in users instead of a plain social sign-in flow.
+- Expand Google/YouTube scopes to support:
+  - channel/live metadata
+  - live chat reading
+  - live chat sending
+  - analytics already in use
+- Persist the linked YouTube identity cleanly into `social_connections` with username, platform user ID, access token, refresh token, expiry, and reconnect state.
+- Add clearer connection states in the UI: Connected, Missing permissions, Token expired, No active livestream.
 
-## Plan
+3. Fix chat reading/sending end-to-end
+- Update `src/hooks/useLiveChat.tsx` to expose the active `liveChatId`, connection state, and polling interval returned by YouTube.
+- Update `src/components/streaming/LiveChatPanel.tsx` so YouTube send passes the real `liveChatId`.
+- Improve YouTube chat UX with better empty states like “Connected, but no active live broadcast found”.
+- Extend `usePlatformOAuth` connection data so Twitch/YouTube connection objects include platform user IDs needed for sending.
+- Update `src/hooks/useTwitchIRC.tsx` and the Twitch send flow to use real IDs, not channel name placeholders.
+- Keep Twitch reading via IRC WebSocket, but make sending use the connected account metadata reliably.
 
-### 1. Fix desktop app routing (the persistent "Oops")
+4. Clean up backend/schema inconsistencies
+- Add a migration to fix `social_connections` so it supports both `twitch` and `youtube`.
+- Normalize any old `google` platform rows to `youtube`, while keeping temporary compatibility reads where needed.
+- Harden `supabase/functions/live-chat/index.ts`:
+  - validate input
+  - return clear scope/token/live-chat errors
+  - keep YouTube read/send behavior consistent
+- Harden `supabase/functions/twitch-chat-send/index.ts` with clearer validation and error messages.
+- Review `platform-stats` and related functions so all platform naming is consistent.
 
-**Root cause**: The `ElectronRouteGuard` uses `useEffect` (runs *after* render), so `NotFound` renders on the first frame before the redirect fires. Also, the guard only runs once (`[]` deps) and doesn't cover edge cases.
+5. Improve the Studio experience
+- Refine `PlatformConnector.tsx` to explain what each connection unlocks: stats, live chat, sending, analytics.
+- Improve `LiveChatPanel.tsx` so the input only enables when sending is truly available.
+- Show a better connection summary in the chat settings modal: Twitch IRC status, YouTube OAuth status, active broadcast status.
+- Polish the desktop/web experience around updates and startup so users see a stable app instead of a warning banner over a broken route.
 
-**Fix in `src/App.tsx`**:
-- Replace the `useEffect`-based guard with a synchronous check: if the current path isn't valid, render `<Navigate to="/" replace />` instead of children — no flash of 404
-- Remove the `ElectronRouteGuard` component entirely and add the logic as a wrapper route or inline check
-- Add a catch: if running in Electron and pathname looks like a file path (contains `C:` or `.html`), redirect to `/`
+Files likely to change
+- `src/App.tsx`
+- `electron/src/index.js`
+- `electron/src/auto-updater.js`
+- `electron/src/preload.js`
+- `src/hooks/usePlatformOAuth.tsx`
+- `src/hooks/useLiveChat.tsx`
+- `src/hooks/useTwitchIRC.tsx`
+- `src/components/streaming/LiveChatPanel.tsx`
+- `src/components/streaming/PlatformConnector.tsx`
+- `src/hooks/useVersionCheck.tsx`
+- `electron/package.json`
+- `.github/workflows/desktop-release.yml`
+- `supabase/functions/live-chat/index.ts`
+- `supabase/functions/twitch-chat-send/index.ts`
+- `supabase/migrations/...`
 
-### 2. Link Twitch connector for gateway API access
+Technical details
+- Desktop issue is likely a combination of stale packaged version plus incomplete Electron hash boot handling.
+- YouTube connection should be treated as “link provider to existing user”, not “sign in as Google and hope tokens persist”.
+- YouTube live chat send requires stronger scopes than the app currently requests.
+- The current UI cannot send YouTube chat reliably because `liveChatId` is not passed from the chat reader into the send request.
+- A new desktop release will be required after these fixes; otherwise users will stay on the broken `1.0.0` installer.
 
-Use the Twitch connector (`std_01km4rt18qe9ra6gthf7ezqmec`) to enable server-side Twitch API calls via the gateway. This enables sending chat messages and fetching user/stream data without managing tokens manually.
-
-**Action**: Link the Twitch connection to the project.
-
-### 3. Create edge function for sending Twitch chat messages
-
-**New file**: `supabase/functions/twitch-chat-send/index.ts`
-
-- Uses the Twitch connector gateway (`https://connector-gateway.lovable.dev/twitch/chat/messages`)
-- Accepts `broadcaster_id`, `sender_id`, and `message` from the client
-- Validates user auth and input with Zod
-- Sends the message via the gateway's REST endpoint
-
-### 4. Add send-message capability to the chat panel
-
-**Update `src/hooks/useTwitchIRC.tsx`**:
-- Add a `sendMessage` function that calls the edge function (since sending via IRC requires a real OAuth token, the gateway REST endpoint is more reliable)
-- Keep the WebSocket for reading (anonymous read works without auth)
-
-**Update `src/components/streaming/LiveChatPanel.tsx`**:
-- Add a message input field at the bottom of the chat panel (text input + send button)
-- Send to Twitch via the new edge function
-- Send to YouTube via existing `live-chat` edge function (add a `send_message` action)
-- Show the sent message optimistically in the chat list
-- Disable input when not connected
-
-### 5. Update YouTube live-chat edge function to support sending
-
-**Update `supabase/functions/live-chat/index.ts`**:
-- Add `send_message` action that POSTs to `https://www.googleapis.com/youtube/v3/liveChat/messages`
-- Uses the user's stored YouTube access token from `social_connections`
-- Fix platform name inconsistency: query `social_connections` for platform `youtube` (not `google`)
-
-### 6. Improve the Twitch IRC hook for resilience
-
-**Update `src/hooks/useTwitchIRC.tsx`**:
-- Add message deduplication (use a Set of message IDs, cap at 500)
-- Add connection status events exposed to the UI
-- Add `channelName` to the return value so the UI always knows which channel is connected
-
-### 7. Navigation and UX improvements
-
-**Update `src/components/streaming/LiveChatPanel.tsx`**:
-- Show a "Send as [username]" label when authenticated
-- Add character count for message input (Twitch limit: 500 chars)
-- Improve the connection settings dialog with clearer status indicators
-
-## Files to create/modify
-
-| File | Change |
-|------|--------|
-| `src/App.tsx` | Replace `ElectronRouteGuard` useEffect with synchronous `Navigate` redirect |
-| `supabase/functions/twitch-chat-send/index.ts` | New edge function to send Twitch chat via connector gateway |
-| `supabase/functions/live-chat/index.ts` | Add `send_message` action for YouTube, fix platform name query |
-| `src/hooks/useTwitchIRC.tsx` | Add `sendMessage`, expose `channelName`, deduplication |
-| `src/components/streaming/LiveChatPanel.tsx` | Add message input bar, send functionality, improved UX |
-
-## Technical details
-
-- Twitch chat reading: anonymous IRC WebSocket (already works, no auth needed)
-- Twitch chat sending: connector gateway REST endpoint `POST /chat/messages` with `LOVABLE_API_KEY` + `TWITCH_API_KEY`
-- YouTube chat reading: polling via `live-chat` edge function (already works)
-- YouTube chat sending: `POST liveChat/messages` via YouTube Data API with stored OAuth token
-- Desktop fix: synchronous path validation before route rendering, no useEffect delay
-
+Expected result
+- Desktop app opens to the real app instead of the Oops screen.
+- Users can connect their YouTube account safely from the studio.
+- YouTube live chat can be read and sent from inside the app when a live broadcast exists.
+- Twitch real-time chat remains live via IRC and can send messages with real account metadata.
+- Updates, routing, connection states, and studio chat UX feel much more production-ready.
