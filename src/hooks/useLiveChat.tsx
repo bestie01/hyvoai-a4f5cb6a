@@ -20,6 +20,7 @@ interface UseLiveChatReturn {
   isConnected: boolean;
   isLoading: boolean;
   error: string | null;
+  liveChatId: string | null;
   connectChat: (platforms: ('twitch' | 'youtube')[]) => Promise<void>;
   disconnectChat: () => void;
   clearMessages: () => void;
@@ -31,6 +32,7 @@ export const useLiveChat = (): UseLiveChatReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveChatId, setLiveChatId] = useState<string | null>(null);
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const youtubeLiveChatIdRef = useRef<string | null>(null);
@@ -39,13 +41,9 @@ export const useLiveChat = (): UseLiveChatReturn => {
 
   const fetchYouTubeChat = useCallback(async () => {
     try {
-      // First, get the live chat ID if we don't have it
       if (!youtubeLiveChatIdRef.current) {
         const { data: chatIdData, error: chatIdError } = await supabase.functions.invoke('live-chat', {
-          body: { 
-            action: 'get_live_chat_id',
-            platform: 'youtube'
-          },
+          body: { action: 'get_live_chat_id', platform: 'youtube' },
         });
 
         if (chatIdError) {
@@ -55,6 +53,7 @@ export const useLiveChat = (): UseLiveChatReturn => {
 
         if (chatIdData?.liveChatId) {
           youtubeLiveChatIdRef.current = chatIdData.liveChatId;
+          setLiveChatId(chatIdData.liveChatId);
           console.log('[useLiveChat] Got YouTube live chat ID:', chatIdData.liveChatId);
         } else {
           console.log('[useLiveChat] No active YouTube broadcast');
@@ -62,7 +61,6 @@ export const useLiveChat = (): UseLiveChatReturn => {
         }
       }
 
-      // Fetch messages
       const { data, error: fetchError } = await supabase.functions.invoke('live-chat', {
         body: { 
           action: 'get_messages',
@@ -84,7 +82,7 @@ export const useLiveChat = (): UseLiveChatReturn => {
 
         if (newMessages.length > 0) {
           newMessages.forEach((msg: ChatMessage) => seenMessageIdsRef.current.add(msg.id));
-          setMessages(prev => [...prev, ...newMessages].slice(-100)); // Keep last 100 messages
+          setMessages(prev => [...prev, ...newMessages].slice(-100));
         }
       }
 
@@ -99,10 +97,7 @@ export const useLiveChat = (): UseLiveChatReturn => {
   const fetchTwitchChat = useCallback(async () => {
     try {
       const { data, error: fetchError } = await supabase.functions.invoke('live-chat', {
-        body: { 
-          action: 'get_messages',
-          platform: 'twitch'
-        },
+        body: { action: 'get_messages', platform: 'twitch' },
       });
 
       if (fetchError) {
@@ -110,8 +105,6 @@ export const useLiveChat = (): UseLiveChatReturn => {
         return;
       }
 
-      // Twitch chat requires IRC WebSocket - this is a placeholder
-      // Real implementation would use Twitch IRC or EventSub
       if (data?.channelInfo) {
         console.log('[useLiveChat] Twitch channel connected:', data.channelInfo.displayName);
       }
@@ -125,47 +118,27 @@ export const useLiveChat = (): UseLiveChatReturn => {
     setError(null);
 
     try {
-      // Clear previous state
       youtubeLiveChatIdRef.current = null;
       youtubePageTokenRef.current = null;
       seenMessageIdsRef.current.clear();
+      setLiveChatId(null);
 
-      // Initial fetch
-      if (platforms.includes('youtube')) {
-        await fetchYouTubeChat();
-      }
-      if (platforms.includes('twitch')) {
-        await fetchTwitchChat();
-      }
+      if (platforms.includes('youtube')) await fetchYouTubeChat();
+      if (platforms.includes('twitch')) await fetchTwitchChat();
 
-      // Set up polling
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
 
       pollingIntervalRef.current = setInterval(async () => {
-        if (platforms.includes('youtube')) {
-          await fetchYouTubeChat();
-        }
-        if (platforms.includes('twitch')) {
-          await fetchTwitchChat();
-        }
-      }, 5000); // Poll every 5 seconds
+        if (platforms.includes('youtube')) await fetchYouTubeChat();
+        if (platforms.includes('twitch')) await fetchTwitchChat();
+      }, 5000);
 
       setIsConnected(true);
-      
-      toast({
-        title: "Chat Connected",
-        description: `Connected to ${platforms.join(' & ')} chat`,
-      });
+      toast({ title: "Chat Connected", description: `Connected to ${platforms.join(' & ')} chat` });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect to chat';
       setError(errorMessage);
-      toast({
-        title: "Chat Connection Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Chat Connection Failed", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -176,15 +149,11 @@ export const useLiveChat = (): UseLiveChatReturn => {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
-
     youtubeLiveChatIdRef.current = null;
     youtubePageTokenRef.current = null;
     setIsConnected(false);
-
-    toast({
-      title: "Chat Disconnected",
-      description: "Live chat has been disconnected",
-    });
+    setLiveChatId(null);
+    toast({ title: "Chat Disconnected", description: "Live chat has been disconnected" });
   }, [toast]);
 
   const clearMessages = useCallback(() => {
@@ -192,22 +161,11 @@ export const useLiveChat = (): UseLiveChatReturn => {
     seenMessageIdsRef.current.clear();
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     };
   }, []);
 
-  return {
-    messages,
-    isConnected,
-    isLoading,
-    error,
-    connectChat,
-    disconnectChat,
-    clearMessages,
-  };
+  return { messages, isConnected, isLoading, error, liveChatId, connectChat, disconnectChat, clearMessages };
 };

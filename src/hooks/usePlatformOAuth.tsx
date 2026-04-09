@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getRedirectUrl } from '@/lib/routes';
 
-interface PlatformConnection {
+export interface PlatformConnection {
   platform: string;
   isConnected: boolean;
   username: string | null;
+  platformUserId: string | null;
   accessToken: string | null;
   expiresAt: Date | null;
   needsReconnect: boolean;
@@ -29,6 +30,7 @@ function makeConnection(platform: string, row: any): PlatformConnection {
     platform,
     isConnected: true,
     username: row.platform_username,
+    platformUserId: row.platform_user_id || null,
     accessToken: row.access_token,
     expiresAt,
     needsReconnect,
@@ -41,7 +43,7 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
   const [youtubeConnection, setYoutubeConnection] = useState<PlatformConnection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Persist provider tokens into social_connections after OAuth sign-in
+  // Persist provider tokens into social_connections after OAuth
   const persistProviderTokens = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -65,7 +67,7 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
                                session.user.email;
       const platformUserId = identity?.identity_data?.provider_id || identity?.id;
 
-      // Upsert into social_connections
+      // Try upsert first, fall back to manual insert/update
       const { error } = await supabase
         .from('social_connections')
         .upsert({
@@ -86,7 +88,6 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
         });
 
       if (error) {
-        // If upsert on conflict fails (no unique constraint), try insert/update manually
         console.warn('Upsert failed, trying manual approach:', error.message);
         
         const { data: existing } = await supabase
@@ -161,11 +162,30 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
 
   const connectTwitch = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // If already signed in, try to link identity instead of replacing session
+      if (session) {
+        const hasIdentity = session.user.identities?.some(i => i.provider === 'twitch');
+        if (!hasIdentity) {
+          const { error } = await supabase.auth.linkIdentity({
+            provider: 'twitch',
+            options: {
+              redirectTo: getRedirectUrl('/studio'),
+              scopes: 'user:read:email channel:read:stream_key analytics:read:extensions analytics:read:games channel:read:subscriptions user:write:chat',
+            },
+          });
+          if (error) throw error;
+          toast({ title: "Redirecting to Twitch", description: "Please authorize Hyvo.ai to access your Twitch account" });
+          return;
+        }
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'twitch',
         options: {
           redirectTo: getRedirectUrl('/studio'),
-          scopes: 'user:read:email channel:read:stream_key analytics:read:extensions analytics:read:games channel:read:subscriptions',
+          scopes: 'user:read:email channel:read:stream_key analytics:read:extensions analytics:read:games channel:read:subscriptions user:write:chat',
         },
       });
       if (error) throw error;
@@ -178,11 +198,38 @@ export const usePlatformOAuth = (): UsePlatformOAuthReturn => {
 
   const connectYouTube = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // YouTube scopes: read channel info, read analytics, read+send live chat
+      const ytScopes = [
+        'https://www.googleapis.com/auth/youtube.readonly',
+        'https://www.googleapis.com/auth/yt-analytics.readonly',
+        'https://www.googleapis.com/auth/youtube.force-ssl',
+      ].join(' ');
+      
+      // If already signed in, try to link identity instead of replacing session
+      if (session) {
+        const hasIdentity = session.user.identities?.some(i => i.provider === 'google');
+        if (!hasIdentity) {
+          const { error } = await supabase.auth.linkIdentity({
+            provider: 'google',
+            options: {
+              redirectTo: getRedirectUrl('/studio'),
+              scopes: ytScopes,
+              queryParams: { access_type: 'offline', prompt: 'consent' },
+            },
+          });
+          if (error) throw error;
+          toast({ title: "Redirecting to Google", description: "Please authorize Hyvo.ai to access your YouTube account" });
+          return;
+        }
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: getRedirectUrl('/studio'),
-          scopes: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
+          scopes: ytScopes,
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
