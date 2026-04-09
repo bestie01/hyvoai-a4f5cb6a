@@ -1,6 +1,6 @@
 {
   "name": "hyvo-stream-studio",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "AI-powered streaming assistant for professional broadcasters",
   "homepage": "https://github.com/bestie01/hyvoai-a4f5cb6a",
   "main": "src/index.js",
