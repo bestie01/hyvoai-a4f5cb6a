@@ -39,12 +39,11 @@ function createWindow() {
     backgroundColor: '#0a0a0f'
   });
 
-  // Load the app
+  // Load the app — always use hash routing for Electron
   if (app.isPackaged) {
     const indexPath = path.join(__dirname, '../app/index.html');
     console.log('[Electron] Loading file:', indexPath);
-    // Load with hash route to ensure app lands on home
-    mainWindow.loadFile(indexPath, { hash: '/' }).catch((err) => {
+    mainWindow.loadFile(indexPath).catch((err) => {
       console.error('[Electron] Failed to load index.html:', err);
       dialog.showErrorBox(
         'Failed to Load App',
@@ -52,7 +51,7 @@ function createWindow() {
       );
     });
   } else {
-    mainWindow.loadURL('http://localhost:5173/#/');
+    mainWindow.loadURL('http://localhost:5173');
   }
 
   // Show window when ready
@@ -160,7 +159,7 @@ app.whenReady().then(() => {
   createWindow();
 
   if (app.isPackaged) {
-    autoUpdater = new AutoUpdater();
+    autoUpdater = new AutoUpdater(mainWindow);
     autoUpdater.startPeriodicChecks();
   }
 
@@ -184,7 +183,6 @@ ipcMain.handle('install-update', () => {
   if (autoUpdater) autoUpdater.installUpdate();
 });
 
-// Auto-update events forwarded to renderer
 ipcMain.handle('get-update-status', () => {
   return autoUpdater ? autoUpdater.getStatus() : { status: 'idle' };
 });

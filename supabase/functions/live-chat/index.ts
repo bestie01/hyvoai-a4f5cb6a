@@ -37,11 +37,7 @@ serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
@@ -52,33 +48,55 @@ serve(async (req) => {
       );
     }
 
-    const { action, platform, channelId, liveChatId, pageToken, message } = await req.json() as ChatRequest;
+    const body = await req.json() as ChatRequest;
+    const { action, platform, channelId, liveChatId, pageToken, message } = body;
 
-    // Get the user's connection for this platform — try both 'youtube' and 'google' for compat
+    if (!action || !platform) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: action, platform' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get the user's connection — try both 'youtube' and 'google' for backward compat
     const platformNames = platform === 'youtube' ? ['youtube', 'google'] : [platform];
     let connection = null;
     for (const pName of platformNames) {
-      const { data, error: connError } = await supabaseClient
+      const { data } = await supabaseClient
         .from('social_connections')
         .select('*')
         .eq('user_id', user.id)
         .eq('platform', pName)
         .eq('is_active', true)
         .maybeSingle();
-      if (!connError && data) { connection = data; break; }
+      if (data) { connection = data; break; }
     }
 
-    if (connError) {
-      console.error('[live-chat] Connection error:', connError);
-    }
-
-    let result = null;
+    let result: any = null;
 
     if (platform === 'twitch') {
       result = await handleTwitchChat(connection?.access_token, channelId, action);
     } else if (platform === 'youtube') {
       if (action === 'send_message') {
-        result = await handleYouTubeSendMessage(connection?.access_token, liveChatId, message);
+        if (!connection?.access_token) {
+          return new Response(
+            JSON.stringify({ error: 'No YouTube access token. Please connect your YouTube account.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (!liveChatId) {
+          return new Response(
+            JSON.stringify({ error: 'Missing liveChatId. Ensure you have an active live broadcast.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (!message || typeof message !== 'string') {
+          return new Response(
+            JSON.stringify({ error: 'Missing or invalid message.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleYouTubeSendMessage(connection.access_token, liveChatId, message);
       } else {
         result = await handleYouTubeChat(connection?.access_token, action, liveChatId, pageToken);
       }
@@ -103,7 +121,7 @@ async function handleTwitchChat(
   accessToken: string | null,
   channelId: string | undefined,
   action: string
-): Promise<{ messages: ChatMessage[] }> {
+): Promise<any> {
   const clientId = Deno.env.get('TWITCH_CLIENT_ID');
   
   if (!clientId || !accessToken) {
@@ -112,12 +130,6 @@ async function handleTwitchChat(
   }
 
   try {
-    // For Twitch, we need to get the broadcaster's recent chat messages
-    // Unfortunately, Twitch doesn't have a simple "get chat messages" API
-    // We'll use the EventSub API for real-time, but for now return mock data
-    // indicating that WebSocket connection is needed for real-time chat
-    
-    // Get channel info to verify the connection works
     const userResponse = await fetch('https://api.twitch.tv/helix/users', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -132,13 +144,8 @@ async function handleTwitchChat(
 
     const userData = await userResponse.json();
     const twitchUser = userData.data?.[0];
+    if (!twitchUser) return { messages: [] };
 
-    if (!twitchUser) {
-      return { messages: [] };
-    }
-
-    // Note: Real Twitch chat requires IRC or EventSub WebSocket connection
-    // This endpoint provides channel info; actual chat would need WebSocket
     return { 
       messages: [],
       channelInfo: {
@@ -166,14 +173,9 @@ async function handleYouTubeChat(
 
   try {
     if (action === 'get_live_chat_id') {
-      // First, find the active live broadcast
       const broadcastResponse = await fetch(
         'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&broadcastStatus=active&mine=true',
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
       );
 
       if (!broadcastResponse.ok) {
@@ -190,24 +192,15 @@ async function handleYouTubeChat(
         return { messages: [], liveChatId: undefined };
       }
 
-      return { 
-        messages: [], 
-        liveChatId: broadcast.snippet?.liveChatId 
-      };
+      return { messages: [], liveChatId: broadcast.snippet?.liveChatId };
     }
 
     if (action === 'get_messages' && liveChatId) {
-      // Fetch chat messages
       let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails`;
-      
-      if (pageToken) {
-        url += `&pageToken=${pageToken}`;
-      }
+      if (pageToken) url += `&pageToken=${pageToken}`;
 
       const chatResponse = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: { 'Authorization': `Bearer ${accessToken}` },
       });
 
       if (!chatResponse.ok) {
@@ -245,17 +238,10 @@ async function handleYouTubeChat(
 }
 
 async function handleYouTubeSendMessage(
-  accessToken: string | null,
-  liveChatId?: string,
-  message?: string
+  accessToken: string,
+  liveChatId: string,
+  message: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!accessToken) {
-    return { success: false, error: 'No YouTube access token' };
-  }
-  if (!liveChatId || !message) {
-    return { success: false, error: 'Missing liveChatId or message' };
-  }
-
   try {
     const response = await fetch(
       'https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet',
