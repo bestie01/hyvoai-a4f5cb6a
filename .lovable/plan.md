@@ -1,86 +1,89 @@
+## Hyvo.ai Audit & Hardening Plan
 
-Goal: make YouTube account linking real, make chat usable end-to-end, and stop the desktop app from getting stuck on the 404/Oops screen.
+I read the codebase. Important note up front: there is **no Wise integration** anywhere in the project — payments are 100% Stripe via the existing `create-checkout`, `customer-portal`, `stripe-webhook`, `pause-subscription`, `resume-subscription` edge functions. I will not invent a Wise integration. If you actually want Wise added, tell me and I'll plan it as a separate feature.
 
-What is actually broken
-- The desktop screenshot is from an old packaged app: it shows current version `1.0.0` while the app code expects newer releases. That means fixes are likely not reaching the installed app yet.
-- The Electron route guard is still too weak for packaged startup edge cases. It validates `pathname`, but Electron routing problems usually come from the hash/file boot URL.
-- Auto-update UI is only half wired: `preload.js` listens for update events, but `auto-updater.js` never forwards those events to the renderer.
-- The YouTube “connect” flow is not a true platform-link flow yet. `usePlatformOAuth` uses `signInWithOAuth`, which risks replacing the user session instead of linking Google/YouTube to the current account.
-- Current Google scopes are not enough for full YouTube live chat sending. Reading may work, sending needs stronger YouTube scope(s).
-- YouTube chat send is currently incomplete in the UI: `LiveChatPanel` calls `send_message` without passing `liveChatId`, so sending can fail even if OAuth succeeds.
-- Twitch chat send is also incomplete: it sends channel names as `broadcaster_id` / `sender_id`, but the API expects real IDs.
-- `social_connections` still only allows `youtube` in its DB check constraint, not `twitch`, so connection persistence is structurally inconsistent.
+The Windows desktop build is **Electron** (`electron/` folder, `electron-builder`, GitHub Releases auto-update). I'll treat it as such.
 
-Implementation plan
+To avoid an "AI gets overwhelmed" mega-change, I'll deliver this in **3 staged commits**, each independently reviewable.
 
-1. Fix the desktop app properly
-- Harden Electron boot routing in `src/App.tsx` so invalid hash/file startup states redirect before route rendering.
-- Update `electron/src/index.js` to always load the packaged app with a normalized home hash and avoid stale file-path route states.
-- Add an Electron-safe fallback route strategy so packaged launches do not land on `NotFound`.
-- Sync app versioning across root app, Electron package, and release workflow so the desktop app stops shipping as `1.0.0`.
-- Wire `electron/src/auto-updater.js` to emit update events to the renderer so desktop update status is real.
+---
 
-2. Build a real YouTube account-link flow
-- Change YouTube platform connection in `src/hooks/usePlatformOAuth.tsx` to use account linking behavior for signed-in users instead of a plain social sign-in flow.
-- Expand Google/YouTube scopes to support:
-  - channel/live metadata
-  - live chat reading
-  - live chat sending
-  - analytics already in use
-- Persist the linked YouTube identity cleanly into `social_connections` with username, platform user ID, access token, refresh token, expiry, and reconnect state.
-- Add clearer connection states in the UI: Connected, Missing permissions, Token expired, No active livestream.
+### Stage 1 — Integration & Auth Audit (backend correctness)
 
-3. Fix chat reading/sending end-to-end
-- Update `src/hooks/useLiveChat.tsx` to expose the active `liveChatId`, connection state, and polling interval returned by YouTube.
-- Update `src/components/streaming/LiveChatPanel.tsx` so YouTube send passes the real `liveChatId`.
-- Improve YouTube chat UX with better empty states like “Connected, but no active live broadcast found”.
-- Extend `usePlatformOAuth` connection data so Twitch/YouTube connection objects include platform user IDs needed for sending.
-- Update `src/hooks/useTwitchIRC.tsx` and the Twitch send flow to use real IDs, not channel name placeholders.
-- Keep Twitch reading via IRC WebSocket, but make sending use the connected account metadata reliably.
+1. **Stripe end-to-end check**
+   - Verify `create-checkout`, `customer-portal`, `stripe-webhook`, `pause-subscription`, `resume-subscription` all read `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` correctly and return CORS headers on every response (including errors).
+   - Confirm `stripe-webhook` signature verification is enforced and `verify_jwt = false` (already correct in `config.toml`).
+   - Add structured error logging + `safeErrorResponse` usage where missing.
 
-4. Clean up backend/schema inconsistencies
-- Add a migration to fix `social_connections` so it supports both `twitch` and `youtube`.
-- Normalize any old `google` platform rows to `youtube`, while keeping temporary compatibility reads where needed.
-- Harden `supabase/functions/live-chat/index.ts`:
-  - validate input
-  - return clear scope/token/live-chat errors
-  - keep YouTube read/send behavior consistent
-- Harden `supabase/functions/twitch-chat-send/index.ts` with clearer validation and error messages.
-- Review `platform-stats` and related functions so all platform naming is consistent.
+2. **Auth flow hardening**
+   - `useAuth.tsx` already uses `onAuthStateChange` + `getSession`. Audit ordering and add a guard so `setLoading(false)` only fires once both have resolved (avoids flashing protected routes).
+   - Add a lightweight `RequireAuth` wrapper for `/dashboard`, `/studio`, `/settings`, `/profile`, `/schedule`, `/growth`, `/community`, `/create` — currently any unauthenticated user can hit them and pages handle it inconsistently.
+   - Confirm `getRedirectUrl()` works for both Electron (uses `https://hyvoai.lovable.app`) and web.
 
-5. Improve the Studio experience
-- Refine `PlatformConnector.tsx` to explain what each connection unlocks: stats, live chat, sending, analytics.
-- Improve `LiveChatPanel.tsx` so the input only enables when sending is truly available.
-- Show a better connection summary in the chat settings modal: Twitch IRC status, YouTube OAuth status, active broadcast status.
-- Polish the desktop/web experience around updates and startup so users see a stable app instead of a warning banner over a broken route.
+3. **AI / connector endpoints sanity pass**
+   - Walk every edge function in `supabase/functions/` and confirm: required secret present (`LOVABLE_API_KEY`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `TWITCH_API_KEY`, `RESEND_API_KEY`), CORS headers on all branches, input validated with Zod, no `service_role` key leaks to the client.
+   - Fix any function returning a plain `Error` without CORS (causes silent failures in the browser).
 
-Files likely to change
-- `src/App.tsx`
-- `electron/src/index.js`
-- `electron/src/auto-updater.js`
-- `electron/src/preload.js`
-- `src/hooks/usePlatformOAuth.tsx`
-- `src/hooks/useLiveChat.tsx`
-- `src/hooks/useTwitchIRC.tsx`
-- `src/components/streaming/LiveChatPanel.tsx`
-- `src/components/streaming/PlatformConnector.tsx`
-- `src/hooks/useVersionCheck.tsx`
-- `electron/package.json`
-- `.github/workflows/desktop-release.yml`
-- `supabase/functions/live-chat/index.ts`
-- `supabase/functions/twitch-chat-send/index.ts`
-- `supabase/migrations/...`
+4. **Schema/RLS spot-check**
+   - Run the Supabase linter and address anything critical (RLS off, overly-permissive policies). No schema change unless required.
 
-Technical details
-- Desktop issue is likely a combination of stale packaged version plus incomplete Electron hash boot handling.
-- YouTube connection should be treated as “link provider to existing user”, not “sign in as Google and hope tokens persist”.
-- YouTube live chat send requires stronger scopes than the app currently requests.
-- The current UI cannot send YouTube chat reliably because `liveChatId` is not passed from the chat reader into the send request.
-- A new desktop release will be required after these fixes; otherwise users will stay on the broken `1.0.0` installer.
+---
 
-Expected result
-- Desktop app opens to the real app instead of the Oops screen.
-- Users can connect their YouTube account safely from the studio.
-- YouTube live chat can be read and sent from inside the app when a live broadcast exists.
-- Twitch real-time chat remains live via IRC and can send messages with real account metadata.
-- Updates, routing, connection states, and studio chat UX feel much more production-ready.
+### Stage 2 — Stability, Error Boundaries, Electron polish
+
+1. **Per-route error boundaries**
+   - Wrap each lazy route in `App.tsx` with the existing `ErrorBoundary` so one page crashing doesn't blank the whole app. Add a friendly reload + "report" CTA.
+   - Add a global `unhandledrejection` + `error` listener that toasts a user-friendly message instead of failing silently.
+
+2. **API failure UX**
+   - Create a tiny `useApiCall` helper (wraps `supabase.functions.invoke`) that auto-toasts on failure with the function name and a retry button. Apply it where chat send / OAuth / Stripe checkout currently swallow errors.
+
+3. **Electron / Windows build**
+   - `electron/package.json` `main` is `src/index.js` — confirm path matches the actual file (`electron/src/index.js`). Already correct.
+   - Tighten `ElectronRouteGuard` in `App.tsx`: also normalize the hash on cold boot (e.g. `#/C:/...` → `#/`) and log the resolved path in dev only.
+   - Wire `electron/src/preload.js` to expose `onUpdateStatus` so the existing Updates tab in Settings reflects real download progress (currently the bridge is incomplete).
+   - Bump `electron/package.json` to match the next GitHub release tag so the auto-updater stops thinking it's "1.0.0".
+   - Verify the `electron-builder` `nsis` config produces a working Windows installer (icon paths, `oneClick:false`, code-signing left disabled — flagged as a manual step below).
+
+4. **Link & dead-button sweep**
+   - Grep for `href="#"`, empty `onClick`, and `<Button>` without handlers across `src/components` and `src/pages`. Wire or remove. Verify nav routes in `src/lib/routes.ts` all resolve to a registered route in `App.tsx`.
+
+---
+
+### Stage 3 — Performance & UI/UX polish
+
+1. **Performance**
+   - Audit lazy-loaded route bundles; add `React.lazy` to heavy non-route components still imported eagerly (`StreamPreview`, `ProfessionalAudioMixer`, `AIThumbnailGenerator`, etc.) where they're not on the critical path.
+   - Replace any remaining `<img>` for hero/marketing assets with `loading="lazy"` + explicit width/height to stop CLS.
+   - Add `react-query` `staleTime` defaults so dashboard widgets stop refetching on every focus.
+
+2. **UI/UX consistency pass**
+   - Standardize page padding (`container mx-auto px-4 sm:px-6 lg:px-8`), card spacing, and heading sizes across `Dashboard`, `Studio`, `Growth`, `Community`, `Settings`.
+   - Normalize empty states (use one shared `<EmptyState>` component) and loading skeletons.
+   - Tighten the `LiveChatPanel` send bar: disabled tooltip explains *why* sending isn't available (no broadcast / not connected / missing scope), instead of a silent disabled button.
+   - Polish `PlatformConnector` cards with consistent badge styles and a single "Reconnect" affordance when scopes are missing.
+   - Mobile sweep at 384px (the viewport you're on right now): fix any horizontal scroll, ensure bottom nav doesn't overlap content.
+
+3. **Vibe / professional polish**
+   - Subtle motion on primary CTAs (already have `MagneticButton` — apply consistently on Hero + Pricing).
+   - Consistent focus rings for a11y.
+   - Replace any remaining `console.log` with `console.debug` gated on `import.meta.env.DEV`.
+
+---
+
+### Out of scope (will NOT touch unless you ask)
+- Adding a Wise payment provider (none exists today).
+- Schema migrations beyond what the linter requires.
+- Code-signing certificates for Windows/macOS (manual key purchase needed).
+- Publishing a new GitHub release tag (you control the repo).
+
+### Manual actions you'll likely need after Stage 1–3
+- **Supabase dashboard**: confirm Google + Twitch OAuth providers are enabled with valid client IDs/secrets; add `https://hyvoai.lovable.app/studio` and `https://hyvoai.lovable.app/dashboard` to redirect URLs.
+- **Stripe dashboard**: confirm the webhook endpoint points at `https://fxvvcyjwgxxxezqzucwm.supabase.co/functions/v1/stripe-webhook` and the signing secret matches `STRIPE_WEBHOOK_SECRET`.
+- **GitHub**: tag a new release (e.g. `v2.2.0`) so the desktop auto-updater picks up these fixes.
+- **Code signing** (optional but recommended) for the Windows `.exe` to remove SmartScreen warnings.
+
+### Deliverables per stage
+After each stage I'll list: files changed, what was fixed, and anything that needs manual follow-up. If any stage uncovers something bigger (e.g. a broken table, missing RLS policy, real bug in a flow), I'll stop and surface it before continuing.
+
+Approve and I'll start with **Stage 1 (Integration & Auth)**.
