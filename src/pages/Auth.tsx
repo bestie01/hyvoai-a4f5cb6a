@@ -47,7 +47,16 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const redirectPath = location.state?.redirect || '/studio';
+  const queryParams = new URLSearchParams(window.location.search);
+  const redirectParam = queryParams.get('redirect');
+  const fromParam = queryParams.get('from');
+  const safeRedirect = (() => {
+    const candidate = redirectParam ? decodeURIComponent(redirectParam) : null;
+    // Only allow same-origin in-app paths
+    if (candidate && candidate.startsWith('/') && !candidate.startsWith('//')) return candidate;
+    return null;
+  })();
+  const redirectPath = safeRedirect || location.state?.redirect || '/studio';
   const planId = location.state?.plan;
 
   useEffect(() => {
@@ -60,10 +69,10 @@ const Auth = () => {
         }
         return;
       }
-      const from = new URLSearchParams(window.location.search).get('from') || redirectPath;
+      const from = fromParam || redirectPath;
       navigate(from, { replace: true });
     }
-  }, [user, navigate, redirectPath, planId, createCheckout]);
+  }, [user, navigate, redirectPath, planId, createCheckout, fromParam]);
 
   const validateForm = (isSignUp: boolean) => {
     const errors: { email?: string; password?: string } = {};
