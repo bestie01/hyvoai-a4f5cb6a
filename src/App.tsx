@@ -7,11 +7,13 @@ import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { GlobalErrorListener } from "@/components/GlobalErrorListener";
 import { SkipLink } from "@/components/SkipLink";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -39,7 +41,20 @@ const GeolocationFeatures = React.lazy(() => import("./pages/native/GeolocationF
 const DeviceFeatures = React.lazy(() => import("./pages/native/DeviceFeatures"));
 const Changelog = React.lazy(() => import("./pages/Changelog"));
 
-const queryClient = new QueryClient();
+// Smarter React Query defaults: avoid refetch storms on focus, reasonable retries
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 // Robust Electron detection
 const isElectron = typeof window !== 'undefined' && (
@@ -48,16 +63,32 @@ const isElectron = typeof window !== 'undefined' && (
 );
 const Router = isElectron ? HashRouter : BrowserRouter;
 
+const VALID_PATHS = [
+  '/', '/download', '/pricing', '/dashboard', '/studio', '/native',
+  '/auth', '/profile', '/subscription-success', '/settings', '/schedule',
+  '/growth', '/community', '/create', '/changelog'
+];
+
+// Normalize Electron hash on cold boot — strip file:// artifacts before React Router runs
+if (isElectron && typeof window !== 'undefined') {
+  const hash = window.location.hash || '';
+  const cleaned = hash.replace(/^#/, '');
+  const looksLikeFilePath =
+    cleaned.includes('C:') || cleaned.includes('.html') || cleaned.includes('\\') || cleaned.includes('file://');
+  if (!cleaned || looksLikeFilePath) {
+    window.location.hash = '#/';
+  }
+}
+
 // Synchronous guard: redirect invalid paths in Electron without useEffect flash
 function ElectronRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (isElectron) {
     const path = location.pathname;
-    // Redirect file:// artifacts or invalid paths synchronously
     const isFilePath = path.includes('C:') || path.includes('.html') || path.includes('\\');
     const isValidRoute = path === '/' || VALID_PATHS.some(p => path === p || path.startsWith(p + '/'));
-    
+
     if (isFilePath || !isValidRoute) {
       return <Navigate to="/" replace />;
     }
@@ -66,40 +97,50 @@ function ElectronRouteGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const VALID_PATHS = [
-  '/', '/download', '/pricing', '/dashboard', '/studio', '/native',
-  '/auth', '/profile', '/subscription-success', '/settings', '/schedule',
-  '/growth', '/community', '/create', '/changelog'
-];
+// Wrap every lazy-loaded route in its own ErrorBoundary so one page crash
+// can't blank the whole app.
+const Page = ({ children }: { children: React.ReactNode }) => (
+  <ErrorBoundary>{children}</ErrorBoundary>
+);
+
+const Protected = ({ children }: { children: React.ReactNode }) => (
+  <ErrorBoundary>
+    <RequireAuth>{children}</RequireAuth>
+  </ErrorBoundary>
+);
 
 const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
     <ElectronRouteGuard>
       <main id="main-content">
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/download" element={<Download />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/studio" element={<StreamingApp />} />
-          <Route path="/native" element={<NativeHub />} />
-          <Route path="/native/camera" element={<CameraFeatures />} />
-          <Route path="/native/haptics" element={<HapticsFeatures />} />
-          <Route path="/native/storage" element={<StorageFeatures />} />
-          <Route path="/native/notifications" element={<NotificationFeatures />} />
-          <Route path="/native/display" element={<DisplayFeatures />} />
-          <Route path="/native/geolocation" element={<GeolocationFeatures />} />
-          <Route path="/native/device" element={<DeviceFeatures />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/schedule" element={<Schedule />} />
-          <Route path="/growth" element={<Growth />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/create" element={<StreamCreator />} />
-          <Route path="/changelog" element={<Changelog />} />
-          <Route path="*" element={<NotFound />} />
+          {/* Public routes */}
+          <Route path="/" element={<Page><Index /></Page>} />
+          <Route path="/download" element={<Page><Download /></Page>} />
+          <Route path="/pricing" element={<Page><Pricing /></Page>} />
+          <Route path="/auth" element={<Page><Auth /></Page>} />
+          <Route path="/changelog" element={<Page><Changelog /></Page>} />
+          <Route path="/native" element={<Page><NativeHub /></Page>} />
+          <Route path="/native/camera" element={<Page><CameraFeatures /></Page>} />
+          <Route path="/native/haptics" element={<Page><HapticsFeatures /></Page>} />
+          <Route path="/native/storage" element={<Page><StorageFeatures /></Page>} />
+          <Route path="/native/notifications" element={<Page><NotificationFeatures /></Page>} />
+          <Route path="/native/display" element={<Page><DisplayFeatures /></Page>} />
+          <Route path="/native/geolocation" element={<Page><GeolocationFeatures /></Page>} />
+          <Route path="/native/device" element={<Page><DeviceFeatures /></Page>} />
+
+          {/* Authenticated routes */}
+          <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+          <Route path="/studio" element={<Protected><StreamingApp /></Protected>} />
+          <Route path="/profile" element={<Protected><Profile /></Protected>} />
+          <Route path="/subscription-success" element={<Protected><SubscriptionSuccess /></Protected>} />
+          <Route path="/settings" element={<Protected><Settings /></Protected>} />
+          <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
+          <Route path="/growth" element={<Protected><Growth /></Protected>} />
+          <Route path="/community" element={<Protected><Community /></Protected>} />
+          <Route path="/create" element={<Protected><StreamCreator /></Protected>} />
+
+          <Route path="*" element={<Page><NotFound /></Page>} />
         </Routes>
       </main>
     </ElectronRouteGuard>
@@ -111,6 +152,7 @@ const App = () => (
     <ThemeProvider defaultTheme="dark" storageKey="hyvo-ui-theme">
       <TooltipProvider>
         <ErrorBoundary>
+          <GlobalErrorListener />
           <SkipLink />
           <UpdateBanner />
           <PWAInstallPrompt />
