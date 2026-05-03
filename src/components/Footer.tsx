@@ -59,10 +59,12 @@ const Footer = () => {
     }],
     legal: [{
       label: "Privacy Policy",
-      href: "/privacy"
+      href: "mailto:legal@hyvo.ai?subject=Privacy%20Policy%20Request",
+      external: true
     }, {
       label: "Terms of Service",
-      href: "/terms"
+      href: "mailto:legal@hyvo.ai?subject=Terms%20of%20Service%20Request",
+      external: true
     }]
   };
   const socialLinks = [{
