@@ -24,6 +24,7 @@ interface UseLiveChatReturn {
   connectChat: (platforms: ('twitch' | 'youtube')[]) => Promise<void>;
   disconnectChat: () => void;
   clearMessages: () => void;
+  sendYouTubeMessage: (message: string) => Promise<boolean>;
 }
 
 export const useLiveChat = (): UseLiveChatReturn => {
@@ -161,11 +162,27 @@ export const useLiveChat = (): UseLiveChatReturn => {
     seenMessageIdsRef.current.clear();
   }, []);
 
+  const sendYouTubeMessage = useCallback(async (message: string): Promise<boolean> => {
+    const liveId = youtubeLiveChatIdRef.current;
+    if (!liveId) {
+      toast({ title: 'No active YouTube broadcast', description: 'Start a YouTube live broadcast to send chat.', variant: 'destructive' });
+      return false;
+    }
+    const { error } = await supabase.functions.invoke('live-chat', {
+      body: { action: 'send_message', platform: 'youtube', message, liveChatId: liveId },
+    });
+    if (error) {
+      toast({ title: 'Failed to send YouTube message', description: error.message, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  }, [toast]);
+
   useEffect(() => {
     return () => {
       if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     };
   }, []);
 
-  return { messages, isConnected, isLoading, error, liveChatId, connectChat, disconnectChat, clearMessages };
+  return { messages, isConnected, isLoading, error, liveChatId, connectChat, disconnectChat, clearMessages, sendYouTubeMessage };
 };

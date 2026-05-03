@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { UpdateCenter } from "@/components/UpdateCenter";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalErrorListener } from "@/components/GlobalErrorListener";
 import { SkipLink } from "@/components/SkipLink";
@@ -14,6 +15,7 @@ import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequirePro } from "@/components/auth/RequirePro";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -138,7 +140,7 @@ const AppRoutes = () => (
           <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
           <Route path="/growth" element={<Protected><Growth /></Protected>} />
           <Route path="/community" element={<Protected><Community /></Protected>} />
-          <Route path="/create" element={<Protected><StreamCreator /></Protected>} />
+          <Route path="/create" element={<Protected><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
 
           <Route path="*" element={<Page><NotFound /></Page>} />
         </Routes>
@@ -155,6 +157,7 @@ const App = () => (
           <GlobalErrorListener />
           <SkipLink />
           <UpdateBanner />
+          <UpdateCenter />
           <PWAInstallPrompt />
           <Toaster />
           <Sonner />

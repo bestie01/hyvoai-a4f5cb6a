@@ -44,7 +44,7 @@ const Footer = () => {
       external: true
     }],
     company: [{
-      label: "About",
+      label: "Features",
       href: "/#features"
     }, {
       label: "Creators",
@@ -59,10 +59,12 @@ const Footer = () => {
     }],
     legal: [{
       label: "Privacy Policy",
-      href: "/#features"
+      href: "mailto:legal@hyvo.ai?subject=Privacy%20Policy%20Request",
+      external: true
     }, {
       label: "Terms of Service",
-      href: "/#features"
+      href: "mailto:legal@hyvo.ai?subject=Terms%20of%20Service%20Request",
+      external: true
     }]
   };
   const socialLinks = [{

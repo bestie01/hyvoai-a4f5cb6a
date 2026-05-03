@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 import { GITHUB_CONFIG } from '@/lib/constants';
 
 const CURRENT_VERSION = '2.1.0';
@@ -52,8 +53,14 @@ export function useVersionCheck() {
       if (api.onUpdateAvailable) cleanups.push(api.onUpdateAvailable((info: any) => setVersionInfo(prev => ({ ...prev, updateStatus: 'available', latestVersion: info?.version || prev.latestVersion, hasUpdate: true }))));
       if (api.onUpdateNotAvailable) cleanups.push(api.onUpdateNotAvailable(() => setVersionInfo(prev => ({ ...prev, updateStatus: 'idle' }))));
       if (api.onUpdateProgress) cleanups.push(api.onUpdateProgress((info: any) => setVersionInfo(prev => ({ ...prev, updateStatus: 'downloading', downloadProgress: info?.percent || 0 }))));
-      if (api.onUpdateDownloaded) cleanups.push(api.onUpdateDownloaded(() => setVersionInfo(prev => ({ ...prev, updateStatus: 'ready' }))));
-      if (api.onUpdateError) cleanups.push(api.onUpdateError(() => setVersionInfo(prev => ({ ...prev, updateStatus: 'error' }))));
+      if (api.onUpdateDownloaded) cleanups.push(api.onUpdateDownloaded((info: any) => {
+        setVersionInfo(prev => ({ ...prev, updateStatus: 'ready', latestVersion: info?.version || prev.latestVersion }));
+        toast.success('Update ready', { description: 'Restart Hyvo to install the latest version.' });
+      }));
+      if (api.onUpdateError) cleanups.push(api.onUpdateError((info: any) => {
+        setVersionInfo(prev => ({ ...prev, updateStatus: 'error', error: info?.message || 'Update failed' }));
+        toast.error('Update failed', { description: (info?.message || 'Could not download update').slice(0, 140) });
+      }));
 
       return () => cleanups.forEach(fn => fn && fn());
     }
