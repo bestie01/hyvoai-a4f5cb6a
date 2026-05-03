@@ -44,7 +44,7 @@ const Footer = () => {
       external: true
     }],
     company: [{
-      label: "About",
+      label: "Features",
       href: "/#features"
     }, {
       label: "Creators",
@@ -59,10 +59,10 @@ const Footer = () => {
     }],
     legal: [{
       label: "Privacy Policy",
-      href: "/#features"
+      href: "/privacy"
     }, {
       label: "Terms of Service",
-      href: "/#features"
+      href: "/terms"
     }]
   };
   const socialLinks = [{
