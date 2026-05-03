@@ -15,6 +15,7 @@ import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequirePro } from "@/components/auth/RequirePro";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -139,7 +140,7 @@ const AppRoutes = () => (
           <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
           <Route path="/growth" element={<Protected><Growth /></Protected>} />
           <Route path="/community" element={<Protected><Community /></Protected>} />
-          <Route path="/create" element={<Protected><StreamCreator /></Protected>} />
+          <Route path="/create" element={<Protected><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
 
           <Route path="*" element={<Page><NotFound /></Page>} />
         </Routes>
