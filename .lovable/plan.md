@@ -1,89 +1,100 @@
-## Hyvo.ai Audit & Hardening Plan
+## Stage 2 — Functional Polish & Feature Adoption
 
-I read the codebase. Important note up front: there is **no Wise integration** anywhere in the project — payments are 100% Stripe via the existing `create-checkout`, `customer-portal`, `stripe-webhook`, `pause-subscription`, `resume-subscription` edge functions. I will not invent a Wise integration. If you actually want Wise added, tell me and I'll plan it as a separate feature.
-
-The Windows desktop build is **Electron** (`electron/` folder, `electron-builder`, GitHub Releases auto-update). I'll treat it as such.
-
-To avoid an "AI gets overwhelmed" mega-change, I'll deliver this in **3 staged commits**, each independently reviewable.
+Scope: desktop updater UX, adopt `useApiCall` in Chat + Stripe flows, sweep dead links/routes, harden Twitch/YouTube end-to-end. No DB migrations required.
 
 ---
 
-### Stage 1 — Integration & Auth Audit (backend correctness)
+### 1. Electron auto-updater UX
 
-1. **Stripe end-to-end check**
-   - Verify `create-checkout`, `customer-portal`, `stripe-webhook`, `pause-subscription`, `resume-subscription` all read `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` correctly and return CORS headers on every response (including errors).
-   - Confirm `stripe-webhook` signature verification is enforced and `verify_jwt = false` (already correct in `config.toml`).
-   - Add structured error logging + `safeErrorResponse` usage where missing.
+Today: `UpdateBanner` already wires `useVersionCheck` → Electron IPC (`onUpdateChecking/Available/Progress/Downloaded/Error`) and `auto-updater.js` already broadcasts those events. Gaps: error states are silent, no "what's new" surface, no toast on completion, banner can't be dismissed during download, web-only `dismissUpdate` does not clear ready/downloading states.
 
-2. **Auth flow hardening**
-   - `useAuth.tsx` already uses `onAuthStateChange` + `getSession`. Audit ordering and add a guard so `setLoading(false)` only fires once both have resolved (avoids flashing protected routes).
-   - Add a lightweight `RequireAuth` wrapper for `/dashboard`, `/studio`, `/settings`, `/profile`, `/schedule`, `/growth`, `/community`, `/create` — currently any unauthenticated user can hit them and pages handle it inconsistently.
-   - Confirm `getRedirectUrl()` works for both Electron (uses `https://hyvoai.lovable.app`) and web.
+Changes:
+- New `src/components/UpdateCenter.tsx`: floating bottom-right "pill" on desktop showing live status (Checking → Downloading X% → Restart now). Replaces the heavy top banner on desktop; banner stays for web "new release available".
+- `useVersionCheck`: expose `errorMessage`, persist `latestVersion` from `update-available`, expose `releaseNotes`. Add Sonner toasts for `error` and `ready` states.
+- `UpdateBanner`: show release notes preview in a `Popover` (web), keep "Download" CTA tied to GitHub release.
+- `electron/src/auto-updater.js`: pass `releaseNotes` through on `update-available` (already partially there — verify). Add `cancellationToken` log on error.
+- `electron/src/preload.js`: confirm all 6 update channels are forwarded; add `removeUpdateListeners()` helper for clean unmount.
 
-3. **AI / connector endpoints sanity pass**
-   - Walk every edge function in `supabase/functions/` and confirm: required secret present (`LOVABLE_API_KEY`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `TWITCH_API_KEY`, `RESEND_API_KEY`), CORS headers on all branches, input validated with Zod, no `service_role` key leaks to the client.
-   - Fix any function returning a plain `Error` without CORS (causes silent failures in the browser).
+Acceptance: on desktop, user sees inline progress; clicking Restart triggers `quitAndInstall`. On web, banner only shows when GitHub has a newer tag.
 
-4. **Schema/RLS spot-check**
-   - Run the Supabase linter and address anything critical (RLS off, overly-permissive policies). No schema change unless required.
+### 2. Adopt `useApiCall` for Chat + Stripe
+
+Targets (highest-value, user-visible failures):
+- `src/hooks/useSubscription.tsx` — `create-checkout`, `customer-portal`, `pause-subscription`, `resume-subscription`, `check-subscription` (5 invocations).
+- `src/hooks/useLiveChat.tsx` — `live-chat` get_live_chat_id, fetch_messages, send_message (3 invocations).
+- `src/hooks/useTwitchIRC.tsx` — `twitch-chat-send` (1 invocation).
+- `src/components/streaming/LiveChatPanel.tsx` — inline `live-chat` send → route through `useLiveChat.sendMessage` instead of duplicate invoke.
+
+Pattern per call site:
+```ts
+const checkout = useApiCall<CheckoutBody, CheckoutResp>('create-checkout', { action: 'start checkout' });
+const data = await checkout.invoke({ priceId, mode });
+if (!data) return; // toast already shown
+```
+
+Benefits: unified error toasts, loading flags consolidated, removes ~80 lines of repetitive try/catch/toast.
+
+Out-of-scope for Stage 2 (defer): the 13 AI hooks — they have bespoke streaming/error semantics; revisit in Stage 3.
+
+### 3. Dead-link / dead-button sweep
+
+Audit method: `rg "to=|href=|onClick" src/pages src/components/Footer.tsx src/components/Navigation.tsx` cross-checked against `src/lib/routes.ts` and `App.tsx` routes.
+
+Known/likely issues to verify and fix:
+- `ROUTES` declares `/create` (StreamCreator) gated by `requiresPro`, but neither `Navigation` nor `MobileBottomNav` enforce `requiresPro` — clicking from a free account dumps them on a blocked page. Add a Pro gate redirect to `/pricing?upgrade=create`.
+- `routes.ts` lists `/studio` twice (sidebar + center "Go Live") — confirm `MobileBottomNav` handles the duplicate without React key warnings; add `key` derived from `label+path`.
+- `Footer.tsx`, `CTA.tsx`, `Hero.tsx`: scan for `href="#"`, broken anchors (`/blog`, `/docs`, `/privacy`, `/terms`) — either point to existing pages, external docs, or remove.
+- `Navigation`: "Sign in" should preserve `?redirect=` (Stage 1 added support; verify call site uses it).
+- `Download` page: ensure the `.dmg` / `.exe` links resolve to current `public/downloads/*` filenames (still on `1.0.0`).
+- `NotFound`: add a "Back to dashboard" + "Go home" pair, currently sparse.
+
+Deliverable: a short report comment in chat listing each fix applied, plus the actual edits.
+
+### 4. Twitch + YouTube end-to-end verification
+
+Twitch:
+- Read: `useTwitchIRC` connects anon to `irc-ws.chat.twitch.tv`. Verify reconnect/backoff and that `channelName` lowercases input.
+- Send: `twitch-chat-send` requires `broadcaster_id` + `sender_id`. Currently `LiveChatPanel` passes `platformUserId` for both — only correct when streaming on your own channel. Add a `broadcasterId` resolution step using `users?login=<channel>` in `useTwitchIRC.connect`, store it, and pass it to `sendMessage`.
+- OAuth: confirm `usePlatformOAuth` populates `twitchConnection.platformUserId` after Supabase OAuth identity link. If missing, prompt reconnect (UI string already present in `LiveChatPanel`).
+
+YouTube:
+- Connection flow (`PlatformConnector` + `usePlatformOAuth.linkIdentity('google', { scopes: youtube.readonly + force-ssl })`) — verify scopes per memory `oauth-real-viewer-stats`.
+- Edge function `live-chat`: confirm it (a) finds the active broadcast for the connected user via `liveBroadcasts?broadcastStatus=active`, (b) returns `liveChatId`, (c) supports `send_message` with the user's OAuth token (server-side via Supabase `provider_token`).
+- UI: `LiveChatPanel` already shows "no active broadcast" empty state; ensure polling stops when `liveChatId` becomes null (avoid 403 spam).
+
+Manual checks (no code): confirm in Supabase dashboard that Google provider has YouTube scopes enabled and the redirect URLs include `https://hyvoai.lovable.app/auth/callback` (and preview).
 
 ---
 
-### Stage 2 — Stability, Error Boundaries, Electron polish
+### Files to touch
 
-1. **Per-route error boundaries**
-   - Wrap each lazy route in `App.tsx` with the existing `ErrorBoundary` so one page crashing doesn't blank the whole app. Add a friendly reload + "report" CTA.
-   - Add a global `unhandledrejection` + `error` listener that toasts a user-friendly message instead of failing silently.
+```text
+src/App.tsx                                  # mount UpdateCenter on desktop
+src/components/UpdateBanner.tsx              # web-only refinements
+src/components/UpdateCenter.tsx              # NEW desktop pill
+src/hooks/useVersionCheck.tsx                # error + releaseNotes + toasts
+electron/src/auto-updater.js                 # releaseNotes payload
+electron/src/preload.js                      # removeUpdateListeners helper
+src/hooks/useSubscription.tsx                # adopt useApiCall x5
+src/hooks/useLiveChat.tsx                    # adopt useApiCall x3
+src/hooks/useTwitchIRC.tsx                   # adopt useApiCall + broadcasterId
+src/components/streaming/LiveChatPanel.tsx   # remove duplicate invoke
+src/lib/routes.ts                            # de-dupe key + Pro gating note
+src/components/Navigation.tsx                # Pro gate + redirect param
+src/components/dashboard/MobileBottomNav.tsx # Pro gate
+src/components/Footer.tsx, CTA.tsx, Hero.tsx # dead-link fixes
+src/pages/NotFound.tsx                       # CTAs
+```
 
-2. **API failure UX**
-   - Create a tiny `useApiCall` helper (wraps `supabase.functions.invoke`) that auto-toasts on failure with the function name and a retry button. Apply it where chat send / OAuth / Stripe checkout currently swallow errors.
+No DB changes. No new secrets. No edge-function code changes (only client adoption + verification).
 
-3. **Electron / Windows build**
-   - `electron/package.json` `main` is `src/index.js` — confirm path matches the actual file (`electron/src/index.js`). Already correct.
-   - Tighten `ElectronRouteGuard` in `App.tsx`: also normalize the hash on cold boot (e.g. `#/C:/...` → `#/`) and log the resolved path in dev only.
-   - Wire `electron/src/preload.js` to expose `onUpdateStatus` so the existing Updates tab in Settings reflects real download progress (currently the bridge is incomplete).
-   - Bump `electron/package.json` to match the next GitHub release tag so the auto-updater stops thinking it's "1.0.0".
-   - Verify the `electron-builder` `nsis` config produces a working Windows installer (icon paths, `oneClick:false`, code-signing left disabled — flagged as a manual step below).
+### Manual actions for the user
+1. Supabase → Auth → Providers → Google: ensure scopes include `https://www.googleapis.com/auth/youtube.readonly` and `youtube.force-ssl`.
+2. Tag a GitHub release `v2.2.0` after merge so existing 1.0.0 desktop installs receive the new updater UX.
+3. Note: Windows/macOS desktop builds use **Electron** (`electron/` + `electron-builder.json` + `.github/workflows/desktop-release.yml`) — check those configs if anything looks off post-release.
 
-4. **Link & dead-button sweep**
-   - Grep for `href="#"`, empty `onClick`, and `<Button>` without handlers across `src/components` and `src/pages`. Wire or remove. Verify nav routes in `src/lib/routes.ts` all resolve to a registered route in `App.tsx`.
-
----
-
-### Stage 3 — Performance & UI/UX polish
-
-1. **Performance**
-   - Audit lazy-loaded route bundles; add `React.lazy` to heavy non-route components still imported eagerly (`StreamPreview`, `ProfessionalAudioMixer`, `AIThumbnailGenerator`, etc.) where they're not on the critical path.
-   - Replace any remaining `<img>` for hero/marketing assets with `loading="lazy"` + explicit width/height to stop CLS.
-   - Add `react-query` `staleTime` defaults so dashboard widgets stop refetching on every focus.
-
-2. **UI/UX consistency pass**
-   - Standardize page padding (`container mx-auto px-4 sm:px-6 lg:px-8`), card spacing, and heading sizes across `Dashboard`, `Studio`, `Growth`, `Community`, `Settings`.
-   - Normalize empty states (use one shared `<EmptyState>` component) and loading skeletons.
-   - Tighten the `LiveChatPanel` send bar: disabled tooltip explains *why* sending isn't available (no broadcast / not connected / missing scope), instead of a silent disabled button.
-   - Polish `PlatformConnector` cards with consistent badge styles and a single "Reconnect" affordance when scopes are missing.
-   - Mobile sweep at 384px (the viewport you're on right now): fix any horizontal scroll, ensure bottom nav doesn't overlap content.
-
-3. **Vibe / professional polish**
-   - Subtle motion on primary CTAs (already have `MagneticButton` — apply consistently on Hero + Pricing).
-   - Consistent focus rings for a11y.
-   - Replace any remaining `console.log` with `console.debug` gated on `import.meta.env.DEV`.
-
----
-
-### Out of scope (will NOT touch unless you ask)
-- Adding a Wise payment provider (none exists today).
-- Schema migrations beyond what the linter requires.
-- Code-signing certificates for Windows/macOS (manual key purchase needed).
-- Publishing a new GitHub release tag (you control the repo).
-
-### Manual actions you'll likely need after Stage 1–3
-- **Supabase dashboard**: confirm Google + Twitch OAuth providers are enabled with valid client IDs/secrets; add `https://hyvoai.lovable.app/studio` and `https://hyvoai.lovable.app/dashboard` to redirect URLs.
-- **Stripe dashboard**: confirm the webhook endpoint points at `https://fxvvcyjwgxxxezqzucwm.supabase.co/functions/v1/stripe-webhook` and the signing secret matches `STRIPE_WEBHOOK_SECRET`.
-- **GitHub**: tag a new release (e.g. `v2.2.0`) so the desktop auto-updater picks up these fixes.
-- **Code signing** (optional but recommended) for the Windows `.exe` to remove SmartScreen warnings.
-
-### Deliverables per stage
-After each stage I'll list: files changed, what was fixed, and anything that needs manual follow-up. If any stage uncovers something bigger (e.g. a broken table, missing RLS policy, real bug in a flow), I'll stop and surface it before continuing.
-
-Approve and I'll start with **Stage 1 (Integration & Auth)**.
+### Expected result
+- Desktop users see a polished, non-blocking update pill with progress and one-click restart.
+- Chat + Stripe failures surface consistent toasts; less duplicated error code.
+- No dead links in nav, footer, or hero CTAs; Pro routes gate gracefully.
+- Twitch send works on channels other than the user's own; YouTube polling stops cleanly when no broadcast is live.
