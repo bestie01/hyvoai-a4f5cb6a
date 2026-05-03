@@ -28,7 +28,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
   const { 
     messages: ytMessages, isConnected: isYtConnected, isLoading: isYtLoading,
     liveChatId, connectChat: connectYtChat, disconnectChat: disconnectYtChat,
-    clearMessages: clearYtMessages 
+    clearMessages: clearYtMessages, sendYouTubeMessage,
   } = useLiveChat();
   
   const twitchIRC = useTwitchIRC();
@@ -110,11 +110,8 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
 
       // Send to YouTube if connected — pass liveChatId
       if (isYtConnected && youtubeConnection?.isConnected && liveChatId) {
-        const { error } = await supabase.functions.invoke('live-chat', {
-          body: { action: 'send_message', platform: 'youtube', message: msg, liveChatId },
-        });
-        if (error) toast.error("Failed to send YouTube message");
-        else sent = true;
+        const ok = await sendYouTubeMessage(msg);
+        if (ok) sent = true;
       }
 
       if (sent) {
@@ -127,7 +124,7 @@ export function LiveChatPanel({ isStreaming = false, streamId = 'default' }: Liv
     } finally {
       setIsSending(false);
     }
-  }, [chatInput, isSending, twitchIRC, twitchConnection, isYtConnected, youtubeConnection, liveChatId]);
+  }, [chatInput, isSending, twitchIRC, twitchConnection, isYtConnected, youtubeConnection, liveChatId, sendYouTubeMessage]);
 
   const handleModerationAction = (action: string, username: string, messageId?: string) => {
     if (action === 'delete' && messageId) {
