@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { UpdateCenter } from "@/components/UpdateCenter";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalErrorListener } from "@/components/GlobalErrorListener";
 import { SkipLink } from "@/components/SkipLink";
@@ -155,6 +156,7 @@ const App = () => (
           <GlobalErrorListener />
           <SkipLink />
           <UpdateBanner />
+          <UpdateCenter />
           <PWAInstallPrompt />
           <Toaster />
           <Sonner />

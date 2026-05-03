@@ -40,6 +40,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update-not-available', handler);
     return () => ipcRenderer.removeListener('update-not-available', handler);
   },
+  removeUpdateListeners: () => {
+    ['update-available', 'update-downloaded', 'update-progress', 'update-error', 'update-checking', 'update-not-available'].forEach((ch) => {
+      ipcRenderer.removeAllListeners(ch);
+    });
+  },
 
   // Local Recording
   saveRecording: (buffer, filename) => ipcRenderer.invoke('save-recording', { buffer, filename }),
