@@ -10,7 +10,7 @@ import { useLiveChat, ChatMessage } from "@/hooks/useLiveChat";
 import { useTwitchIRC } from "@/hooks/useTwitchIRC";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { ChatModerationControls } from "./ChatModerationControls";
-import { supabase } from "@/integrations/supabase/client";
+
 import { 
   MessageSquare, Tv, Youtube, Link2, Unlink, Trash2,
   Crown, Shield, Loader2, Radio, Settings2, Send, AlertCircle
