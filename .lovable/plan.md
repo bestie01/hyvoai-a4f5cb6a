@@ -1,100 +1,86 @@
-## Stage 2 — Functional Polish & Feature Adoption
+# Stage 3 — Premium UI/UX & Performance
 
-Scope: desktop updater UX, adopt `useApiCall` in Chat + Stripe flows, sweep dead links/routes, harden Twitch/YouTube end-to-end. No DB migrations required.
+## 1. Design Language & Consistency
 
----
+**Token unification (`src/index.css`, `tailwind.config.ts`)**
+- Audit `--radius` usage — buttons currently use `rounded-md` (0.375rem) while cards use `rounded-2xl`. Standardize on three tiers: `sm` (inputs/buttons = `--radius`), `md` (cards = `--radius-lg`), `lg` (panels = `--radius-xl`).
+- Consolidate shadow scale (`--shadow-soft/medium/large/xl`) and apply consistently — replace ad-hoc `shadow-lg` calls in `dashboard/*`, `streaming/*`.
+- Add `--hover-lift` and `--press-scale` CSS variables so all interactive surfaces share the same motion vocabulary.
 
-### 1. Electron auto-updater UX
+**Component audit**
+- `Button` (src/components/ui/button.tsx) — already has `active:scale-[0.98]`. Extend `hero`/`accent` variants with `--shadow-medium` rest state and `--glow-primary` on hover.
+- `Card`, `Input`, `Select`, `Dialog` — verify all use `rounded-[var(--radius-lg)]`, `border-border/60`, and the same focus ring (`ring-primary/40`).
+- Replace remaining hard-coded hex/`bg-white/5` in `dashboard/DashboardMain.tsx`, `LiveChatPanel.tsx`, `PlatformConnector.tsx` with `bg-card/60` + `liquid-glass-panel` utility.
 
-Today: `UpdateBanner` already wires `useVersionCheck` → Electron IPC (`onUpdateChecking/Available/Progress/Downloaded/Error`) and `auto-updater.js` already broadcasts those events. Gaps: error states are silent, no "what's new" surface, no toast on completion, banner can't be dismissed during download, web-only `dismissUpdate` does not clear ready/downloading states.
+**Typography & spacing**
+- Define `.section` (py-16 md:py-24), `.stack-sm/md/lg` (vertical rhythm 8/16/24px) utilities in `index.css`.
+- Apply to Dashboard widget grid (currently inconsistent gap-4/gap-6) and Studio side panels (cluttered chat header).
+- Tighten heading scale: h1 `text-4xl md:text-5xl`, h2 `text-2xl md:text-3xl`, body `text-base leading-relaxed`.
 
-Changes:
-- New `src/components/UpdateCenter.tsx`: floating bottom-right "pill" on desktop showing live status (Checking → Downloading X% → Restart now). Replaces the heavy top banner on desktop; banner stays for web "new release available".
-- `useVersionCheck`: expose `errorMessage`, persist `latestVersion` from `update-available`, expose `releaseNotes`. Add Sonner toasts for `error` and `ready` states.
-- `UpdateBanner`: show release notes preview in a `Popover` (web), keep "Download" CTA tied to GitHub release.
-- `electron/src/auto-updater.js`: pass `releaseNotes` through on `update-available` (already partially there — verify). Add `cancellationToken` log on error.
-- `electron/src/preload.js`: confirm all 6 update channels are forwarded; add `removeUpdateListeners()` helper for clean unmount.
+**Dark mode contrast**
+- Bump `--foreground` from `220 15% 95%` to `95%+` and audit `--muted-foreground` against background (currently borderline 4.1:1 — push to ≥4.5:1 WCAG AA).
+- Soften `--border` in dark mode to `240 10% 18%` for cleaner card edges.
+- Re-tune `--primary` glow opacity (0.35 → 0.25) so panels feel less "neon-burned".
 
-Acceptance: on desktop, user sees inline progress; clicking Restart triggers `quitAndInstall`. On web, banner only shows when GitHub has a newer tag.
+## 2. Micro-interactions & Transitions
 
-### 2. Adopt `useApiCall` for Chat + Stripe
+**Page transitions**
+- Wrap `<AppRoutes>` (`src/App.tsx`) with the existing `PageTransition` (`src/components/animations/PageTransition.tsx`) — currently unused. Provides 200ms fade with `AnimatePresence`.
+- Respect `prefers-reduced-motion` via Framer's `useReducedMotion`.
 
-Targets (highest-value, user-visible failures):
-- `src/hooks/useSubscription.tsx` — `create-checkout`, `customer-portal`, `pause-subscription`, `resume-subscription`, `check-subscription` (5 invocations).
-- `src/hooks/useLiveChat.tsx` — `live-chat` get_live_chat_id, fetch_messages, send_message (3 invocations).
-- `src/hooks/useTwitchIRC.tsx` — `twitch-chat-send` (1 invocation).
-- `src/components/streaming/LiveChatPanel.tsx` — inline `live-chat` send → route through `useLiveChat.sendMessage` instead of duplicate invoke.
+**Loading states**
+- Replace `<LoadingScreen />` Suspense fallback with route-specific skeletons:
+  - Dashboard route → `DashboardSkeletonGrid` (already exists in `dashboard-skeleton.tsx`).
+  - Studio route → new `StudioSkeleton.tsx` (chat + preview + controls placeholders).
+  - Pricing/Profile/Settings → generic `PageSkeleton.tsx`.
+- Eliminate layout shift in `StreamAnalytics`, `RealtimeDashboard` by reserving min-heights on widgets.
 
-Pattern per call site:
-```ts
-const checkout = useApiCall<CheckoutBody, CheckoutResp>('create-checkout', { action: 'start checkout' });
-const data = await checkout.invoke({ priceId, mode });
-if (!data) return; // toast already shown
-```
+**Button & form feedback**
+- Already have `isLoading`/`isSuccess` props on `Button`. Wire them into `useApiCall` consumers (Stripe checkout, chat send) so submits show the success check briefly.
+- Add `RippleEffect` (already exists) to primary CTAs in `Hero`, `CTA`, `Pricing`.
+- Form success: Confetti burst on first subscription, gentle scale-in on settings save.
 
-Benefits: unified error toasts, loading flags consolidated, removes ~80 lines of repetitive try/catch/toast.
+## 3. Performance & Asset Polish
 
-Out-of-scope for Stage 2 (defer): the 13 AI hooks — they have bespoke streaming/error semantics; revisit in Stage 3.
+**Image optimization**
+- `public/lovable-uploads/93a389d8…png` — 1.4 MB. Convert to WebP (~150 KB target) and add `<picture>` fallback wherever it's referenced.
+- `public/app-icon-1024.png` (570 KB) — only needed by Electron build; remove from Vite public bundle by moving to `electron/app/icons/`.
+- `src/assets/hero-dashboard.jpg` (116 KB) is fine — add `loading="lazy"` + `decoding="async"` everywhere except above-the-fold Hero (already `loading="eager"`).
+- Add `width`/`height` attributes to all `<img>` to prevent CLS.
 
-### 3. Dead-link / dead-button sweep
+**Bundle check**
+- Audit `package.json` heavy deps: `framer-motion`, `recharts`, `@capacitor/*`, `lucide-react`. Already lazy-loading routes — extend to:
+  - `Confetti` and `ParticleSystem` → dynamic import on first trigger.
+  - `recharts` → already only in dashboard (lazy via route).
+  - Tree-shake `lucide-react` imports — verified per-icon imports are used (good).
+- Add `manualChunks` in `vite.config.ts` to split `react-vendor`, `radix`, `charts`, `framer` into separate chunks for better caching.
+- Verify `@capacitor/electron` stays in `devDependencies` (per memory rule).
 
-Audit method: `rg "to=|href=|onClick" src/pages src/components/Footer.tsx src/components/Navigation.tsx` cross-checked against `src/lib/routes.ts` and `App.tsx` routes.
+**Empty state polish**
+- Upgrade `EmptyState` (`src/components/ui/empty-state.tsx`):
+  - Add optional `illustration` prop (custom SVG) replacing the plain Lucide icon circle.
+  - Add subtle `animate-pulse` glow ring around illustration.
+  - Ship 4 reusable SVG illustrations: `no-streams`, `no-chat`, `no-analytics`, `no-schedule` in `src/components/illustrations/`.
+- Update consumers in Dashboard, Schedule, LiveChatPanel, Analytics.
 
-Known/likely issues to verify and fix:
-- `ROUTES` declares `/create` (StreamCreator) gated by `requiresPro`, but neither `Navigation` nor `MobileBottomNav` enforce `requiresPro` — clicking from a free account dumps them on a blocked page. Add a Pro gate redirect to `/pricing?upgrade=create`.
-- `routes.ts` lists `/studio` twice (sidebar + center "Go Live") — confirm `MobileBottomNav` handles the duplicate without React key warnings; add `key` derived from `label+path`.
-- `Footer.tsx`, `CTA.tsx`, `Hero.tsx`: scan for `href="#"`, broken anchors (`/blog`, `/docs`, `/privacy`, `/terms`) — either point to existing pages, external docs, or remove.
-- `Navigation`: "Sign in" should preserve `?redirect=` (Stage 1 added support; verify call site uses it).
-- `Download` page: ensure the `.dmg` / `.exe` links resolve to current `public/downloads/*` filenames (still on `1.0.0`).
-- `NotFound`: add a "Back to dashboard" + "Go home" pair, currently sparse.
+## Performance Scorecard (targets)
 
-Deliverable: a short report comment in chat listing each fix applied, plus the actual edits.
+| Metric | Current (est.) | Target |
+|---|---|---|
+| LCP (home) | ~2.4s | < 1.8s |
+| CLS | ~0.12 | < 0.05 |
+| Initial JS | ~480 KB gz | < 350 KB gz |
+| Largest image | 1.4 MB PNG | < 200 KB WebP |
+| Dark-mode contrast | 4.1:1 | ≥ 4.5:1 AA |
 
-### 4. Twitch + YouTube end-to-end verification
+## Files to be modified / created
 
-Twitch:
-- Read: `useTwitchIRC` connects anon to `irc-ws.chat.twitch.tv`. Verify reconnect/backoff and that `channelName` lowercases input.
-- Send: `twitch-chat-send` requires `broadcaster_id` + `sender_id`. Currently `LiveChatPanel` passes `platformUserId` for both — only correct when streaming on your own channel. Add a `broadcasterId` resolution step using `users?login=<channel>` in `useTwitchIRC.connect`, store it, and pass it to `sendMessage`.
-- OAuth: confirm `usePlatformOAuth` populates `twitchConnection.platformUserId` after Supabase OAuth identity link. If missing, prompt reconnect (UI string already present in `LiveChatPanel`).
+Created: `src/components/illustrations/{NoStreams,NoChat,NoAnalytics,NoSchedule}.tsx`, `src/components/ui/StudioSkeleton.tsx`, `src/components/ui/PageSkeleton.tsx`.
+Edited: `src/index.css`, `tailwind.config.ts`, `vite.config.ts`, `src/App.tsx`, `src/components/ui/{button,empty-state,card,input}.tsx`, `src/components/Hero.tsx`, `src/components/CTA.tsx`, dashboard widgets, `LiveChatPanel.tsx`.
 
-YouTube:
-- Connection flow (`PlatformConnector` + `usePlatformOAuth.linkIdentity('google', { scopes: youtube.readonly + force-ssl })`) — verify scopes per memory `oauth-real-viewer-stats`.
-- Edge function `live-chat`: confirm it (a) finds the active broadcast for the connected user via `liveBroadcasts?broadcastStatus=active`, (b) returns `liveChatId`, (c) supports `send_message` with the user's OAuth token (server-side via Supabase `provider_token`).
-- UI: `LiveChatPanel` already shows "no active broadcast" empty state; ensure polling stops when `liveChatId` becomes null (avoid 403 spam).
+## Notes & manual actions
+- WebP conversion will be done in-build via a one-off script (`/tmp/convert.js`) since Vite has no built-in image pipeline.
+- Desktop build: changes to `vite.config.ts` `manualChunks` are safe for Electron (`base: './'` preserved per memory rule).
+- No design tokens that the user previously rejected will be reintroduced (per memory).
 
-Manual checks (no code): confirm in Supabase dashboard that Google provider has YouTube scopes enabled and the redirect URLs include `https://hyvoai.lovable.app/auth/callback` (and preview).
-
----
-
-### Files to touch
-
-```text
-src/App.tsx                                  # mount UpdateCenter on desktop
-src/components/UpdateBanner.tsx              # web-only refinements
-src/components/UpdateCenter.tsx              # NEW desktop pill
-src/hooks/useVersionCheck.tsx                # error + releaseNotes + toasts
-electron/src/auto-updater.js                 # releaseNotes payload
-electron/src/preload.js                      # removeUpdateListeners helper
-src/hooks/useSubscription.tsx                # adopt useApiCall x5
-src/hooks/useLiveChat.tsx                    # adopt useApiCall x3
-src/hooks/useTwitchIRC.tsx                   # adopt useApiCall + broadcasterId
-src/components/streaming/LiveChatPanel.tsx   # remove duplicate invoke
-src/lib/routes.ts                            # de-dupe key + Pro gating note
-src/components/Navigation.tsx                # Pro gate + redirect param
-src/components/dashboard/MobileBottomNav.tsx # Pro gate
-src/components/Footer.tsx, CTA.tsx, Hero.tsx # dead-link fixes
-src/pages/NotFound.tsx                       # CTAs
-```
-
-No DB changes. No new secrets. No edge-function code changes (only client adoption + verification).
-
-### Manual actions for the user
-1. Supabase → Auth → Providers → Google: ensure scopes include `https://www.googleapis.com/auth/youtube.readonly` and `youtube.force-ssl`.
-2. Tag a GitHub release `v2.2.0` after merge so existing 1.0.0 desktop installs receive the new updater UX.
-3. Note: Windows/macOS desktop builds use **Electron** (`electron/` + `electron-builder.json` + `.github/workflows/desktop-release.yml`) — check those configs if anything looks off post-release.
-
-### Expected result
-- Desktop users see a polished, non-blocking update pill with progress and one-click restart.
-- Chat + Stripe failures surface consistent toasts; less duplicated error code.
-- No dead links in nav, footer, or hero CTAs; Pro routes gate gracefully.
-- Twitch send works on channels other than the user's own; YouTube polling stops cleanly when no broadcast is live.
+Awaiting approval to implement.
