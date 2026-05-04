@@ -15,6 +15,20 @@
    animation: shimmer 2s infinite;
  }
 
+@layer utilities {
+  .section { @apply py-16 md:py-24; }
+  .stack-sm > * + * { margin-top: 0.5rem; }
+  .stack-md > * + * { margin-top: 1rem; }
+  .stack-lg > * + * { margin-top: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

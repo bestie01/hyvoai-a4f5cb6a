@@ -16,6 +16,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RequirePro } from "@/components/auth/RequirePro";
+import { PageTransition } from "@/components/animations/PageTransition";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -115,35 +116,37 @@ const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
     <ElectronRouteGuard>
       <main id="main-content">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Page><Index /></Page>} />
-          <Route path="/download" element={<Page><Download /></Page>} />
-          <Route path="/pricing" element={<Page><Pricing /></Page>} />
-          <Route path="/auth" element={<Page><Auth /></Page>} />
-          <Route path="/changelog" element={<Page><Changelog /></Page>} />
-          <Route path="/native" element={<Page><NativeHub /></Page>} />
-          <Route path="/native/camera" element={<Page><CameraFeatures /></Page>} />
-          <Route path="/native/haptics" element={<Page><HapticsFeatures /></Page>} />
-          <Route path="/native/storage" element={<Page><StorageFeatures /></Page>} />
-          <Route path="/native/notifications" element={<Page><NotificationFeatures /></Page>} />
-          <Route path="/native/display" element={<Page><DisplayFeatures /></Page>} />
-          <Route path="/native/geolocation" element={<Page><GeolocationFeatures /></Page>} />
-          <Route path="/native/device" element={<Page><DeviceFeatures /></Page>} />
+        <PageTransition>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Page><Index /></Page>} />
+            <Route path="/download" element={<Page><Download /></Page>} />
+            <Route path="/pricing" element={<Page><Pricing /></Page>} />
+            <Route path="/auth" element={<Page><Auth /></Page>} />
+            <Route path="/changelog" element={<Page><Changelog /></Page>} />
+            <Route path="/native" element={<Page><NativeHub /></Page>} />
+            <Route path="/native/camera" element={<Page><CameraFeatures /></Page>} />
+            <Route path="/native/haptics" element={<Page><HapticsFeatures /></Page>} />
+            <Route path="/native/storage" element={<Page><StorageFeatures /></Page>} />
+            <Route path="/native/notifications" element={<Page><NotificationFeatures /></Page>} />
+            <Route path="/native/display" element={<Page><DisplayFeatures /></Page>} />
+            <Route path="/native/geolocation" element={<Page><GeolocationFeatures /></Page>} />
+            <Route path="/native/device" element={<Page><DeviceFeatures /></Page>} />
 
-          {/* Authenticated routes */}
-          <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-          <Route path="/studio" element={<Protected><StreamingApp /></Protected>} />
-          <Route path="/profile" element={<Protected><Profile /></Protected>} />
-          <Route path="/subscription-success" element={<Protected><SubscriptionSuccess /></Protected>} />
-          <Route path="/settings" element={<Protected><Settings /></Protected>} />
-          <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
-          <Route path="/growth" element={<Protected><Growth /></Protected>} />
-          <Route path="/community" element={<Protected><Community /></Protected>} />
-          <Route path="/create" element={<Protected><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
+            {/* Authenticated routes */}
+            <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+            <Route path="/studio" element={<Protected><StreamingApp /></Protected>} />
+            <Route path="/profile" element={<Protected><Profile /></Protected>} />
+            <Route path="/subscription-success" element={<Protected><SubscriptionSuccess /></Protected>} />
+            <Route path="/settings" element={<Protected><Settings /></Protected>} />
+            <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
+            <Route path="/growth" element={<Protected><Growth /></Protected>} />
+            <Route path="/community" element={<Protected><Community /></Protected>} />
+            <Route path="/create" element={<Protected><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
 
-          <Route path="*" element={<Page><NotFound /></Page>} />
-        </Routes>
+            <Route path="*" element={<Page><NotFound /></Page>} />
+          </Routes>
+        </PageTransition>
       </main>
     </ElectronRouteGuard>
   </Suspense>
