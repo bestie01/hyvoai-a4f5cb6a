@@ -163,7 +163,7 @@ const Auth = () => {
           <motion.div className="flex items-center justify-center gap-2 mb-2" whileHover={{ scale: 1.02 }}>
             <div className="p-2.5 rounded-xl bg-gradient-primary shadow-glow-primary">
               <img 
-                src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" 
+                src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.webp" 
                 alt="Hyvo.ai Logo" 
                 className="w-7 h-7 object-contain brightness-0 invert dark:brightness-100 dark:invert-0" 
               />

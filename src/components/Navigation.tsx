@@ -27,7 +27,7 @@ const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <motion.div className="w-12 h-12 flex items-center justify-center bg-gradient-primary rounded-xl p-2 shadow-glow-primary" whileHover={{ scale: 1.05, rotate: 5 }} whileTap={{ scale: 0.95 }}>
-              <img src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.png" alt="Hyvo.ai Logo" className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0" />
+              <img src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.webp" alt="Hyvo.ai Logo" className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0" />
             </motion.div>
             <div className="flex flex-col">
               <span className="text-2xl font-display font-bold bg-gradient-primary bg-clip-text text-transparent bg-primary-foreground">Hyvo.ai</span>
