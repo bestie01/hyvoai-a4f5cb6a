@@ -102,7 +102,7 @@ All colors MUST be HSL.
   /* Dark mode - Deep Space */
   .dark {
     --background: 240 15% 6%;
-    --foreground: 220 15% 95%;
+    --foreground: 220 20% 97%;
 
     --card: 240 12% 10%;
     --card-foreground: 220 15% 95%;
@@ -119,7 +119,7 @@ All colors MUST be HSL.
     --secondary-foreground: 220 15% 90%;
 
     --muted: 240 10% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted-foreground: 220 14% 68%;
 
     --accent: 165 85% 50%;
     --accent-foreground: 240 15% 6%;
