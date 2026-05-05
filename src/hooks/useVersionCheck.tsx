@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { GITHUB_CONFIG } from '@/lib/constants';
 
-const CURRENT_VERSION = '2.1.0';
+const CURRENT_VERSION = '2.2.0';
 const DISMISSED_VERSION_KEY = 'hyvo_dismissed_version';
 
 const isElectron = typeof window !== 'undefined' && (window as any).electronAPI?.isElectron;
