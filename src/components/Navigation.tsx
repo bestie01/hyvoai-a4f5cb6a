@@ -25,14 +25,16 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <motion.div className="w-12 h-12 flex items-center justify-center bg-gradient-primary rounded-xl p-2 shadow-glow-primary" whileHover={{ scale: 1.05, rotate: 5 }} whileTap={{ scale: 0.95 }}>
-              <img src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.webp" alt="Hyvo.ai Logo" className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0" />
-            </motion.div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-display font-bold bg-gradient-primary bg-clip-text text-transparent bg-primary-foreground">Hyvo.ai</span>
-              <Badge variant="secondary" className="text-[10px] w-fit bg-gradient-primary/20 text-primary border-0">AI-Powered</Badge>
-            </div>
+          <Link to="/" className="flex items-center gap-2 group" aria-label="Hyvo.ai home">
+            <motion.span
+              className="text-2xl md:text-3xl font-display font-extrabold tracking-tight leading-none"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <span className="bg-gradient-primary bg-clip-text text-transparent">Hyvo</span>
+              <span className="text-foreground">.ai</span>
+            </motion.span>
+            <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] bg-primary/10 text-primary border-0">AI-Powered</Badge>
           </Link>
 
           {/* Desktop Navigation */}

@@ -1,86 +1,63 @@
-# Stage 3 — Premium UI/UX & Performance
+# v2.2.0 Finalization Plan
 
-## 1. Design Language & Consistency
+Audit results: most items are already in place. Only the logo and version strings need actual changes.
 
-**Token unification (`src/index.css`, `tailwind.config.ts`)**
-- Audit `--radius` usage — buttons currently use `rounded-md` (0.375rem) while cards use `rounded-2xl`. Standardize on three tiers: `sm` (inputs/buttons = `--radius`), `md` (cards = `--radius-lg`), `lg` (panels = `--radius-xl`).
-- Consolidate shadow scale (`--shadow-soft/medium/large/xl`) and apply consistently — replace ad-hoc `shadow-lg` calls in `dashboard/*`, `streaming/*`.
-- Add `--hover-lift` and `--press-scale` CSS variables so all interactive surfaces share the same motion vocabulary.
+## 1. Branding — Replace Purple Logo Tile with Text Wordmark
 
-**Component audit**
-- `Button` (src/components/ui/button.tsx) — already has `active:scale-[0.98]`. Extend `hero`/`accent` variants with `--shadow-medium` rest state and `--glow-primary` on hover.
-- `Card`, `Input`, `Select`, `Dialog` — verify all use `rounded-[var(--radius-lg)]`, `border-border/60`, and the same focus ring (`ring-primary/40`).
-- Replace remaining hard-coded hex/`bg-white/5` in `dashboard/DashboardMain.tsx`, `LiveChatPanel.tsx`, `PlatformConnector.tsx` with `bg-card/60` + `liquid-glass-panel` utility.
+**File:** `src/components/Navigation.tsx` (lines 28–36)
 
-**Typography & spacing**
-- Define `.section` (py-16 md:py-24), `.stack-sm/md/lg` (vertical rhythm 8/16/24px) utilities in `index.css`.
-- Apply to Dashboard widget grid (currently inconsistent gap-4/gap-6) and Studio side panels (cluttered chat header).
-- Tighten heading scale: h1 `text-4xl md:text-5xl`, h2 `text-2xl md:text-3xl`, body `text-base leading-relaxed`.
+Currently the header renders a purple gradient square containing the placeholder `93a389d8…webp` next to a "Hyvo.ai" label, which reads as the "purple rectangle" you're seeing.
 
-**Dark mode contrast**
-- Bump `--foreground` from `220 15% 95%` to `95%+` and audit `--muted-foreground` against background (currently borderline 4.1:1 — push to ≥4.5:1 WCAG AA).
-- Soften `--border` in dark mode to `240 10% 18%` for cleaner card edges.
-- Re-tune `--primary` glow opacity (0.35 → 0.25) so panels feel less "neon-burned".
+Change to a clean, premium text-only wordmark:
 
-## 2. Micro-interactions & Transitions
+```tsx
+<Link to="/" className="flex items-center gap-2 group" aria-label="Hyvo.ai home">
+  <span className="text-2xl md:text-3xl font-display font-extrabold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
+    Hyvo<span className="text-foreground">.ai</span>
+  </span>
+  <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] bg-primary/10 text-primary border-0">
+    AI-Powered
+  </Badge>
+</Link>
+```
 
-**Page transitions**
-- Wrap `<AppRoutes>` (`src/App.tsx`) with the existing `PageTransition` (`src/components/animations/PageTransition.tsx`) — currently unused. Provides 200ms fade with `AnimatePresence`.
-- Respect `prefers-reduced-motion` via Framer's `useReducedMotion`.
+- Uses `font-display` (Space Grotesk, already in design system) at `font-extrabold` for that premium SaaS feel.
+- Gradient on "Hyvo", solid foreground on ".ai" for contrast.
+- Links to `/` (Home / Dashboard fallback handled by existing routes).
+- Removes the gradient tile + image entirely.
 
-**Loading states**
-- Replace `<LoadingScreen />` Suspense fallback with route-specific skeletons:
-  - Dashboard route → `DashboardSkeletonGrid` (already exists in `dashboard-skeleton.tsx`).
-  - Studio route → new `StudioSkeleton.tsx` (chat + preview + controls placeholders).
-  - Pricing/Profile/Settings → generic `PageSkeleton.tsx`.
-- Eliminate layout shift in `StreamAnalytics`, `RealtimeDashboard` by reserving min-heights on widgets.
+## 2. Routing / Electron 404 — Already Implemented (verify only)
 
-**Button & form feedback**
-- Already have `isLoading`/`isSuccess` props on `Button`. Wire them into `useApiCall` consumers (Stripe checkout, chat send) so submits show the success check briefly.
-- Add `RippleEffect` (already exists) to primary CTAs in `Hero`, `CTA`, `Pricing`.
-- Form success: Confetti burst on first subscription, gentle scale-in on settings save.
+`src/App.tsx` already has:
+- HashRouter selected when Electron is detected (lines 63–67).
+- Cold-boot hash normalization stripping `file://`, `C:`, `.html`, `\` artifacts (lines 76–84).
+- `ElectronRouteGuard` synchronously redirecting invalid paths to `/` (lines 87–101).
 
-## 3. Performance & Asset Polish
+`electron/src/index.js` correctly loads `app/index.html` via `mainWindow.loadFile(...)` when packaged.
 
-**Image optimization**
-- `public/lovable-uploads/93a389d8…png` — 1.4 MB. Convert to WebP (~150 KB target) and add `<picture>` fallback wherever it's referenced.
-- `public/app-icon-1024.png` (570 KB) — only needed by Electron build; remove from Vite public bundle by moving to `electron/app/icons/`.
-- `src/assets/hero-dashboard.jpg` (116 KB) is fine — add `loading="lazy"` + `decoding="async"` everywhere except above-the-fold Hero (already `loading="eager"`).
-- Add `width`/`height` attributes to all `<img>` to prevent CLS.
+**No code change required.** The plan is to leave this untouched and confirm in the summary.
 
-**Bundle check**
-- Audit `package.json` heavy deps: `framer-motion`, `recharts`, `@capacitor/*`, `lucide-react`. Already lazy-loading routes — extend to:
-  - `Confetti` and `ParticleSystem` → dynamic import on first trigger.
-  - `recharts` → already only in dashboard (lazy via route).
-  - Tree-shake `lucide-react` imports — verified per-icon imports are used (good).
-- Add `manualChunks` in `vite.config.ts` to split `react-vendor`, `radix`, `charts`, `framer` into separate chunks for better caching.
-- Verify `@capacitor/electron` stays in `devDependencies` (per memory rule).
+## 3. Version Sync to 2.2.0
 
-**Empty state polish**
-- Upgrade `EmptyState` (`src/components/ui/empty-state.tsx`):
-  - Add optional `illustration` prop (custom SVG) replacing the plain Lucide icon circle.
-  - Add subtle `animate-pulse` glow ring around illustration.
-  - Ship 4 reusable SVG illustrations: `no-streams`, `no-chat`, `no-analytics`, `no-schedule` in `src/components/illustrations/`.
-- Update consumers in Dashboard, Schedule, LiveChatPanel, Analytics.
+- `electron/package.json` → `"version": "2.2.0"` (currently 2.1.0).
+- `src/hooks/useVersionCheck.tsx` line 5 → `const CURRENT_VERSION = '2.2.0';` (drives the UI footer / About / update banner).
+- `package.json` is managed by Lovable and can't be edited directly; the Electron build and runtime use the two files above, so the desktop binary will correctly identify as 2.2.0.
 
-## Performance Scorecard (targets)
+## 4. Vite `base: './'` — Already Set
 
-| Metric | Current (est.) | Target |
-|---|---|---|
-| LCP (home) | ~2.4s | < 1.8s |
-| CLS | ~0.12 | < 0.05 |
-| Initial JS | ~480 KB gz | < 350 KB gz |
-| Largest image | 1.4 MB PNG | < 200 KB WebP |
-| Dark-mode contrast | 4.1:1 | ≥ 4.5:1 AA |
+`vite.config.ts` line 8 already declares `base: './'`. No change needed.
 
-## Files to be modified / created
+## 5. Out of Scope (deferred)
 
-Created: `src/components/illustrations/{NoStreams,NoChat,NoAnalytics,NoSchedule}.tsx`, `src/components/ui/StudioSkeleton.tsx`, `src/components/ui/PageSkeleton.tsx`.
-Edited: `src/index.css`, `tailwind.config.ts`, `vite.config.ts`, `src/App.tsx`, `src/components/ui/{button,empty-state,card,input}.tsx`, `src/components/Hero.tsx`, `src/components/CTA.tsx`, dashboard widgets, `LiveChatPanel.tsx`.
+- "Wise integration" sweep: a repo-wide search returned zero matches in `src/`. Nothing to remove.
+- WebP hero asset: still present at `public/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.webp` (66 KB). Once the Navigation switches to a text logo, this asset will only be used by Hero/Auth/Footer/LoadingScreen, which is fine.
 
-## Notes & manual actions
-- WebP conversion will be done in-build via a one-off script (`/tmp/convert.js`) since Vite has no built-in image pipeline.
-- Desktop build: changes to `vite.config.ts` `manualChunks` are safe for Electron (`base: './'` preserved per memory rule).
-- No design tokens that the user previously rejected will be reintroduced (per memory).
+## Files to Edit
 
-Awaiting approval to implement.
+1. `src/components/Navigation.tsx` — text wordmark.
+2. `electron/package.json` — version 2.2.0.
+3. `src/hooks/useVersionCheck.tsx` — `CURRENT_VERSION = '2.2.0'`.
+
+## Deliverable Summary
+
+After approval I will apply the three edits above and report back with a release-ready summary so you can tag `v2.2.0` on GitHub and trigger the desktop build workflow.
