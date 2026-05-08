@@ -60,7 +60,7 @@ const Schedule = () => {
         />
       </div>
 
-      <Navigation />
+      {/* Navigation provided by AppShell */}
 
       <PageHeader
         title="Stream Schedule"
@@ -81,7 +81,7 @@ const Schedule = () => {
         </div>
       </motion.main>
 
-      <Footer />
+      {/* Footer hidden in app shell */}
     </div>
   );
 };

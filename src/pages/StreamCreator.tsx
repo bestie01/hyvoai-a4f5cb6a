@@ -91,7 +91,7 @@ const StreamCreator = () => {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-hero">
-          <Navigation />
+          {/* Navigation provided by AppShell */}
           <section className="pt-32 pb-16 px-6">
             <div className="container mx-auto max-w-2xl">
               <ProFeatureGate 
@@ -177,7 +177,7 @@ const StreamCreator = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-hero">
-        <Navigation />
+        {/* Navigation provided by AppShell */}
         
         <section className="pt-32 pb-16 px-6 relative overflow-hidden">
           {/* Animated background */}

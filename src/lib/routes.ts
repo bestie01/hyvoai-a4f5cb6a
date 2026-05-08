@@ -22,6 +22,7 @@ export const ROUTES: RouteConfig[] = [
   { path: '/community', label: 'Community', icon: Users, showInNav: true, showInSidebar: true, showInMobile: true },
   { path: '/schedule', label: 'Schedule', icon: Calendar },
   { path: '/pricing', label: 'Pricing', icon: DollarSign, showInNav: true },
+  { path: '/subscription', label: 'Subscription', icon: DollarSign, showInSidebar: true },
   { path: '/download', label: 'Download', icon: Download, showInNav: true },
   { path: '/changelog', label: 'Changelog', icon: FileText, showInNav: true },
   { path: '/native', label: 'Mobile', icon: Smartphone, showInSidebar: true },
