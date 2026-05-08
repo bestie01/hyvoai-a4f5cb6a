@@ -111,6 +111,7 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
+      client_reference_id: user.id,
       phone_number_collection: {
         enabled: true,
       },
@@ -131,7 +132,7 @@ serve(async (req) => {
       ],
       mode: "subscription",
       success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/pricing`,
+      cancel_url: `${origin}/subscription`,
       customer_update: {
         name: 'auto',
         address: 'auto',

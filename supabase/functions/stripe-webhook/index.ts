@@ -126,7 +126,7 @@ serve(async (req) => {
 
             const { error } = await supabaseClient
               .from("subscribers")
-              .upsert(payload, { onConflict: userId ? "user_id" : "email" });
+              .upsert(payload, { onConflict: "email" });
 
             if (error) {
               logStep("ERROR: Failed to upsert subscriber", { error: error.message });
