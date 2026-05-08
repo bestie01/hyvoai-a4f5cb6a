@@ -85,7 +85,7 @@ serve(async (req) => {
 
         if (session.mode === "subscription" && session.customer) {
           const customerId = session.customer as string;
-          const userId = session.metadata?.user_id;
+          const userId = session.metadata?.user_id || session.client_reference_id || null;
           const planType = session.metadata?.plan_type;
 
           // Get customer email
@@ -97,41 +97,46 @@ serve(async (req) => {
             break;
           }
 
-          // Get subscription details
-          const subscriptions = await stripe.subscriptions.list({
-            customer: customerId,
-            status: "active",
-            limit: 1,
-          });
+          // Retrieve the subscription that the session created (handles trialing/incomplete)
+          let subscription: Stripe.Subscription | null = null;
+          if (session.subscription) {
+            subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          } else {
+            const list = await stripe.subscriptions.list({ customer: customerId, limit: 1 });
+            subscription = list.data[0] ?? null;
+          }
 
-          if (subscriptions.data.length > 0) {
-            const subscription = subscriptions.data[0];
+          if (subscription && ["active", "trialing", "past_due"].includes(subscription.status)) {
             const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-            
-            // Determine tier
-            let subscriptionTier = planType === 'yearone' ? 'Year One' : 'Pro';
+            const subscriptionTier = planType === "yearone" ? "Year One" : planType === "starter" ? "Starter" : "Pro";
 
-            logStep("Creating/updating subscriber", { email, subscriptionTier });
+            logStep("Activating subscriber", { email, userId, subscriptionTier, status: subscription.status });
+
+            // Upsert by user_id when we have it (more reliable), otherwise by email.
+            const payload = {
+              email,
+              user_id: userId,
+              stripe_customer_id: customerId,
+              subscribed: true,
+              subscription_tier: subscriptionTier,
+              subscription_end: subscriptionEnd,
+              payment_status: "active",
+              updated_at: new Date().toISOString(),
+            };
 
             const { error } = await supabaseClient
               .from("subscribers")
-              .upsert({
-                email,
-                user_id: userId || null,
-                stripe_customer_id: customerId,
-                subscribed: true,
-                subscription_tier: subscriptionTier,
-                subscription_end: subscriptionEnd,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'email' });
+              .upsert(payload, { onConflict: userId ? "user_id" : "email" });
 
             if (error) {
-              logStep("ERROR: Failed to upsert subscriber");
+              logStep("ERROR: Failed to upsert subscriber", { error: error.message });
             } else {
-              logStep("Successfully updated subscriber in database");
+              logStep("Successfully activated subscriber");
               const customerName = (customer as Stripe.Customer).name;
               await sendSubscriptionEmail(email, "subscription_created", subscriptionTier, subscriptionEnd, customerName || undefined);
             }
+          } else {
+            logStep("Subscription not in activatable state", { status: subscription?.status });
           }
         }
         break;
