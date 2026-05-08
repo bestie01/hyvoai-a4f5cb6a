@@ -12,7 +12,7 @@ export function RequirePro({ children, feature = "this" }: { children: React.Rea
 
   if (initialLoading) return <LoadingScreen />;
   if (!isPro) {
-    return <Navigate to={`/pricing?upgrade=${encodeURIComponent(feature)}`} replace state={{ from: location.pathname }} />;
+    return <Navigate to={`/subscription?upgrade=${encodeURIComponent(feature)}`} replace state={{ from: location.pathname }} />;
   }
   return <>{children}</>;
 }

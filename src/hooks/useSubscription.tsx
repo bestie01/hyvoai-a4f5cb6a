@@ -116,7 +116,17 @@ export const useSubscription = () => {
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => checkSubscription(false), 300000);
-    return () => clearInterval(interval);
+    const onFocus = () => checkSubscription(false);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkSubscription(false);
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 

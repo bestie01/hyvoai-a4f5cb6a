@@ -17,6 +17,7 @@ import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RequirePro } from "@/components/auth/RequirePro";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { AppShell } from "@/components/layout/AppShell";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ const Schedule = React.lazy(() => import("./pages/Schedule"));
 const Growth = React.lazy(() => import("./pages/Growth"));
 const Community = React.lazy(() => import("./pages/Community"));
 const StreamCreator = React.lazy(() => import("./pages/StreamCreator"));
+const Subscription = React.lazy(() => import("./pages/Subscription"));
 const NativeHub = React.lazy(() => import("./pages/native/NativeHub"));
 const CameraFeatures = React.lazy(() => import("./pages/native/CameraFeatures"));
 const HapticsFeatures = React.lazy(() => import("./pages/native/HapticsFeatures"));
@@ -68,18 +70,19 @@ const Router = isElectron ? HashRouter : BrowserRouter;
 
 const VALID_PATHS = [
   '/', '/download', '/pricing', '/dashboard', '/studio', '/native',
-  '/auth', '/profile', '/subscription-success', '/settings', '/schedule',
+  '/auth', '/profile', '/subscription', '/subscription-success', '/settings', '/schedule',
   '/growth', '/community', '/create', '/changelog'
 ];
 
-// Normalize Electron hash on cold boot — strip file:// artifacts before React Router runs
+// Normalize Electron hash on cold boot — strip file:// artifacts and land in the app shell, not marketing.
 if (isElectron && typeof window !== 'undefined') {
   const hash = window.location.hash || '';
   const cleaned = hash.replace(/^#/, '');
   const looksLikeFilePath =
     cleaned.includes('C:') || cleaned.includes('.html') || cleaned.includes('\\') || cleaned.includes('file://');
-  if (!cleaned || looksLikeFilePath) {
-    window.location.hash = '#/';
+  if (!cleaned || cleaned === '/' || looksLikeFilePath) {
+    // Default desktop landing — RequireAuth will bounce to /auth if not signed in.
+    window.location.hash = '#/dashboard';
   }
 }
 
@@ -106,9 +109,11 @@ const Page = ({ children }: { children: React.ReactNode }) => (
   <ErrorBoundary>{children}</ErrorBoundary>
 );
 
-const Protected = ({ children }: { children: React.ReactNode }) => (
+const Protected = ({ children, bleed = false }: { children: React.ReactNode; bleed?: boolean }) => (
   <ErrorBoundary>
-    <RequireAuth>{children}</RequireAuth>
+    <RequireAuth>
+      <AppShell bleed={bleed}>{children}</AppShell>
+    </RequireAuth>
   </ErrorBoundary>
 );
 
@@ -133,16 +138,17 @@ const AppRoutes = () => (
             <Route path="/native/geolocation" element={<Page><GeolocationFeatures /></Page>} />
             <Route path="/native/device" element={<Page><DeviceFeatures /></Page>} />
 
-            {/* Authenticated routes */}
+            {/* In-app (authenticated) routes — wrapped in the persistent AppShell */}
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-            <Route path="/studio" element={<Protected><StreamingApp /></Protected>} />
+            <Route path="/studio" element={<Protected bleed><StreamingApp /></Protected>} />
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
+            <Route path="/subscription" element={<Protected><Subscription /></Protected>} />
             <Route path="/subscription-success" element={<Protected><SubscriptionSuccess /></Protected>} />
             <Route path="/settings" element={<Protected><Settings /></Protected>} />
             <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
             <Route path="/growth" element={<Protected><Growth /></Protected>} />
             <Route path="/community" element={<Protected><Community /></Protected>} />
-            <Route path="/create" element={<Protected><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
+            <Route path="/create" element={<Protected bleed><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
 
             <Route path="*" element={<Page><NotFound /></Page>} />
           </Routes>
