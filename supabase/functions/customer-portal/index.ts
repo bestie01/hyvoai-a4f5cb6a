@@ -49,10 +49,12 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "http://localhost:3000";
+    const reqOrigin = req.headers.get("origin") || "";
+    const isLovableOrigin = /^https:\/\/[^/]+\.lovable\.app$/.test(reqOrigin);
+    const origin = isLovableOrigin ? reqOrigin : "https://hyvoai.lovable.app";
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/profile`,
+      return_url: `${origin}/subscription`,
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 

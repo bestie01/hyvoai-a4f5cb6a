@@ -10,6 +10,7 @@ interface SubscriptionData {
   is_paused?: boolean;
   paused_at?: string | null;
   payment_status?: string | null;
+  cancel_at_period_end?: boolean;
 }
 
 const EMPTY: SubscriptionData = {
@@ -19,6 +20,7 @@ const EMPTY: SubscriptionData = {
   is_paused: false,
   paused_at: null,
   payment_status: null,
+  cancel_at_period_end: false,
 };
 
 export const useSubscription = () => {
@@ -51,6 +53,7 @@ export const useSubscription = () => {
           is_paused: data.is_paused || false,
           paused_at: data.paused_at || null,
           payment_status: data.payment_status || null,
+          cancel_at_period_end: data.cancel_at_period_end || false,
         });
         if (showToast && data.subscribed) {
           toast.success('Subscription active', { description: `Your ${data.subscription_tier} plan is active.` });
@@ -139,7 +142,10 @@ export const useSubscription = () => {
   const isStarter = subscription.subscribed && subscription.subscription_tier === 'Starter';
   const isPaid = subscription.subscribed;
   const isPaused = subscription.is_paused || false;
-  const paymentFailed = subscription.payment_status === 'failed';
+  const paymentFailed = subscription.payment_status === 'failed' || subscription.payment_status === 'past_due';
+  const isTrialing = subscription.payment_status === 'trialing';
+  const willCancel = subscription.cancel_at_period_end || false;
+  const renewalDate = subscription.subscription_end;
 
   const canAccessStudio = isPaid && !isPaused;
   const canAccessAI = isPro && !isPaused;
@@ -160,6 +166,9 @@ export const useSubscription = () => {
     isStarter,
     isPaid,
     isPaused,
+    isTrialing,
+    willCancel,
+    renewalDate,
     paymentFailed,
     canAccessStudio,
     canAccessAI,

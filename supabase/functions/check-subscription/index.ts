@@ -68,33 +68,47 @@ serve(async (req) => {
 
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      status: "all",
+      limit: 10,
     });
-    const hasActiveSub = subscriptions.data.length > 0;
-    let subscriptionTier = null;
-    let subscriptionEnd = null;
+    // Prefer active or trialing subs
+    const activeSub = subscriptions.data.find(
+      (s) => s.status === "active" || s.status === "trialing"
+    );
+    const hasActiveSub = !!activeSub;
+    let subscriptionTier: string | null = null;
+    let subscriptionEnd: string | null = null;
+    let cancelAtPeriodEnd = false;
+    let paymentStatus: string | null = null;
 
-    if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      
-      // Determine subscription tier from price
-      const priceId = subscription.items.data[0].price.id;
+    if (activeSub) {
+      subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+      cancelAtPeriodEnd = activeSub.cancel_at_period_end ?? false;
+      paymentStatus = activeSub.status; // 'active' | 'trialing'
+      logStep("Active/trialing subscription found", {
+        subscriptionId: activeSub.id,
+        endDate: subscriptionEnd,
+        cancelAtPeriodEnd,
+        status: activeSub.status,
+      });
+
+      const priceId = activeSub.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
-      
+
       if (amount >= 29000) {
         subscriptionTier = "Year One";
-      } else if (amount >= 2900) {
+      } else if (amount >= 1400) {
         subscriptionTier = "Pro";
       } else {
-        subscriptionTier = "Basic";
+        subscriptionTier = "Starter";
       }
       logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
     } else {
-      logStep("No active subscription found");
+      // Surface past_due / canceled if present so the UI can show a status pill
+      const latest = subscriptions.data[0];
+      if (latest) paymentStatus = latest.status;
+      logStep("No active subscription found", { latestStatus: paymentStatus });
     }
 
     await supabaseClient.from("subscribers").upsert({
@@ -104,6 +118,7 @@ serve(async (req) => {
       subscribed: hasActiveSub,
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd,
+      payment_status: paymentStatus,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
 
@@ -111,7 +126,9 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       subscription_tier: subscriptionTier,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      cancel_at_period_end: cancelAtPeriodEnd,
+      payment_status: paymentStatus,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

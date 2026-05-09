@@ -37,7 +37,8 @@ const PLANS = [
 
 const Subscription = () => {
   const {
-    subscription, isPro, isYearOne, isStarter, isPaid, isPaused,
+    subscription, isPro, isYearOne, isStarter, isPaid, isPaused, isTrialing,
+    willCancel, renewalDate, paymentFailed,
     initialLoading, loading, createCheckout, openCustomerPortal,
     pauseSubscription, resumeSubscription,
   } = useSubscription();
@@ -48,6 +49,19 @@ const Subscription = () => {
     if (id === "yearone") return isYearOne;
     return false;
   };
+
+  const formatDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  const statusPill = () => {
+    if (!isPaid) return { label: 'Free', cls: 'bg-white/10 text-white/70' };
+    if (isPaused) return { label: 'Paused', cls: 'bg-amber-500/20 text-amber-300' };
+    if (paymentFailed) return { label: 'Past Due', cls: 'bg-red-500/20 text-red-300' };
+    if (willCancel) return { label: 'Canceling', cls: 'bg-orange-500/20 text-orange-300' };
+    if (isTrialing) return { label: 'Trialing', cls: 'bg-blue-500/20 text-blue-300' };
+    return { label: 'Active', cls: 'bg-emerald-500/20 text-emerald-300' };
+  };
+  const status = statusPill();
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -60,46 +74,62 @@ const Subscription = () => {
       {!initialLoading && (
         <Card className="liquid-glass-panel border-white/10">
           <CardHeader>
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                {isPaid ? (
-                  <Crown className="w-6 h-6 text-amber-400" />
-                ) : (
-                  <Sparkles className="w-6 h-6 text-white/50" />
-                )}
-                <div>
-                  <CardTitle className="text-xl">
-                    {isPaid ? `${subscription.subscription_tier} Plan` : "Free Plan"}
-                  </CardTitle>
-                  <CardDescription className="text-white/60">
-                    {isPaid && subscription.subscription_end
-                      ? `Renews ${new Date(subscription.subscription_end).toLocaleDateString()}`
-                      : "Upgrade to unlock pro features"}
-                  </CardDescription>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {isPaused && <Badge variant="secondary">Paused</Badge>}
-                {isPaid && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={openCustomerPortal} disabled={loading}>
-                      <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                      Manage Billing
-                    </Button>
-                    {isPaused ? (
-                      <Button variant="outline" size="sm" onClick={resumeSubscription} disabled={loading}>
-                        <Play className="w-3.5 h-3.5 mr-1.5" /> Resume
-                      </Button>
-                    ) : (
-                      <Button variant="outline" size="sm" onClick={pauseSubscription} disabled={loading}>
-                        <Pause className="w-3.5 h-3.5 mr-1.5" /> Pause
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
+            <div className="flex items-center gap-3">
+              {isPaid ? (
+                <Crown className="w-6 h-6 text-amber-400" />
+              ) : (
+                <Sparkles className="w-6 h-6 text-white/50" />
+              )}
+              <CardTitle className="text-xl">
+                {isPaid ? `${subscription.subscription_tier} Plan` : "Free Plan"}
+              </CardTitle>
             </div>
           </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-white/40 mb-1">Plan</div>
+                <div className="text-lg font-semibold">
+                  {isPaid ? subscription.subscription_tier : 'Free'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wider text-white/40 mb-1">
+                  {willCancel ? 'Cancels' : isPaid ? 'Renews' : 'Renewal'}
+                </div>
+                <div className="text-lg font-semibold">{formatDate(renewalDate)}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wider text-white/40 mb-1">Status</div>
+                <Badge className={`${status.cls} border-0`}>{status.label}</Badge>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-white/10">
+              {isPaid ? (
+                <>
+                  <Button onClick={openCustomerPortal} disabled={loading} className="bg-gradient-primary">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Manage Subscription
+                  </Button>
+                  {isPaused ? (
+                    <Button variant="outline" size="sm" onClick={resumeSubscription} disabled={loading}>
+                      <Play className="w-3.5 h-3.5 mr-1.5" /> Resume
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={pauseSubscription} disabled={loading}>
+                      <Pause className="w-3.5 h-3.5 mr-1.5" /> Pause
+                    </Button>
+                  )}
+                  <p className="text-xs text-white/50 ml-auto">
+                    Cancel or resume anytime via the Stripe portal.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-white/60">Choose a plan below to unlock pro features.</p>
+              )}
+            </div>
+          </CardContent>
         </Card>
       )}
 
