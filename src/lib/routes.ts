@@ -38,12 +38,23 @@ export function isRouteActive(currentPath: string, routePath: string): boolean {
   return currentPath === routePath || currentPath.startsWith(routePath + '/');
 }
 
-// Get safe redirect URL for OAuth (works on both web and Electron)
+// Production URL — never hand Supabase a localhost callback during OAuth.
+const PRODUCTION_URL = 'https://hyvoai.lovable.app';
+
+// Get safe redirect URL for OAuth (works on web, preview, and Electron)
 export function getRedirectUrl(path: string = '/'): string {
-  const isElectronEnv = typeof window !== 'undefined' && (window as any).electronAPI?.isElectron;
-  if (isElectronEnv) {
-    // For Electron, use the published web URL for OAuth callbacks
-    return `https://hyvoai.lovable.app${path}`;
+  if (typeof window === 'undefined') return `${PRODUCTION_URL}${path}`;
+
+  const isElectronEnv = (window as any).electronAPI?.isElectron === true
+    || navigator.userAgent.includes('Electron');
+  const host = window.location.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+
+  // For Electron and local dev, redirect through the production URL so Supabase
+  // never gets a localhost callback (which would 404 in the OAuth flow).
+  if (isElectronEnv || isLocal) {
+    return `${PRODUCTION_URL}${path}`;
   }
+  // On real lovable preview / published / custom domains, use current origin.
   return `${window.location.origin}${path}`;
 }

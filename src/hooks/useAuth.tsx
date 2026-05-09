@@ -68,7 +68,7 @@ export const useAuth = (): UseAuthReturn => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'twitch',
       options: {
-        redirectTo: getRedirectUrl('/studio'),
+        redirectTo: getRedirectUrl('/dashboard'),
         queryParams: { access_type: 'offline', prompt: 'consent' }
       }
     });
