@@ -33,7 +33,10 @@ const FOOTER_NAV: NavItem[] = [
 export function HyvoSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
+  const { isPaid, isPaused, subscription } = useSubscription();
   const navigate = useNavigate();
+  const showProBadge = isPaid && !isPaused;
+  const tierLabel = subscription.subscription_tier === 'Year One' ? 'Year One' : 'Pro';
 
   const handleSignOut = async () => {
     await signOut();
@@ -101,8 +104,21 @@ export function HyvoSidebar() {
           {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
         </button>
         {!collapsed && user?.email && (
-          <div className="px-3 pt-2 text-[11px] text-white/40 truncate" title={user.email}>
-            {user.email}
+          <div className="px-3 pt-2 flex items-center gap-2">
+            <span className="text-[11px] text-white/40 truncate flex-1" title={user.email}>
+              {user.email}
+            </span>
+            {showProBadge && (
+              <Badge className="h-5 px-1.5 text-[10px] bg-gradient-to-r from-amber-400 to-amber-600 text-black border-0 font-semibold">
+                <Crown className="w-2.5 h-2.5 mr-0.5" />
+                {tierLabel}
+              </Badge>
+            )}
+          </div>
+        )}
+        {collapsed && showProBadge && (
+          <div className="flex justify-center pt-2">
+            <Crown className="w-4 h-4 text-amber-400" />
           </div>
         )}
       </div>
