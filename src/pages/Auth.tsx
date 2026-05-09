@@ -56,7 +56,7 @@ const Auth = () => {
     if (candidate && candidate.startsWith('/') && !candidate.startsWith('//')) return candidate;
     return null;
   })();
-  const redirectPath = safeRedirect || location.state?.redirect || '/studio';
+  const redirectPath = safeRedirect || location.state?.redirect || '/dashboard';
   const planId = location.state?.plan;
 
   useEffect(() => {
