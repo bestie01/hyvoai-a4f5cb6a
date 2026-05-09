@@ -1,10 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home, Radio, Calendar, TrendingUp, Users, CreditCard,
-  Settings, User as UserIcon, LogOut, ChevronLeft, ChevronRight,
+  Settings, User as UserIcon, LogOut, ChevronLeft, ChevronRight, Crown,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import hyvoLogo from "/hyvo-logo.png";
 
