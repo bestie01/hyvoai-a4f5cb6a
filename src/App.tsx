@@ -19,6 +19,7 @@ import { RequirePro } from "@/components/auth/RequirePro";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { AppShell } from "@/components/layout/AppShell";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -176,6 +177,7 @@ const App = () => (
             <AppRoutes />
           </Router>
           <Analytics />
+          <SpeedInsights />
         </ErrorBoundary>
       </TooltipProvider>
     </ThemeProvider>
