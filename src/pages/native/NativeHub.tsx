@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { LiquidGlassCard, LiquidGlassIcon, LiquidGlassBadge } from "@/components/ui/liquid-glass-card";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { Seo } from "@/components/Seo";
 
 const features = [
   {
@@ -76,6 +77,11 @@ const NativeHub = () => {
 
   return (
     <PageTransition>
+      <Seo
+        title="Native Features — Hyvo.ai Device Hub"
+        description="Access device capabilities from Hyvo.ai: camera, haptics, local storage, notifications, geolocation, and device info."
+        path="/native"
+      />
       <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-mesh opacity-50" />

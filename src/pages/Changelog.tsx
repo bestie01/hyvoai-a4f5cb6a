@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Loader2, ExternalLink, FileDown, ChevronDown, Tag, Calendar, Download, ArrowLeft, Monitor, Apple, Terminal } from "lucide-react";
 import { useAllGitHubReleases } from "@/hooks/useAllGitHubReleases";
 import { format } from "date-fns";
+import { Seo } from "@/components/Seo";
 
 const formatFileSize = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -90,6 +91,11 @@ const Changelog = () => {
 
   return (
     <PageTransition>
+      <Seo
+        title="Changelog — Hyvo.ai Release Notes"
+        description="Every Hyvo.ai update, improvement, and fix. Stream Studio releases, AI features, and platform updates in one place."
+        path="/changelog"
+      />
       <div className="min-h-screen bg-background">
         <Navigation />
         <ScrollToTop />

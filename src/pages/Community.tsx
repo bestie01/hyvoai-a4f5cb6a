@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
 import Footer from "@/components/Footer";
+import { Seo } from "@/components/Seo";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -112,6 +113,11 @@ const Community = () => {
 
   return (
     <div className="min-h-screen liquid-glass-bg relative overflow-hidden">
+      <Seo
+        title="Community — Hyvo.ai Creator Network"
+        description="Join the Hyvo.ai streamer community. Tournaments, giveaways, collabs, and special streams for creators on YouTube and Twitch."
+        path="/community"
+      />
       {/* Animated background orbs */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <motion.div

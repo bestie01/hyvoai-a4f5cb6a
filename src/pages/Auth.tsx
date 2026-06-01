@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { Seo } from "@/components/Seo";
 
 // Validation schemas
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -112,6 +113,11 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen liquid-glass-bg flex items-center justify-center p-4 relative overflow-hidden">
+      <Seo
+        title="Sign in to Hyvo.ai — Streaming Studio Access"
+        description="Sign in or create your Hyvo.ai account to access the AI streaming studio for YouTube and Twitch."
+        path="/auth"
+      />
       {/* Animated background with particles effect */}
       <div className="fixed inset-0 -z-10">
         <motion.div
