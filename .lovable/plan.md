@@ -1,63 +1,52 @@
-# Desktop App Polish: Auth Fixes + Pro Badge + Subscription Management
+## SEO Improvement Plan
 
-## 1. Fix Auth 404 / localhost redirect
+Address the failing SEO findings without changing app functionality. All edits are head-meta, static files, and a sitemap generator.
 
-**Problem**: Google/Discord OAuth lands on `localhost:3000/...` and 404s. Root cause is two-fold:
-- `getRedirectUrl()` returns `window.location.origin` on web, which becomes `http://localhost:3000` during local dev preview, and Supabase's Site URL setting determines the final landing page.
-- `useAuth.signInWithTwitch` redirects to `/studio` instead of `/dashboard`.
+### 1. Shorten and brand the sitewide title (index.html)
+- Shorten `<title>` to ≤60 chars: `Hyvo.ai — AI Streaming Assistant for YouTube & Twitch`.
+- Keep the existing meta description (under 160 chars).
+- Add `<link rel="canonical" href="https://hyvoai.lovable.app/" />`.
+- Add `<meta property="og:url" content="https://hyvoai.lovable.app/" />`.
+- Add Organization + WebSite JSON-LD blocks.
 
-**Code changes**:
-- `src/lib/routes.ts` → `getRedirectUrl()`: always return the production URL (`https://hyvoai.lovable.app${path}`) when not running on a `*.lovable.app` preview domain or Electron, so OAuth never hands Supabase a `localhost` callback. Detection: if `window.location.hostname` is `localhost`/`127.0.0.1` OR Electron → use production URL. Otherwise use current origin (so real lovable preview/published domains keep working).
-- `src/hooks/useAuth.tsx` → change all three OAuth providers (`signInWithTwitch`, `signInWithGoogle`, `signInWithDiscord`) to redirect to `/dashboard`.
-- Add a small `/auth/callback` handling: not needed — Supabase strips the hash and `RequireAuth` will already pass through to `/dashboard`. But `Auth.tsx` already listens to `onAuthStateChange`; verify it routes to `/dashboard` after `SIGNED_IN` and add it if missing.
+### 2. Per-route head with react-helmet-async
+- Install `react-helmet-async`.
+- Wrap app in `<HelmetProvider>` in `src/main.tsx`.
+- Add a small `<Seo />` helper component (`src/components/Seo.tsx`) for title, description, canonical, og:title/description/url, optional JSON-LD.
+- Drop `<Seo />` into the main public routes with unique copy:
+  - `/` (Index)
+  - `/pricing` (with FAQPage JSON-LD built from existing FAQ data)
+  - `/download` (with SoftwareApplication JSON-LD)
+  - `/community`, `/growth`, `/changelog`, `/auth`, `/native`
+- Remove the duplicate `<link rel="canonical">` problem by letting each route own its own canonical (sitewide one stays in index.html as fallback for `/`).
 
-**Manual user steps (called out in chat after implementation)**:
-- Supabase Dashboard → Authentication → URL Configuration: Site URL = `https://hyvoai.lovable.app`, Additional Redirect URLs include `https://hyvoai.lovable.app/**` and any preview domain.
-- Google Cloud Console + Discord Developer Portal: ensure Authorized Redirect URIs include `https://fxvvcyjwgxxxezqzucwm.supabase.co/auth/v1/callback`.
+### 3. Sitemap + robots
+- Create `scripts/generate-sitemap.ts` listing all public routes (`/`, `/pricing`, `/download`, `/community`, `/growth`, `/changelog`, `/auth`, `/native` + sub-pages).
+- Wire `predev` and `prebuild` npm scripts to run it via `bunx tsx`.
+- Update `public/robots.txt` to append `Sitemap: https://hyvoai.lovable.app/sitemap.xml`.
 
-## 2. Pro Badge in Sidebar
+### 4. /llms.txt
+- Add `public/llms.txt` with a Hyvo.ai summary and links to main pages.
 
-- `src/components/layout/HyvoSidebar.tsx`: import `useSubscription`, render a small `Pro` (or `Year One`) chip next to the user's email at the bottom when `isPaid && !isPaused`. Uses existing `ProBadge` style (gold gradient + Crown icon) but inline-sized.
-- Sidebar already re-renders whenever `useSubscription` state changes, so cancel/resume from the Stripe portal will flip the badge automatically once `checkSubscription` runs (focus listener already wired in the hook).
+### 5. Accessibility / content fixes (from scan)
+- `src/pages/Auth.tsx`: change H1 to "Sign in to Hyvo.ai"; add `aria-label` to Google/Discord/Twitch social-login buttons.
+- `src/components/Navigation.tsx`: add `aria-label="Notifications"` to the bell button.
+- `src/pages/native/NativeHub.tsx` and `src/pages/native/CameraFeatures.tsx`: add `aria-label="Go back"` to back buttons.
+- Expand alt text on NativeFeatures demo images.
 
-## 3. Enhanced Subscription Page
+### 6. LCP performance pass
+- In `src/components/Hero.tsx`: ensure the hero image (if present) has explicit `width`/`height`, no `loading="lazy"`, and `fetchpriority="high"`.
+- Confirm Google Fonts `<link>` in `index.html` already uses `display=swap` (it does) — no change needed.
 
-**`supabase/functions/check-subscription/index.ts`**:
-- Also accept `trialing` status (currently only `active`).
-- Return additional fields: `current_period_end` (already as `subscription_end`), `cancel_at_period_end`, `payment_status` (`active|past_due|canceled|trialing`), `current_period_start`.
-- Persist `payment_status` to `subscribers` table (column already exists).
+### Out of scope
+- No business-logic, auth, Stripe, or DB changes.
+- Google Search Console connector + META verification will be offered as a follow-up (requires user OAuth approval).
 
-**`src/hooks/useSubscription.tsx`**:
-- Extend `SubscriptionData` with `cancel_at_period_end?: boolean` and `current_period_start?: string | null`.
-- Expose `willCancel = cancel_at_period_end` and `renewalDate = subscription_end`.
-
-**`src/pages/Subscription.tsx`** — redesign current-plan card to a 3-column summary:
-- **Plan**: tier name + Pro badge.
-- **Renewal**: formatted `subscription_end` ("Renews Jan 14, 2026" or "Cancels Jan 14, 2026" if `cancel_at_period_end`).
-- **Status**: pill — Active / Trialing / Past Due / Paused / Canceling.
-- Primary CTA: **"Manage Subscription"** → calls `openCustomerPortal()` (existing `customer-portal` edge function works). Keep Pause/Resume secondary.
-- Add a `useEffect` that calls `refreshSubscription()` once the window regains focus after the portal opens (already handled by hook — verify focus listener fires).
-
-**`supabase/functions/customer-portal/index.ts`**:
-- Set `return_url` to `https://hyvoai.lovable.app/subscription` (use request origin if it's a `*.lovable.app` host, else the production URL — never `localhost`).
-
-## 4. Core Dashboard
-
-Already done in the previous loop — `/studio` is `bleed` inside `AppShell`. No changes here unless QA finds gaps; flag only.
-
-## Files touched
-
-- EDIT `src/lib/routes.ts`
-- EDIT `src/hooks/useAuth.tsx`
-- EDIT `src/hooks/useSubscription.tsx`
-- EDIT `src/components/layout/HyvoSidebar.tsx`
-- EDIT `src/pages/Subscription.tsx`
-- EDIT `supabase/functions/check-subscription/index.ts`
-- EDIT `supabase/functions/customer-portal/index.ts`
-
-## Out of scope
-
-- No DB schema changes — `subscribers.payment_status` and `subscription_end` already exist.
-- No Stripe webhook changes — webhook was already hardened in the prior loop.
-- No new auth providers; only redirect fixes.
-- Marketing site untouched.
+### Files touched
+- `index.html`
+- `src/main.tsx`
+- `src/components/Seo.tsx` (new)
+- `src/pages/Index.tsx`, `Pricing.tsx`, `Download.tsx`, `Community.tsx`, `Growth.tsx`, `Changelog.tsx`, `Auth.tsx`, `native/NativeHub.tsx`, `native/CameraFeatures.tsx`
+- `src/components/Navigation.tsx`, `src/components/Hero.tsx`, `src/components/NativeFeatures.tsx`
+- `scripts/generate-sitemap.ts` (new), `package.json`
+- `public/robots.txt`, `public/llms.txt` (new)
