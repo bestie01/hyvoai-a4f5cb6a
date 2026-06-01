@@ -251,7 +251,10 @@ const Hero = () => {
                   src={heroImage}
                   alt="Hyvo.ai Dashboard Preview - AI-powered streaming analytics"
                   className="w-full h-auto object-cover"
+                  width={1600}
+                  height={900}
                   loading="eager"
+                  fetchPriority="high"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
 

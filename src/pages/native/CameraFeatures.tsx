@@ -69,6 +69,7 @@ const CameraFeatures = () => {
                 size="icon"
                 onClick={() => navigate("/native")}
                 className="liquid-glass-button !p-2"
+                aria-label="Back to Native Features"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>

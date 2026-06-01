@@ -16,6 +16,7 @@ import { ProFeatureGate } from "@/components/ProFeatureGate";
 import { PageHeader } from "@/components/ui/page-header";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
 import Footer from "@/components/Footer";
+import { Seo } from "@/components/Seo";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -111,6 +112,11 @@ const Growth = () => {
 
   return (
     <div className="min-h-screen liquid-glass-bg relative overflow-hidden">
+      <Seo
+        title="Growth Tools — Hyvo.ai for Streamers"
+        description="Grow your audience with Hyvo.ai. Schedule social posts to Twitter and Discord, track engagement, and analyze growth across platforms."
+        path="/growth"
+      />
       {/* Animated background orbs */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <motion.div

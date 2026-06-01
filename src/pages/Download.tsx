@@ -14,6 +14,17 @@ import { useGitHubReleases } from "@/hooks/useGitHubReleases";
 import { BuildStatusCard } from "@/components/BuildStatusCard";
 import { GITHUB_CONFIG } from "@/lib/constants";
 import { format } from "date-fns";
+import { Seo } from "@/components/Seo";
+
+const downloadJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Hyvo Stream Studio",
+  operatingSystem: "Windows, macOS, Linux",
+  applicationCategory: "MultimediaApplication",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  description: "Native desktop streaming studio with WebRTC capture, AI tools, multi-platform relay, and scene management.",
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -175,6 +186,12 @@ const DownloadPage = () => {
 
   return (
     <PageTransition>
+      <Seo
+        title="Download Hyvo Stream Studio — Desktop App"
+        description="Download Hyvo Stream Studio for Windows, macOS, and Linux. Native streaming studio with AI tools, multi-platform relay, and scene management."
+        path="/download"
+        jsonLd={downloadJsonLd}
+      />
       <div className="min-h-screen bg-background">
         <Navigation />
 

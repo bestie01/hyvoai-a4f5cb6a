@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hyvo.ai - AI-Powered Streaming Assistant | Grow Your YouTube &amp; Twitch</title>
+    <title>Hyvo.ai — AI Streaming Assistant for YouTube & Twitch</title>
     <meta name="description" content="Automate streaming with AI. Schedule smarter, engage in real-time, create highlights automatically. The all-in-one tool for YouTube and Twitch streamers.">
     <meta name="author" content="Hyvo.ai" />
-     
+
      <!-- PWA Meta Tags -->
      <meta name="theme-color" content="#8b5cf6" />
      <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -14,21 +14,45 @@
      <meta name="apple-mobile-web-app-title" content="Hyvo.ai" />
      <link rel="apple-touch-icon" href="/app-icon-1024.png" />
      <link rel="manifest" href="/manifest.webmanifest" />
-    
+
     <!-- Google Fonts - Premium Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    
-    
+    <!-- Open Graph / social fallback (per-route Helmet overrides these for JS crawlers) -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hyvoai.lovable.app/" />
+    <meta property="og:title" content="Hyvo.ai — AI Streaming Assistant for YouTube & Twitch" />
+    <meta property="og:description" content="Automate streaming with AI. Schedule smarter, engage in real-time, create highlights automatically.">
     <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/yjmGtEpguxaCwBoK7qWJXQ7PpI03/social-images/social-1760005057349-yes.png">
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:title" content="Hyvo.ai — AI Streaming Assistant for YouTube & Twitch" />
+    <meta name="twitter:description" content="Automate streaming with AI. Schedule smarter, engage in real-time, create highlights automatically.">
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/yjmGtEpguxaCwBoK7qWJXQ7PpI03/social-images/social-1760005057349-yes.png">
-    
+
+    <!-- Structured data: Organization + WebSite -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Hyvo.ai",
+        "url": "https://hyvoai.lovable.app",
+        "logo": "https://hyvoai.lovable.app/app-icon-1024.png",
+        "sameAs": ["https://youtube.com/@hyvoai", "https://github.com/bestie01/hyvoai-a4f5cb6a"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Hyvo.ai",
+        "url": "https://hyvoai.lovable.app"
+      }
+    </script>
+
     <!-- Prevent flash of unstyled content with theme -->
     <script>
       (function() {
@@ -37,24 +61,9 @@
         document.documentElement.classList.add(theme === 'system' ? systemTheme : theme);
       })();
     </script>
-    
-  
-  
-  
-  <link rel="icon" type="image/png" href="/app-icon-1024.png">
-  
-  
-  
-  
-  
-  
-  
-  
-  <meta property="og:title" content="Hyvo.ai - AI-Powered Streaming Assistant | Grow Your YouTube &amp; Twitch">
-  <meta name="twitter:title" content="Hyvo.ai - AI-Powered Streaming Assistant | Grow Your YouTube &amp; Twitch">
-  <meta property="og:description" content="Automate streaming with AI. Schedule smarter, engage in real-time, create highlights automatically. The all-in-one tool for YouTube and Twitch streamers.">
-  <meta name="twitter:description" content="Automate streaming with AI. Schedule smarter, engage in real-time, create highlights automatically. The all-in-one tool for YouTube and Twitch streamers.">
-</head>
+
+    <link rel="icon" type="image/png" href="/app-icon-1024.png">
+  </head>
 
   <body>
     <div id="root"></div>

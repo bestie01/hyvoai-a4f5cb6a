@@ -1,0 +1,19 @@
+# Hyvo.ai
+
+> AI-powered streaming assistant for YouTube and Twitch creators — automated scheduling, real-time engagement, AI highlights, multi-platform streaming, and a native desktop studio.
+
+Hyvo.ai is an all-in-one streaming platform that combines a professional in-browser studio (WebRTC capture, scene manager, audio mixer, multi-platform relay) with 11 AI features (title and thumbnail generation, chat moderation, highlight clips, game coaching, predictive analytics, voice assistant, viewer Q&A, and more). Available as a web app and a native desktop application for Windows and macOS.
+
+## Pages
+
+- [Home](/): Product overview, features, and call to action.
+- [Pricing](/pricing): Starter, Pro ($15/mo), and Year One ($30/yr) plans with a 14-day free trial.
+- [Download](/download): Desktop installers for Windows and macOS.
+- [Community](/community): Creator community and showcase.
+- [Growth](/growth): Growth tips and playbooks for streamers.
+- [Changelog](/changelog): Release notes and platform updates.
+- [Native](/native): Native device features (camera, haptics, notifications, geolocation).
+
+## Optional
+
+- [Sign in](/auth): Account access for existing users.
