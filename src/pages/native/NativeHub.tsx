@@ -91,6 +91,7 @@ const NativeHub = () => {
                 size="icon"
                 onClick={() => navigate(-1)}
                 className="liquid-glass-button !p-2"
+                aria-label="Go back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>

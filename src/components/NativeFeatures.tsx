@@ -147,7 +147,7 @@ export const NativeFeatures = () => {
             {camera.photo && (
               <img 
                 src={camera.photo} 
-                alt="Captured" 
+                alt="Photo captured from the device camera in the Hyvo.ai native demo" 
                 className="w-full max-w-xs rounded-lg border"
               />
             )}
