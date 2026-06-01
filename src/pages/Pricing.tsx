@@ -14,6 +14,26 @@ import { ScrollProgress } from "@/components/effects/ScrollProgress";
 import { PricingCalculator } from "@/components/PricingCalculator";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { ComparisonSlider } from "@/components/ComparisonSlider";
+import { Seo } from "@/components/Seo";
+
+const FAQ_ITEMS = [
+  { q: "Can I change plans anytime?", a: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately." },
+  { q: "Is there a free trial?", a: "Yes, Pro plan comes with a 14-day free trial. No credit card required to start." },
+  { q: "What payment methods do you accept?", a: "We accept all major credit cards through Stripe's secure payment processing." },
+  { q: "Do you offer refunds?", a: "Yes, we offer a 30-day money-back guarantee for all paid plans." },
+  { q: "What happens when I cancel?", a: "You'll retain access to Pro features until the end of your billing period, then automatically return to the free plan." },
+  { q: "Can I get a custom plan?", a: "For enterprise needs or custom requirements, contact our sales team for a tailored solution." },
+];
+
+const pricingJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
 const Pricing = () => {
   const {
     createCheckout,
@@ -93,6 +113,12 @@ const Pricing = () => {
     return loading || plan.isCurrent;
   };
   return <PageTransition>
+      <Seo
+        title="Pricing — Hyvo.ai Plans for Streamers"
+        description="Simple, transparent pricing for streamers. Starter $5/mo, Pro $15/mo with a 14-day free trial, or Year One $30/yr (save 83%)."
+        path="/pricing"
+        jsonLd={pricingJsonLd}
+      />
       <div className="min-h-screen bg-gradient-hero">
         <ScrollProgress color="gradient" />
         <Navigation />

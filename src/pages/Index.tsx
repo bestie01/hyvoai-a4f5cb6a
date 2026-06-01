@@ -14,10 +14,17 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollProgress } from "@/components/effects/ScrollProgress";
 import { FloatingActions } from "@/components/ui/floating-actions";
 import { PlatformLogos } from "@/components/PlatformLogos";
+import { Seo } from "@/components/Seo";
 
 const Index = () => {
   return (
     <PageTransition>
+      <Seo
+        title="Hyvo.ai — AI Streaming Assistant for YouTube & Twitch"
+        description="Automate streaming with AI. Schedule smarter, engage in real-time, and create highlights automatically. The all-in-one tool for YouTube and Twitch streamers."
+        path="/"
+      />
+
       <div className="min-h-screen bg-background relative scroll-smooth">
         <ScrollProgress color="gradient" />
         <CursorGlow color="dynamic" magnetic trail />
