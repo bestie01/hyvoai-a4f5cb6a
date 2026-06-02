@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { getRedirectUrl } from '@/lib/routes';
+import { getRedirectUrl, POST_AUTH_PATH } from '@/lib/routes';
 
 interface UseAuthReturn {
   user: User | null;
