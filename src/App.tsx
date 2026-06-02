@@ -18,6 +18,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RequirePro } from "@/components/auth/RequirePro";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { AppShell } from "@/components/layout/AppShell";
+import { TitleBar } from "@/components/desktop/TitleBar";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
