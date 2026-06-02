@@ -187,6 +187,7 @@ function createTray() {
 
 // App lifecycle
 app.whenReady().then(() => {
+  createSplash();
   createWindow();
 
   if (app.isPackaged) {
