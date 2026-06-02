@@ -167,6 +167,7 @@ const App = () => (
         <ErrorBoundary>
           <GlobalErrorListener />
           <SkipLink />
+          <TitleBar />
           <UpdateBanner />
           <UpdateCenter />
           <PWAInstallPrompt />
