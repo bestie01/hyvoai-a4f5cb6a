@@ -1,52 +1,60 @@
-## SEO Improvement Plan
+# Fix Auth/Stripe + Desktop Polish + Stream Health
 
-Address the failing SEO findings without changing app functionality. All edits are head-meta, static files, and a sitemap generator.
+## 1. OAuth redirect fix (Google / Discord / Twitch)
 
-### 1. Shorten and brand the sitewide title (index.html)
-- Shorten `<title>` to ≤60 chars: `Hyvo.ai — AI Streaming Assistant for YouTube & Twitch`.
-- Keep the existing meta description (under 160 chars).
-- Add `<link rel="canonical" href="https://hyvoai.lovable.app/" />`.
-- Add `<meta property="og:url" content="https://hyvoai.lovable.app/" />`.
-- Add Organization + WebSite JSON-LD blocks.
+**Root cause**: `getRedirectUrl()` in `src/lib/routes.ts` already routes Electron and localhost through `https://hyvoai.lovable.app`, but the success path lands on `/dashboard`. The user-reported 404 is from Supabase's Site URL / provider redirect allowlist still containing `localhost`, plus signups landing on `/` (which can flicker before auth state hydrates).
 
-### 2. Per-route head with react-helmet-async
-- Install `react-helmet-async`.
-- Wrap app in `<HelmetProvider>` in `src/main.tsx`.
-- Add a small `<Seo />` helper component (`src/components/Seo.tsx`) for title, description, canonical, og:title/description/url, optional JSON-LD.
-- Drop `<Seo />` into the main public routes with unique copy:
-  - `/` (Index)
-  - `/pricing` (with FAQPage JSON-LD built from existing FAQ data)
-  - `/download` (with SoftwareApplication JSON-LD)
-  - `/community`, `/growth`, `/changelog`, `/auth`, `/native`
-- Remove the duplicate `<link rel="canonical">` problem by letting each route own its own canonical (sitewide one stays in index.html as fallback for `/`).
+**Changes**:
+- `src/lib/routes.ts` — keep `PRODUCTION_URL = 'https://hyvoai.lovable.app'`, change post-OAuth landing path constant to `/ready-to-stream` (new alias route → Dashboard).
+- `src/hooks/useAuth.tsx` — replace `getRedirectUrl('/dashboard')` and `getRedirectUrl('/')` calls (Google, Discord, Twitch, signUp, resetPassword) to use the new `/ready-to-stream` deep-link for OAuth and `/auth/callback` for email recovery.
+- `src/App.tsx` — add a `/ready-to-stream` route that renders `Dashboard` (so any stale Supabase config that still points there works), and a tiny `<AuthCallback />` route that calls `supabase.auth.getSession()` then `navigate('/ready-to-stream', { replace: true })` to absorb the hash fragment cleanly (kills the white-flash 404).
+- `src/pages/Auth.tsx` — after `onAuthStateChange` sees `SIGNED_IN`, `navigate('/ready-to-stream', { replace: true })`.
 
-### 3. Sitemap + robots
-- Create `scripts/generate-sitemap.ts` listing all public routes (`/`, `/pricing`, `/download`, `/community`, `/growth`, `/changelog`, `/auth`, `/native` + sub-pages).
-- Wire `predev` and `prebuild` npm scripts to run it via `bunx tsx`.
-- Update `public/robots.txt` to append `Sitemap: https://hyvoai.lovable.app/sitemap.xml`.
+**User action required (documented in chat, not code)**: In Supabase Dashboard → Authentication → URL Configuration, set Site URL to `https://hyvoai.lovable.app` and add `https://hyvoai.lovable.app/**` to Additional Redirect URLs. In Google Cloud Console and Discord Dev Portal, set Authorized Redirect URI to `https://fxvvcyjwgxxxezqzucwm.supabase.co/auth/v1/callback` only.
 
-### 4. /llms.txt
-- Add `public/llms.txt` with a Hyvo.ai summary and links to main pages.
+## 2. Stripe Customer Portal fix
 
-### 5. Accessibility / content fixes (from scan)
-- `src/pages/Auth.tsx`: change H1 to "Sign in to Hyvo.ai"; add `aria-label` to Google/Discord/Twitch social-login buttons.
-- `src/components/Navigation.tsx`: add `aria-label="Notifications"` to the bell button.
-- `src/pages/native/NativeHub.tsx` and `src/pages/native/CameraFeatures.tsx`: add `aria-label="Go back"` to back buttons.
-- Expand alt text on NativeFeatures demo images.
+**Root cause audit of `supabase/functions/customer-portal/index.ts`**:
+- Looks up Stripe customer by `email` only — fails silently if the user signed up with a different email casing or has no Stripe customer yet.
+- `return_url` uses request `origin`; Electron sends `file://` or a chrome-extension-like origin → Stripe rejects.
+- Errors return 500 with raw message but client `useSubscription.tsx` may swallow them.
 
-### 6. LCP performance pass
-- In `src/components/Hero.tsx`: ensure the hero image (if present) has explicit `width`/`height`, no `loading="lazy"`, and `fetchpriority="high"`.
-- Confirm Google Fonts `<link>` in `index.html` already uses `display=swap` (it does) — no change needed.
+**Changes**:
+- `supabase/functions/customer-portal/index.ts`:
+  - Prefer `stripe_customer_id` from the `subscribers` table (lookup by `user_id`); fall back to email search; if still missing, create a customer and persist it.
+  - Force `return_url` to `https://hyvoai.lovable.app/subscription` whenever request origin is not an `*.lovable.app` host (covers Electron + localhost).
+  - Wrap Stripe call in try/catch and return structured `{ error, code }` JSON so the client can surface it.
+- `src/hooks/useSubscription.tsx` — on `openCustomerPortal`, await invoke, toast the error message if `data.error` is present, and `window.open(data.url, '_blank')` (in Electron use `window.electronAPI.openExternal(url)` if available).
+- `src/pages/Subscription.tsx` — show inline error state when portal call fails.
 
-### Out of scope
-- No business-logic, auth, Stripe, or DB changes.
-- Google Search Console connector + META verification will be offered as a follow-up (requires user OAuth approval).
+## 3. Desktop UI: custom title bar + splash screen
 
-### Files touched
-- `index.html`
-- `src/main.tsx`
-- `src/components/Seo.tsx` (new)
-- `src/pages/Index.tsx`, `Pricing.tsx`, `Download.tsx`, `Community.tsx`, `Growth.tsx`, `Changelog.tsx`, `Auth.tsx`, `native/NativeHub.tsx`, `native/CameraFeatures.tsx`
-- `src/components/Navigation.tsx`, `src/components/Hero.tsx`, `src/components/NativeFeatures.tsx`
-- `scripts/generate-sitemap.ts` (new), `package.json`
-- `public/robots.txt`, `public/llms.txt` (new)
+**Custom title bar (frameless window)**:
+- `electron/src/index.js` — set `frame: false`, `titleBarStyle: 'hidden'`, `titleBarOverlay: { color: '#0A0A0F', symbolColor: '#ffffff', height: 36 }` for Windows/Linux; on macOS use `hiddenInset` (already set).
+- `electron/src/preload.js` — expose `window.electronAPI.window.{minimize, maximize, close, isMaximized}` IPC bridges.
+- New `src/components/desktop/TitleBar.tsx` — 36px tall, `-webkit-app-region: drag`, Hyvo logo + app name on left, three glyph buttons (Minimize / Maximize / Close) on the right with `-webkit-app-region: no-drag`. Liquid-glass dark styling, red hover on Close. Only renders when `window.electronAPI?.isElectron`.
+- `src/components/layout/AppShell.tsx` and marketing `Navigation.tsx` — mount `<TitleBar />` at the very top so it's present on every route in Electron.
+
+**Cold-start splash screen**:
+- `electron/src/index.js` — create a frameless 420×260 `BrowserWindow` with `transparent: true`, load `electron/splash.html`; show main window only on `did-finish-load`, then close splash.
+- `electron/splash.html` — dark `#0A0A0F` background, centered Hyvo logo with a subtle pulse/shimmer animation (CSS keyframes, no external deps).
+- `index.html` — add an inline `<style>` boot screen (matching dark bg + logo) inside `#root` so the web build also hides white flash before React hydrates; cleared automatically when React mounts.
+
+## 4. Stream Health overlay on Dashboard
+
+- New `src/components/dashboard/StreamHealthOverlay.tsx`:
+  - Floating glass panel, bottom-right, draggable, toggle via a small "Stream Health" pill button in the dashboard header.
+  - Three metrics: **FPS**, **Bitrate (kbps)**, **Latency (ms)**.
+  - Reads from `useWebRTCStream` / `useLocalRecording` when a stream is active; otherwise shows simulated placeholder values that gently fluctuate (so it always feels alive on the Ready-to-Stream view).
+  - Color-coded status dot (green/amber/red) based on thresholds.
+  - Persist open/closed + position in `localStorage` (`hyvo.streamHealth.*`).
+- `src/pages/Dashboard.tsx` — mount the overlay and a header toggle button. State lives in `useState` + localStorage hook.
+
+## Out of scope
+No DB migrations. No new edge functions. No changes to AI features, pricing, or RLS.
+
+## Files
+
+**Created**: `src/components/desktop/TitleBar.tsx`, `src/components/dashboard/StreamHealthOverlay.tsx`, `electron/splash.html`, `src/pages/AuthCallback.tsx`.
+
+**Edited**: `src/lib/routes.ts`, `src/hooks/useAuth.tsx`, `src/App.tsx`, `src/pages/Auth.tsx`, `src/pages/Subscription.tsx`, `src/hooks/useSubscription.tsx`, `src/components/layout/AppShell.tsx`, `src/components/Navigation.tsx`, `src/pages/Dashboard.tsx`, `index.html`, `electron/src/index.js`, `electron/src/preload.js`, `supabase/functions/customer-portal/index.ts`.
