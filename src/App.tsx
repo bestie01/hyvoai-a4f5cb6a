@@ -69,7 +69,7 @@ const isElectron = typeof window !== 'undefined' && (
 const Router = isElectron ? HashRouter : BrowserRouter;
 
 const VALID_PATHS = [
-  '/', '/download', '/pricing', '/dashboard', '/studio', '/native',
+  '/', '/download', '/pricing', '/dashboard', '/ready-to-stream', '/studio', '/native',
   '/auth', '/profile', '/subscription', '/subscription-success', '/settings', '/schedule',
   '/growth', '/community', '/create', '/changelog'
 ];
