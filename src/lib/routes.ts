@@ -38,6 +38,9 @@ export function isRouteActive(currentPath: string, routePath: string): boolean {
   return currentPath === routePath || currentPath.startsWith(routePath + '/');
 }
 
+// Default landing route after OAuth success.
+export const POST_AUTH_PATH = '/ready-to-stream';
+
 // Production URL — never hand Supabase a localhost callback during OAuth.
 const PRODUCTION_URL = 'https://hyvoai.lovable.app';
 
