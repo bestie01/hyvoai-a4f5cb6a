@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { getRedirectUrl } from '@/lib/routes';
+import { getRedirectUrl, POST_AUTH_PATH } from '@/lib/routes';
 
 interface UseAuthReturn {
   user: User | null;
@@ -68,7 +68,7 @@ export const useAuth = (): UseAuthReturn => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'twitch',
       options: {
-        redirectTo: getRedirectUrl('/dashboard'),
+        redirectTo: getRedirectUrl(POST_AUTH_PATH),
         queryParams: { access_type: 'offline', prompt: 'consent' }
       }
     });
@@ -79,7 +79,7 @@ export const useAuth = (): UseAuthReturn => {
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: getRedirectUrl('/dashboard') }
+      options: { redirectTo: getRedirectUrl(POST_AUTH_PATH) }
     });
     if (error) toast({ title: "Google Sign In Failed", description: error.message, variant: "destructive" });
     return { error };
@@ -88,7 +88,7 @@ export const useAuth = (): UseAuthReturn => {
   const signInWithDiscord = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: { redirectTo: getRedirectUrl('/dashboard') }
+      options: { redirectTo: getRedirectUrl(POST_AUTH_PATH) }
     });
     if (error) toast({ title: "Discord Sign In Failed", description: error.message, variant: "destructive" });
     return { error };

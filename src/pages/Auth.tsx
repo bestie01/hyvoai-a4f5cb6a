@@ -57,7 +57,7 @@ const Auth = () => {
     if (candidate && candidate.startsWith('/') && !candidate.startsWith('//')) return candidate;
     return null;
   })();
-  const redirectPath = safeRedirect || location.state?.redirect || '/dashboard';
+  const redirectPath = safeRedirect || location.state?.redirect || '/ready-to-stream';
   const planId = location.state?.plan;
 
   useEffect(() => {

@@ -85,9 +85,19 @@ export const useSubscription = () => {
     }
     const data = await portalApi.invoke();
     if (data?.url) {
-      window.open(data.url, '_blank');
+      const electronApi = (window as any).electronAPI;
+      if (electronApi?.isElectron && typeof electronApi.openExternal === 'function') {
+        electronApi.openExternal(data.url);
+      } else {
+        window.open(data.url, '_blank', 'noopener,noreferrer');
+      }
+    } else {
+      toast.error('Could not open billing portal', {
+        description: 'Check the Stripe Customer Portal is configured in your Stripe dashboard.',
+      });
     }
   };
+
 
   const pauseSubscription = async () => {
     if (!user || !session) return false;

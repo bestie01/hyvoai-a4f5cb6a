@@ -4,6 +4,7 @@ const fs = require('fs');
 const { AutoUpdater } = require('./auto-updater');
 
 let mainWindow;
+let splashWindow;
 let tray;
 let autoUpdater;
 let registeredShortcuts = new Map();
@@ -22,6 +23,23 @@ if (!gotTheLock) {
   });
 }
 
+function createSplash() {
+  splashWindow = new BrowserWindow({
+    width: 420,
+    height: 260,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    movable: false,
+    skipTaskbar: true,
+    backgroundColor: '#00000000',
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+  splashWindow.loadFile(path.join(__dirname, '..', 'splash.html')).catch(() => {});
+  splashWindow.on('closed', () => { splashWindow = null; });
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -30,6 +48,11 @@ function createWindow() {
     minHeight: 768,
     title: 'Hyvo Stream Studio',
     icon: path.join(__dirname, '../app/icons/appIcon.png'),
+    frame: false,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    ...(process.platform !== 'darwin' && {
+      titleBarOverlay: { color: '#0A0A0F', symbolColor: '#ffffff', height: 36 },
+    }),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -54,10 +77,17 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
   }
 
-  // Show window when ready
+  // Show window when ready; close splash after a small overlap to mask the swap.
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    setTimeout(() => {
+      if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+    }, 200);
   });
+
+  // Maximize state notifications for the custom title bar
+  mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximize-changed', true));
+  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-maximize-changed', false));
 
   // Handle window close
   mainWindow.on('close', (event) => {
@@ -74,6 +104,7 @@ function createWindow() {
   createMenu();
   createTray();
 }
+
 
 function createMenu() {
   const template = [
@@ -156,6 +187,7 @@ function createTray() {
 
 // App lifecycle
 app.whenReady().then(() => {
+  createSplash();
   createWindow();
 
   if (app.isPackaged) {
@@ -241,5 +273,25 @@ ipcMain.handle('unregister-all-hotkeys', () => {
 });
 
 ipcMain.handle('get-gpu-info', async () => app.getGPUInfo('complete'));
+
+// Window controls (custom title bar)
+ipcMain.handle('window-minimize', () => { if (mainWindow) mainWindow.minimize(); });
+ipcMain.handle('window-maximize-toggle', () => {
+  if (!mainWindow) return false;
+  if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize();
+  return mainWindow.isMaximized();
+});
+ipcMain.handle('window-close', () => { if (mainWindow) mainWindow.close(); });
+ipcMain.handle('window-is-maximized', () => mainWindow ? mainWindow.isMaximized() : false);
+
+// Open external URL (Stripe portal, OAuth, etc.)
+ipcMain.handle('open-external', async (_event, url) => {
+  const { shell } = require('electron');
+  if (typeof url === 'string' && /^https?:\/\//.test(url)) {
+    await shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
 
 app.on('will-quit', () => globalShortcut.unregisterAll());

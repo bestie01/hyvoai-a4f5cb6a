@@ -59,4 +59,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Hardware Info
   getGPUInfo: () => ipcRenderer.invoke('get-gpu-info'),
+
+  // Window controls (custom title bar)
+  window: {
+    minimize: () => ipcRenderer.invoke('window-minimize'),
+    maximizeToggle: () => ipcRenderer.invoke('window-maximize-toggle'),
+    close: () => ipcRenderer.invoke('window-close'),
+    isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+    onMaximizeChanged: (callback) => {
+      const handler = (_event, isMax) => callback(isMax);
+      ipcRenderer.on('window-maximize-changed', handler);
+      return () => ipcRenderer.removeListener('window-maximize-changed', handler);
+    },
+  },
+
+  // External browser
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
 });

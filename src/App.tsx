@@ -18,6 +18,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RequirePro } from "@/components/auth/RequirePro";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { AppShell } from "@/components/layout/AppShell";
+import { TitleBar } from "@/components/desktop/TitleBar";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -69,7 +70,7 @@ const isElectron = typeof window !== 'undefined' && (
 const Router = isElectron ? HashRouter : BrowserRouter;
 
 const VALID_PATHS = [
-  '/', '/download', '/pricing', '/dashboard', '/studio', '/native',
+  '/', '/download', '/pricing', '/dashboard', '/ready-to-stream', '/studio', '/native',
   '/auth', '/profile', '/subscription', '/subscription-success', '/settings', '/schedule',
   '/growth', '/community', '/create', '/changelog'
 ];
@@ -140,6 +141,7 @@ const AppRoutes = () => (
 
             {/* In-app (authenticated) routes — wrapped in the persistent AppShell */}
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+            <Route path="/ready-to-stream" element={<Protected><Dashboard /></Protected>} />
             <Route path="/studio" element={<Protected bleed><StreamingApp /></Protected>} />
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/subscription" element={<Protected><Subscription /></Protected>} />
@@ -165,6 +167,7 @@ const App = () => (
         <ErrorBoundary>
           <GlobalErrorListener />
           <SkipLink />
+          <TitleBar />
           <UpdateBanner />
           <UpdateCenter />
           <PWAInstallPrompt />
