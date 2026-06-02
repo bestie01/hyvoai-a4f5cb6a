@@ -274,4 +274,24 @@ ipcMain.handle('unregister-all-hotkeys', () => {
 
 ipcMain.handle('get-gpu-info', async () => app.getGPUInfo('complete'));
 
+// Window controls (custom title bar)
+ipcMain.handle('window-minimize', () => { if (mainWindow) mainWindow.minimize(); });
+ipcMain.handle('window-maximize-toggle', () => {
+  if (!mainWindow) return false;
+  if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize();
+  return mainWindow.isMaximized();
+});
+ipcMain.handle('window-close', () => { if (mainWindow) mainWindow.close(); });
+ipcMain.handle('window-is-maximized', () => mainWindow ? mainWindow.isMaximized() : false);
+
+// Open external URL (Stripe portal, OAuth, etc.)
+ipcMain.handle('open-external', async (_event, url) => {
+  const { shell } = require('electron');
+  if (typeof url === 'string' && /^https?:\/\//.test(url)) {
+    await shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
+
 app.on('will-quit', () => globalShortcut.unregisterAll());
