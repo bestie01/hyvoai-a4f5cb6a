@@ -140,6 +140,7 @@ const AppRoutes = () => (
 
             {/* In-app (authenticated) routes — wrapped in the persistent AppShell */}
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+            <Route path="/ready-to-stream" element={<Protected><Dashboard /></Protected>} />
             <Route path="/studio" element={<Protected bleed><StreamingApp /></Protected>} />
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/subscription" element={<Protected><Subscription /></Protected>} />
