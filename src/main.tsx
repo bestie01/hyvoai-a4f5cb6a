@@ -9,3 +9,14 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </HelmetProvider>
 );
+
+// Fade out the boot splash once React paints.
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    const el = document.getElementById('boot-splash');
+    if (el) {
+      el.classList.add('hide');
+      setTimeout(() => el.remove(), 400);
+    }
+  }, 150);
+});
