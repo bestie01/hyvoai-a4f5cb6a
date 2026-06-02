@@ -4,6 +4,7 @@ const fs = require('fs');
 const { AutoUpdater } = require('./auto-updater');
 
 let mainWindow;
+let splashWindow;
 let tray;
 let autoUpdater;
 let registeredShortcuts = new Map();
