@@ -1,15 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, X, GripVertical } from "lucide-react";
-
-interface Metric {
-  label: string;
-  value: number;
-  unit: string;
-  good: number; // <= good → green
-  warn: number; // <= warn → amber; above → red
-  format?: (n: number) => string;
-}
+import { PulseDot, type PulseStatus } from "./PulseDot";
 
 const LS_KEY = "hyvo.streamHealth.v1";
 
@@ -21,16 +13,15 @@ function loadState() {
   return { open: true, x: 24, y: 24 };
 }
 
-function statusColor(value: number, good: number, warn: number, invert = false) {
-  // For FPS, higher is better — invert thresholds.
+function statusFor(value: number, good: number, warn: number, invert = false): PulseStatus {
   if (invert) {
-    if (value >= good) return "bg-emerald-400";
-    if (value >= warn) return "bg-amber-400";
-    return "bg-red-400";
+    if (value >= good) return "good";
+    if (value >= warn) return "warn";
+    return "bad";
   }
-  if (value <= good) return "bg-emerald-400";
-  if (value <= warn) return "bg-amber-400";
-  return "bg-red-400";
+  if (value <= good) return "good";
+  if (value <= warn) return "warn";
+  return "bad";
 }
 
 export function StreamHealthOverlay() {
