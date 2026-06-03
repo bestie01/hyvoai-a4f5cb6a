@@ -1,7 +1,42 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, dialog } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, dialog, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { AutoUpdater } = require('./auto-updater');
+
+// ---- Window state persistence ----
+function getStateFile() {
+  return path.join(app.getPath('userData'), 'window-state.json');
+}
+function loadWindowState() {
+  try {
+    const raw = fs.readFileSync(getStateFile(), 'utf8');
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+let saveTimer = null;
+function saveWindowState(win) {
+  if (!win || win.isDestroyed()) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      const isMax = win.isMaximized();
+      const isFs = win.isFullScreen();
+      const bounds = win.getNormalBounds ? win.getNormalBounds() : win.getBounds();
+      const data = { ...bounds, maximized: isMax, fullScreen: isFs };
+      fs.writeFileSync(getStateFile(), JSON.stringify(data));
+    } catch (e) { /* ignore */ }
+  }, 300);
+}
+function validateBounds(b) {
+  if (!b) return null;
+  const displays = screen.getAllDisplays();
+  const onScreen = displays.some((d) => {
+    const wa = d.workArea;
+    return b.x + b.width > wa.x && b.x < wa.x + wa.width &&
+           b.y + b.height > wa.y && b.y < wa.y + wa.height;
+  });
+  return onScreen ? b : null;
+}
 
 let mainWindow;
 let splashWindow;
@@ -41,9 +76,14 @@ function createSplash() {
 }
 
 function createWindow() {
+  const saved = loadWindowState();
+  const validBounds = validateBounds(saved);
+
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: validBounds?.width || 1400,
+    height: validBounds?.height || 900,
+    x: validBounds?.x,
+    y: validBounds?.y,
     minWidth: 1024,
     minHeight: 768,
     title: 'Hyvo Stream Studio',
@@ -62,6 +102,9 @@ function createWindow() {
     backgroundColor: '#0a0a0f'
   });
 
+  if (saved?.maximized) mainWindow.maximize();
+  if (saved?.fullScreen) mainWindow.setFullScreen(true);
+
   // Load the app — always use hash routing for Electron
   if (app.isPackaged) {
     const indexPath = path.join(__dirname, '../app/index.html');
@@ -77,20 +120,28 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
   }
 
-  // Show window when ready; close splash after a small overlap to mask the swap.
+  // Show window when ready; cross-fade splash off after the main window has painted.
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      try { splashWindow.webContents.executeJavaScript("document.body.classList.add('fade-out')"); } catch {}
+    }
     setTimeout(() => {
       if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
-    }, 200);
+    }, 350);
   });
 
   // Maximize state notifications for the custom title bar
-  mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximize-changed', true));
-  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-maximize-changed', false));
+  mainWindow.on('maximize', () => { mainWindow.webContents.send('window-maximize-changed', true); saveWindowState(mainWindow); });
+  mainWindow.on('unmaximize', () => { mainWindow.webContents.send('window-maximize-changed', false); saveWindowState(mainWindow); });
+  mainWindow.on('resize', () => saveWindowState(mainWindow));
+  mainWindow.on('move', () => saveWindowState(mainWindow));
+  mainWindow.on('enter-full-screen', () => saveWindowState(mainWindow));
+  mainWindow.on('leave-full-screen', () => saveWindowState(mainWindow));
 
   // Handle window close
   mainWindow.on('close', (event) => {
+    saveWindowState(mainWindow);
     if (process.platform === 'darwin') {
       event.preventDefault();
       mainWindow.hide();

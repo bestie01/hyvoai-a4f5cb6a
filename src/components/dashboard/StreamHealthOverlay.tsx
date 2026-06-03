@@ -1,15 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, X, GripVertical } from "lucide-react";
-
-interface Metric {
-  label: string;
-  value: number;
-  unit: string;
-  good: number; // <= good → green
-  warn: number; // <= warn → amber; above → red
-  format?: (n: number) => string;
-}
+import { PulseDot, type PulseStatus } from "./PulseDot";
 
 const LS_KEY = "hyvo.streamHealth.v1";
 
@@ -21,16 +13,15 @@ function loadState() {
   return { open: true, x: 24, y: 24 };
 }
 
-function statusColor(value: number, good: number, warn: number, invert = false) {
-  // For FPS, higher is better — invert thresholds.
+function statusFor(value: number, good: number, warn: number, invert = false): PulseStatus {
   if (invert) {
-    if (value >= good) return "bg-emerald-400";
-    if (value >= warn) return "bg-amber-400";
-    return "bg-red-400";
+    if (value >= good) return "good";
+    if (value >= warn) return "warn";
+    return "bad";
   }
-  if (value <= good) return "bg-emerald-400";
-  if (value <= warn) return "bg-amber-400";
-  return "bg-red-400";
+  if (value <= good) return "good";
+  if (value <= warn) return "warn";
+  return "bad";
 }
 
 export function StreamHealthOverlay() {
@@ -89,7 +80,7 @@ export function StreamHealthOverlay() {
           label="FPS"
           value={Math.round(fps)}
           unit=""
-          dot={statusColor(fps, 58, 50, true)}
+          status={statusFor(fps, 58, 50, true)}
         />
       ),
     },
@@ -100,7 +91,7 @@ export function StreamHealthOverlay() {
           label="Bitrate"
           value={Math.round(bitrate)}
           unit="kbps"
-          dot={statusColor(bitrate, 4000, 5000, true)}
+          status={statusFor(bitrate, 4000, 5000, true)}
         />
       ),
     },
@@ -111,7 +102,7 @@ export function StreamHealthOverlay() {
           label="Latency"
           value={Math.round(latency)}
           unit="ms"
-          dot={statusColor(latency, 50, 90)}
+          status={statusFor(latency, 50, 90)}
         />
       ),
     },
@@ -143,23 +134,23 @@ export function StreamHealthOverlay() {
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2.5">
         {metrics.map((m) => (
           <div key={m.key}>{m.node}</div>
         ))}
         <div className="pt-2 mt-1 border-t border-white/5 text-[10px] uppercase tracking-wider text-white/40">
-          Live diagnostics · placeholder
+          Live diagnostics
         </div>
       </div>
     </motion.div>
   );
 }
 
-function Row({ label, value, unit, dot }: { label: string; value: number; unit: string; dot: string }) {
+function Row({ label, value, unit, status }: { label: string; value: number; unit: string; status: PulseStatus }) {
   return (
     <div className="flex items-center justify-between text-sm">
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${dot}`} />
+      <div className="flex items-center gap-2.5">
+        <PulseDot status={status} />
         <span className="text-white/70">{label}</span>
       </div>
       <div className="font-mono tabular-nums">
@@ -169,3 +160,4 @@ function Row({ label, value, unit, dot }: { label: string; value: number; unit: 
     </div>
   );
 }
+

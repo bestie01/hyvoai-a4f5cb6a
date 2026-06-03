@@ -1,24 +1,26 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   Home, Radio, Calendar, TrendingUp, Users, CreditCard,
   Settings, User as UserIcon, LogOut, ChevronLeft, ChevronRight, Crown,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import hyvoLogo from "/hyvo-logo.png";
 
 interface NavItem {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  essential?: boolean;
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: Home },
-  { to: "/studio", label: "Ready to Stream", icon: Radio },
+  { to: "/dashboard", label: "Dashboard", icon: Home, essential: true },
+  { to: "/studio", label: "Ready to Stream", icon: Radio, essential: true },
   { to: "/schedule", label: "Schedule", icon: Calendar },
   { to: "/growth", label: "Growth", icon: TrendingUp },
   { to: "/community", label: "Community", icon: Users },
@@ -30,13 +32,34 @@ const FOOTER_NAV: NavItem[] = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
+const LS_KEY = "hyvo.sidebar.collapsed";
+const COCKPIT_ROUTES = ["/studio", "/ready-to-stream", "/create"];
+
 export function HyvoSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(LS_KEY);
+      if (stored !== null) return stored === "1";
+    } catch {}
+    return COCKPIT_ROUTES.some(r => location.pathname.startsWith(r));
+  });
   const { user, signOut } = useAuth();
   const { isPaid, isPaused, subscription } = useSubscription();
   const navigate = useNavigate();
   const showProBadge = isPaid && !isPaused;
   const tierLabel = subscription.subscription_tier === 'Year One' ? 'Year One' : 'Pro';
+
+  // Auto-collapse on cockpit routes (only if user hasn't toggled manually for this route change)
+  useEffect(() => {
+    if (COCKPIT_ROUTES.some(r => location.pathname.startsWith(r))) {
+      setCollapsed(true);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    try { localStorage.setItem(LS_KEY, collapsed ? "1" : "0"); } catch {}
+  }, [collapsed]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,12 +68,14 @@ export function HyvoSidebar() {
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
-    return (
+    const link = (
       <NavLink
         key={item.to}
         to={item.to}
         className={({ isActive }) =>
           `group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+            collapsed ? "justify-center" : ""
+          } ${
             isActive
               ? "bg-primary/20 text-white shadow-glow-primary border border-primary/30"
               : "text-white/70 hover:text-white hover:bg-white/5"
@@ -60,6 +85,13 @@ export function HyvoSidebar() {
         <Icon className="w-5 h-5 flex-shrink-0" />
         {!collapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
       </NavLink>
+    );
+    if (!collapsed) return link;
+    return (
+      <Tooltip key={item.to} delayDuration={150}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">{item.label}</TooltipContent>
+      </Tooltip>
     );
   };
 

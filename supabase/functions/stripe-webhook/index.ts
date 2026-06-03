@@ -66,10 +66,17 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     const body = await req.text();
-    
-    // Always verify webhook signature - no exceptions for security
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    logStep("Webhook signature verified", { eventType: event.type });
+
+    // Verify cryptographic signature using Deno-compatible async crypto.
+    // constructEvent (sync) uses Node's crypto and silently fails verification on Deno.
+    let event: Stripe.Event;
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    } catch (verifyErr) {
+      logStep("ERROR: Signature verification failed");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
+    }
+    logStep("Webhook signature verified", { eventId: event.id, eventType: event.type });
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
