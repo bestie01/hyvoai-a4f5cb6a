@@ -76,9 +76,14 @@ function createSplash() {
 }
 
 function createWindow() {
+  const saved = loadWindowState();
+  const validBounds = validateBounds(saved);
+
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: validBounds?.width || 1400,
+    height: validBounds?.height || 900,
+    x: validBounds?.x,
+    y: validBounds?.y,
     minWidth: 1024,
     minHeight: 768,
     title: 'Hyvo Stream Studio',
@@ -97,6 +102,9 @@ function createWindow() {
     backgroundColor: '#0a0a0f'
   });
 
+  if (saved?.maximized) mainWindow.maximize();
+  if (saved?.fullScreen) mainWindow.setFullScreen(true);
+
   // Load the app — always use hash routing for Electron
   if (app.isPackaged) {
     const indexPath = path.join(__dirname, '../app/index.html');
@@ -112,20 +120,28 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
   }
 
-  // Show window when ready; close splash after a small overlap to mask the swap.
+  // Show window when ready; cross-fade splash off after the main window has painted.
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      try { splashWindow.webContents.executeJavaScript("document.body.classList.add('fade-out')"); } catch {}
+    }
     setTimeout(() => {
       if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
-    }, 200);
+    }, 350);
   });
 
   // Maximize state notifications for the custom title bar
-  mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximize-changed', true));
-  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-maximize-changed', false));
+  mainWindow.on('maximize', () => { mainWindow.webContents.send('window-maximize-changed', true); saveWindowState(mainWindow); });
+  mainWindow.on('unmaximize', () => { mainWindow.webContents.send('window-maximize-changed', false); saveWindowState(mainWindow); });
+  mainWindow.on('resize', () => saveWindowState(mainWindow));
+  mainWindow.on('move', () => saveWindowState(mainWindow));
+  mainWindow.on('enter-full-screen', () => saveWindowState(mainWindow));
+  mainWindow.on('leave-full-screen', () => saveWindowState(mainWindow));
 
   // Handle window close
   mainWindow.on('close', (event) => {
+    saveWindowState(mainWindow);
     if (process.platform === 'darwin') {
       event.preventDefault();
       mainWindow.hide();
