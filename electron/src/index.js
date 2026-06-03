@@ -1,7 +1,42 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, dialog } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, globalShortcut, dialog, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { AutoUpdater } = require('./auto-updater');
+
+// ---- Window state persistence ----
+function getStateFile() {
+  return path.join(app.getPath('userData'), 'window-state.json');
+}
+function loadWindowState() {
+  try {
+    const raw = fs.readFileSync(getStateFile(), 'utf8');
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+let saveTimer = null;
+function saveWindowState(win) {
+  if (!win || win.isDestroyed()) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      const isMax = win.isMaximized();
+      const isFs = win.isFullScreen();
+      const bounds = win.getNormalBounds ? win.getNormalBounds() : win.getBounds();
+      const data = { ...bounds, maximized: isMax, fullScreen: isFs };
+      fs.writeFileSync(getStateFile(), JSON.stringify(data));
+    } catch (e) { /* ignore */ }
+  }, 300);
+}
+function validateBounds(b) {
+  if (!b) return null;
+  const displays = screen.getAllDisplays();
+  const onScreen = displays.some((d) => {
+    const wa = d.workArea;
+    return b.x + b.width > wa.x && b.x < wa.x + wa.width &&
+           b.y + b.height > wa.y && b.y < wa.y + wa.height;
+  });
+  return onScreen ? b : null;
+}
 
 let mainWindow;
 let splashWindow;
