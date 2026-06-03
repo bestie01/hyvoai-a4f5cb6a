@@ -67,7 +67,9 @@
 
   <body style="margin:0;background:#0A0A0F;">
     <style>
-      #boot-splash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:radial-gradient(circle at 30% 20%,rgba(59,130,246,.18),transparent 60%),radial-gradient(circle at 70% 80%,rgba(139,92,246,.18),transparent 60%),#0A0A0F;color:#fff;font-family:-apple-system,BlinkMacSystemFont,Inter,Segoe UI,sans-serif;z-index:9999;transition:opacity .35s ease}
+      #root{opacity:0;transition:opacity .35s ease}
+      #root.ready{opacity:1}
+      #boot-splash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:radial-gradient(circle at 30% 20%,rgba(59,130,246,.18),transparent 60%),radial-gradient(circle at 70% 80%,rgba(139,92,246,.18),transparent 60%),#0A0A0F;color:#fff;font-family:-apple-system,BlinkMacSystemFont,Inter,Segoe UI,sans-serif;z-index:9999;transition:opacity .4s ease}
       #boot-splash.hide{opacity:0;pointer-events:none}
       #boot-splash .logo{font-weight:800;font-size:40px;letter-spacing:-1px;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;animation:bsP 1.6s ease-in-out infinite}
       #boot-splash .bar{width:140px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;position:relative}
