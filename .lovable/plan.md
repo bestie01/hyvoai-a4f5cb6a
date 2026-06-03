@@ -1,60 +1,71 @@
-# Fix Auth/Stripe + Desktop Polish + Stream Health
+# Premium Improvements Plan
 
-## 1. OAuth redirect fix (Google / Discord / Twitch)
+## 1. Desktop Title Bar & Window Controls
 
-**Root cause**: `getRedirectUrl()` in `src/lib/routes.ts` already routes Electron and localhost through `https://hyvoai.lovable.app`, but the success path lands on `/dashboard`. The user-reported 404 is from Supabase's Site URL / provider redirect allowlist still containing `localhost`, plus signups landing on `/` (which can flicker before auth state hydrates).
+**`electron/src/index.js`**
+- Add window state persistence using `electron-store` (or simple JSON file at `app.getPath('userData')/window-state.json`) — keep no new deps; use `fs` + JSON file to avoid install bloat.
+- On startup: read saved `{x, y, width, height, maximized}` and apply to `BrowserWindow` (validate against available displays so off-screen coords fall back to defaults).
+- Listen for `resize`, `move`, `maximize`, `unmaximize`, `close` → debounce-save to disk (300ms).
 
-**Changes**:
-- `src/lib/routes.ts` — keep `PRODUCTION_URL = 'https://hyvoai.lovable.app'`, change post-OAuth landing path constant to `/ready-to-stream` (new alias route → Dashboard).
-- `src/hooks/useAuth.tsx` — replace `getRedirectUrl('/dashboard')` and `getRedirectUrl('/')` calls (Google, Discord, Twitch, signUp, resetPassword) to use the new `/ready-to-stream` deep-link for OAuth and `/auth/callback` for email recovery.
-- `src/App.tsx` — add a `/ready-to-stream` route that renders `Dashboard` (so any stale Supabase config that still points there works), and a tiny `<AuthCallback />` route that calls `supabase.auth.getSession()` then `navigate('/ready-to-stream', { replace: true })` to absorb the hash fragment cleanly (kills the white-flash 404).
-- `src/pages/Auth.tsx` — after `onAuthStateChange` sees `SIGNED_IN`, `navigate('/ready-to-stream', { replace: true })`.
+**`src/components/desktop/TitleBar.tsx`**
+- Add hover/active scale + color transitions on Minimize/Maximize/Close buttons (`active:scale-95`, smoother `transition-all duration-150`, red glow on close hover).
+- Add subtle ripple on click via a small inline span using framer-motion `whileTap`.
+- Verify it mounts above `AppShell` cleanly with no double-border (audit `src/App.tsx` layout wrapper).
 
-**User action required (documented in chat, not code)**: In Supabase Dashboard → Authentication → URL Configuration, set Site URL to `https://hyvoai.lovable.app` and add `https://hyvoai.lovable.app/**` to Additional Redirect URLs. In Google Cloud Console and Discord Dev Portal, set Authorized Redirect URI to `https://fxvvcyjwgxxxezqzucwm.supabase.co/auth/v1/callback` only.
+## 2. 'Ready to Stream' Interface Polish
 
-## 2. Stripe Customer Portal fix
+**`src/components/layout/HyvoSidebar.tsx`**
+- Introduce a `collapsed` state persisted to `localStorage` (`hyvo.sidebar.collapsed`).
+- When collapsed: 64px rail, icons only, tooltips on hover; non-essential items (Settings, Profile, Community, Changelog) collapse first.
+- Auto-collapse by default on `/ready-to-stream` and `/dashboard` routes to maximize cockpit space.
+- Add toggle chevron at top.
 
-**Root cause audit of `supabase/functions/customer-portal/index.ts`**:
-- Looks up Stripe customer by `email` only — fails silently if the user signed up with a different email casing or has no Stripe customer yet.
-- `return_url` uses request `origin`; Electron sends `file://` or a chrome-extension-like origin → Stripe rejects.
-- Errors return 500 with raw message but client `useSubscription.tsx` may swallow them.
+**`src/components/dashboard/StreamHealthOverlay.tsx`**
+- Replace static dot with `PulseDot` component: animated ring using framer-motion (`scale 1 → 1.6`, opacity fade, infinite) — color-tied to status (emerald / amber / red).
+- Pulse speed scales inversely with health (faster pulse when degraded).
+- Add a thin animated sparkline strip under each metric showing last 20 samples (lightweight SVG polyline).
+- Keep simulated drift behavior, but expose `useStreamHealth()` hook so real WebRTC stats can plug in later without touching the overlay.
 
-**Changes**:
-- `supabase/functions/customer-portal/index.ts`:
-  - Prefer `stripe_customer_id` from the `subscribers` table (lookup by `user_id`); fall back to email search; if still missing, create a customer and persist it.
-  - Force `return_url` to `https://hyvoai.lovable.app/subscription` whenever request origin is not an `*.lovable.app` host (covers Electron + localhost).
-  - Wrap Stripe call in try/catch and return structured `{ error, code }` JSON so the client can surface it.
-- `src/hooks/useSubscription.tsx` — on `openCustomerPortal`, await invoke, toast the error message if `data.error` is present, and `window.open(data.url, '_blank')` (in Electron use `window.electronAPI.openExternal(url)` if available).
-- `src/pages/Subscription.tsx` — show inline error state when portal call fails.
+## 3. Production-Grade Security Hardening
 
-## 3. Desktop UI: custom title bar + splash screen
+**`supabase/functions/stripe-webhook/index.ts`** (audit + harden)
+- Confirm `stripe.webhooks.constructEventAsync(rawBody, signature, STRIPE_WEBHOOK_SECRET)` is used (NOT `JSON.parse` of body).
+- Read raw body with `await req.text()` before any parsing.
+- Reject with 400 when `stripe-signature` header is missing or verification throws.
+- Add structured logging of `event.id` + `event.type` only — never log full payload.
+- Ensure function is deployed with `verify_jwt = false` in `supabase/config.toml` (webhooks come from Stripe, not authenticated users) and validate via signature only.
 
-**Custom title bar (frameless window)**:
-- `electron/src/index.js` — set `frame: false`, `titleBarStyle: 'hidden'`, `titleBarOverlay: { color: '#0A0A0F', symbolColor: '#ffffff', height: 36 }` for Windows/Linux; on macOS use `hiddenInset` (already set).
-- `electron/src/preload.js` — expose `window.electronAPI.window.{minimize, maximize, close, isMaximized}` IPC bridges.
-- New `src/components/desktop/TitleBar.tsx` — 36px tall, `-webkit-app-region: drag`, Hyvo logo + app name on left, three glyph buttons (Minimize / Maximize / Close) on the right with `-webkit-app-region: no-drag`. Liquid-glass dark styling, red hover on Close. Only renders when `window.electronAPI?.isElectron`.
-- `src/components/layout/AppShell.tsx` and marketing `Navigation.tsx` — mount `<TitleBar />` at the very top so it's present on every route in Electron.
+**`src/integrations/supabase/client.ts`**
+- Configure auth for 30-day persistent sessions in Electron/desktop:
+  - `persistSession: true` (already set), `autoRefreshToken: true` (already set), add `storageKey: 'hyvo.auth.v1'`.
+  - Use `localStorage` on web; on Electron use a wrapper that writes to `localStorage` (Electron renderer has it) — but also mirror token to `electronAPI.secureStore` if exposed (no-op fallback for now).
+- Note: actual session lifetime is governed by Supabase JWT settings. Document for the user that they need to set "JWT expiry" to refresh-token-backed 30 days in Supabase dashboard (Auth → Settings → JWT expiry = 3600s + refresh token rotation; refresh tokens default to long-lived).
 
-**Cold-start splash screen**:
-- `electron/src/index.js` — create a frameless 420×260 `BrowserWindow` with `transparent: true`, load `electron/splash.html`; show main window only on `did-finish-load`, then close splash.
-- `electron/splash.html` — dark `#0A0A0F` background, centered Hyvo logo with a subtle pulse/shimmer animation (CSS keyframes, no external deps).
-- `index.html` — add an inline `<style>` boot screen (matching dark bg + logo) inside `#root` so the web build also hides white flash before React hydrates; cleared automatically when React mounts.
+## 4. Code Optimization & Fluidity
 
-## 4. Stream Health overlay on Dashboard
+**`vite.config.ts`**
+- Add `build.rollupOptions.output.manualChunks` splitting: `react`, `supabase`, `framer-motion`, `recharts`, `radix-ui`, `lucide`.
+- Enable `build.cssCodeSplit: true`, `build.reportCompressedSize: false` (faster builds), `build.chunkSizeWarningLimit: 1200`.
+- Keep `base: './'` for Electron.
 
-- New `src/components/dashboard/StreamHealthOverlay.tsx`:
-  - Floating glass panel, bottom-right, draggable, toggle via a small "Stream Health" pill button in the dashboard header.
-  - Three metrics: **FPS**, **Bitrate (kbps)**, **Latency (ms)**.
-  - Reads from `useWebRTCStream` / `useLocalRecording` when a stream is active; otherwise shows simulated placeholder values that gently fluctuate (so it always feels alive on the Ready-to-Stream view).
-  - Color-coded status dot (green/amber/red) based on thresholds.
-  - Persist open/closed + position in `localStorage` (`hyvo.streamHealth.*`).
-- `src/pages/Dashboard.tsx` — mount the overlay and a header toggle button. State lives in `useState` + localStorage hook.
+**Lazy routes — `src/App.tsx`**
+- Convert heavy route imports (Dashboard, StreamingApp, StreamCreator, Subscription, Native* pages, AI pages) to `React.lazy()` + `<Suspense fallback={<RouteFallback />}>`.
+- Keep `Index`, `Auth`, `NotFound` eager.
 
-## Out of scope
-No DB migrations. No new edge functions. No changes to AI features, pricing, or RLS.
+**Boot splash hand-off — `index.html` + `src/main.tsx`**
+- Replace abrupt removal with crossfade: splash fades out (300ms) while `#root` fades in (300ms) using `opacity` transition.
+- Mount `<App />` first, then in `requestIdleCallback` (fallback to `setTimeout 50ms`) trigger `boot-splash.classList.add('hide')` and set `#root` opacity to 1.
+- Match splash background to app background (`#0A0A0F`) so there is zero color flash.
+- Electron splash window (`electron/splash.html`): increase overlap delay from 200ms → 350ms and add inner opacity transition for the same crossfade effect when handing off to main window.
+
+## Out of Scope
+- No new DB tables or migrations (security work is code-only in the webhook function).
+- No changes to AI features, pricing, or RLS.
+- No new npm dependencies.
 
 ## Files
+**Created:** `src/components/dashboard/PulseDot.tsx`, `src/hooks/useStreamHealth.tsx`, `src/components/RouteFallback.tsx`.
+**Edited:** `electron/src/index.js`, `electron/splash.html`, `src/components/desktop/TitleBar.tsx`, `src/components/layout/HyvoSidebar.tsx`, `src/components/dashboard/StreamHealthOverlay.tsx`, `supabase/functions/stripe-webhook/index.ts`, `supabase/config.toml`, `src/integrations/supabase/client.ts`, `vite.config.ts`, `src/App.tsx`, `src/main.tsx`, `index.html`.
 
-**Created**: `src/components/desktop/TitleBar.tsx`, `src/components/dashboard/StreamHealthOverlay.tsx`, `electron/splash.html`, `src/pages/AuthCallback.tsx`.
-
-**Edited**: `src/lib/routes.ts`, `src/hooks/useAuth.tsx`, `src/App.tsx`, `src/pages/Auth.tsx`, `src/pages/Subscription.tsx`, `src/hooks/useSubscription.tsx`, `src/components/layout/AppShell.tsx`, `src/components/Navigation.tsx`, `src/pages/Dashboard.tsx`, `index.html`, `electron/src/index.js`, `electron/src/preload.js`, `supabase/functions/customer-portal/index.ts`.
+## Manual Action
+- In Supabase Dashboard → Auth → Settings: confirm "Refresh token rotation" enabled and "Refresh token reuse interval" ≥ 10s for the 30-day session experience.
