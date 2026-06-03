@@ -68,12 +68,14 @@ export function HyvoSidebar() {
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
-    return (
+    const link = (
       <NavLink
         key={item.to}
         to={item.to}
         className={({ isActive }) =>
           `group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+            collapsed ? "justify-center" : ""
+          } ${
             isActive
               ? "bg-primary/20 text-white shadow-glow-primary border border-primary/30"
               : "text-white/70 hover:text-white hover:bg-white/5"
@@ -83,6 +85,13 @@ export function HyvoSidebar() {
         <Icon className="w-5 h-5 flex-shrink-0" />
         {!collapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
       </NavLink>
+    );
+    if (!collapsed) return link;
+    return (
+      <Tooltip key={item.to} delayDuration={150}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">{item.label}</TooltipContent>
+      </Tooltip>
     );
   };
 
