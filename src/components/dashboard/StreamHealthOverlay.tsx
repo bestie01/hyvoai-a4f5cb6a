@@ -160,5 +160,4 @@ function Row({ label, value, unit, status }: { label: string; value: number; uni
     </div>
   );
 }
-  );
-}
+
