@@ -73,17 +73,24 @@ export function HyvoSidebar() {
         key={item.to}
         to={item.to}
         className={({ isActive }) =>
-          `group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+          `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
             collapsed ? "justify-center" : ""
           } ${
             isActive
-              ? "bg-primary/20 text-white shadow-glow-primary border border-primary/30"
-              : "text-white/70 hover:text-white hover:bg-white/5"
+              ? "bg-primary/15 text-white border border-primary/30 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.6)]"
+              : "text-white/70 hover:text-white hover:bg-white/[0.06] border border-transparent"
           }`
         }
       >
-        <Icon className="w-5 h-5 flex-shrink-0" />
-        {!collapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
+        {({ isActive }) => (
+          <>
+            {isActive && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r bg-gradient-to-b from-[hsl(var(--neon-cyan))] to-[hsl(var(--neon-violet))] shadow-[0_0_12px_hsl(var(--neon-cyan)/0.8)]" />
+            )}
+            <Icon className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
+          </>
+        )}
       </NavLink>
     );
     if (!collapsed) return link;
