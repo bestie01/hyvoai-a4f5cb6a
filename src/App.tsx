@@ -150,7 +150,7 @@ const AppRoutes = () => (
             <Route path="/schedule" element={<Protected><Schedule /></Protected>} />
             <Route path="/growth" element={<Protected><Growth /></Protected>} />
             <Route path="/community" element={<Protected><Community /></Protected>} />
-            <Route path="/create" element={<Protected bleed><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
+            <Route path="/create" element={<Protected><RequirePro feature="create"><StreamCreator /></RequirePro></Protected>} />
 
             <Route path="*" element={<Page><NotFound /></Page>} />
           </Routes>
