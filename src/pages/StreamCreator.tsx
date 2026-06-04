@@ -1,603 +1,120 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import Navigation from "@/components/Navigation";
-import { PageTransition } from "@/components/animations/PageTransition";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAITitleGenerator } from "@/hooks/useAITitleGenerator";
-import { useAIThumbnailGenerator } from "@/hooks/useAIThumbnailGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useNavigate } from "react-router-dom";
-import { ProFeatureGate } from "@/components/ProFeatureGate";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { 
-  Sparkles, 
-  Image, 
-  Type, 
-  Wand2, 
-  Copy, 
-  Check, 
-  Download, 
-  Zap,
-  Loader2,
-  ArrowRight,
-  RefreshCw,
-  Search,
-  Repeat,
-  MessageSquare
-} from "lucide-react";
-import { ThumbnailAnalyzer } from "@/components/ai/ThumbnailAnalyzer";
-import { ThumbnailRecreator } from "@/components/ai/ThumbnailRecreator";
-import { NaturalLanguageEditor } from "@/components/ai/NaturalLanguageEditor";
+import { ProFeatureGate } from "@/components/ProFeatureGate";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Wand2 } from "lucide-react";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+import { WizardShell, WizardStep } from "@/components/create/WizardShell";
+import { SetupStep } from "@/components/create/steps/SetupStep";
+import { MediaStep } from "@/components/create/steps/MediaStep";
+import { StreamConfigStep } from "@/components/create/steps/StreamConfigStep";
+import { ReviewStep } from "@/components/create/steps/ReviewStep";
+import {
+  createEmptyDraft,
+  getDraftStream,
+  saveDraftStream,
+  type DraftStream,
+} from "@/lib/draftStream";
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5 }
-  }
-};
+const STEPS: WizardStep[] = [
+  { id: "setup", label: "Setup", description: "Title & schedule" },
+  { id: "media", label: "Media", description: "Thumbnail" },
+  { id: "config", label: "Stream", description: "Quality & platforms" },
+  { id: "review", label: "Review", description: "Launch" },
+];
 
 const StreamCreator = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isPro, loading: subLoading } = useSubscription();
-  const navigate = useNavigate();
-  
-  // Title generator - ALL hooks must be called before any early returns
-  const { generateTitles, result: titleResult, loading: titleLoading } = useAITitleGenerator();
-  const [game, setGame] = useState("");
-  const [theme, setTheme] = useState("");
-  const [targetAudience, setTargetAudience] = useState("");
-  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
-  const [copiedTitle, setCopiedTitle] = useState<string | null>(null);
-  
-  // Thumbnail generator
-  const { generateThumbnails, thumbnails, loading: thumbnailLoading } = useAIThumbnailGenerator();
-  const [thumbnailTitle, setThumbnailTitle] = useState("");
-  const [thumbnailGame, setThumbnailGame] = useState("");
-  const [selectedThumbnail, setSelectedThumbnail] = useState<number | null>(null);
-  
-  // Show loading while checking auth
-  if (authLoading || subLoading) {
-    return <LoadingScreen message="Loading Creator Tools..." />;
-  }
 
-  // Redirect non-authenticated users
+  const [draft, setDraft] = useState<DraftStream>(() => getDraftStream() ?? createEmptyDraft());
+  const [index, setIndex] = useState(0);
+
+  // Auto-persist as the user edits
+  useEffect(() => {
+    saveDraftStream(draft);
+  }, [draft]);
+
+  if (authLoading || subLoading) return <LoadingScreen message="Loading Creator..." />;
+
   if (!user) {
     navigate("/auth", { state: { redirect: "/create" } });
     return null;
   }
-  
-  // Show Pro gate for non-Pro users
+
   if (!isPro) {
     return (
-      <PageTransition>
-        <div className="min-h-screen bg-gradient-hero">
-          {/* Navigation provided by AppShell */}
-          <section className="pt-32 pb-16 px-6">
-            <div className="container mx-auto max-w-2xl">
-              <ProFeatureGate 
-                feature="AI Stream Creator" 
-                description="Generate AI-powered titles and thumbnails for your streams. Upgrade to Pro to unlock this feature."
-              />
-            </div>
-          </section>
-        </div>
-      </PageTransition>
+      <div className="max-w-2xl mx-auto pt-10">
+        <ProFeatureGate
+          feature="Stream Creator"
+          description="Plan, brand, and launch streams with a guided setup wizard. Upgrade to Pro to unlock."
+        />
+      </div>
     );
   }
 
-  const handleGenerateTitles = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to use AI features.",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
-    
-    if (!game.trim()) {
-      toast({
-        title: "Game Required",
-        description: "Please enter a game or category.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await generateTitles(game, theme, targetAudience);
-  };
+  const onChange = (patch: Partial<DraftStream>) => setDraft((d) => ({ ...d, ...patch }));
 
-  const handleGenerateThumbnails = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to use AI features.",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
-    
-    if (!thumbnailTitle.trim() || !thumbnailGame.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both title and game.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await generateThumbnails(thumbnailTitle, thumbnailGame);
-  };
+  const canAdvance = (() => {
+    if (index === 0) return draft.title.trim().length > 2;
+    if (index === 2) return draft.platforms.length > 0;
+    return true;
+  })();
 
-  const handleCopyTitle = (title: string) => {
-    navigator.clipboard.writeText(title);
-    setCopiedTitle(title);
+  const handleFinish = () => {
+    if (!draft.title.trim()) {
+      toast({ title: "Add a title", description: "Streams need at least a title.", variant: "destructive" });
+      setIndex(0);
+      return;
+    }
+    saveDraftStream(draft);
     toast({
-      title: "Copied!",
-      description: "Title copied to clipboard.",
+      title: "Draft sent to Studio",
+      description: "Your stream config is ready on the Ready-to-Stream dashboard.",
     });
-    setTimeout(() => setCopiedTitle(null), 2000);
-  };
-
-  const handleDownloadThumbnail = (url: string, index: number) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `thumbnail-${index + 1}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({
-      title: "Download Started",
-      description: "Your thumbnail is being downloaded.",
-    });
+    navigate("/ready-to-stream", { state: { draftStream: draft } });
   };
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-gradient-hero">
-        {/* Navigation provided by AppShell */}
-        
-        <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-          {/* Animated background */}
-          <div className="absolute inset-0 -z-10">
-            <motion.div 
-              className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 8, repeat: Infinity }}
-            />
-            <motion.div 
-              className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-            />
-          </div>
-          
-          <motion.div 
-            className="container mx-auto text-center"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div variants={itemVariants}>
-              <Badge className="mb-4 bg-gradient-primary text-primary-foreground">
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI-Powered Stream Tools
-              </Badge>
-              
-              <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Create Your{" "}
-                <span className="text-gradient-primary">
-                  Perfect Stream
-                </span>
-              </h1>
-              
-              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                Generate eye-catching titles and thumbnails with AI. Stand out from the crowd and grow your audience.
-              </p>
-            </motion.div>
-          </motion.div>
-        </section>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <Badge className="mb-3 bg-primary/15 text-white border border-primary/30">
+            <Sparkles className="w-3 h-3 mr-1.5" />
+            Create
+          </Badge>
+          <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white">
+            New stream setup
+          </h1>
+          <p className="text-white/60 mt-1 max-w-xl">
+            Walk through a guided setup — your config syncs to the Studio automatically.
+          </p>
+        </div>
+        <div className="hidden md:flex items-center gap-2 text-xs text-white/40">
+          <Wand2 className="w-4 h-4" />
+          Auto-saved
+        </div>
+      </header>
 
-        <section className="pb-24 px-6">
-          <motion.div 
-            className="container mx-auto max-w-5xl"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <Tabs defaultValue="titles" className="w-full">
-              <motion.div variants={itemVariants}>
-                <TabsList className="grid w-full grid-cols-5 mb-8">
-                  <TabsTrigger value="titles" className="text-sm py-3">
-                    <Type className="w-4 h-4 mr-1.5" />
-                    AI Titles
-                  </TabsTrigger>
-                  <TabsTrigger value="thumbnails" className="text-sm py-3">
-                    <Image className="w-4 h-4 mr-1.5" />
-                    AI Thumbnails
-                  </TabsTrigger>
-                  <TabsTrigger value="analyzer" className="text-sm py-3">
-                    <Search className="w-4 h-4 mr-1.5" />
-                    Analyzer
-                  </TabsTrigger>
-                  <TabsTrigger value="recreator" className="text-sm py-3">
-                    <Repeat className="w-4 h-4 mr-1.5" />
-                    Recreator
-                  </TabsTrigger>
-                  <TabsTrigger value="editor" className="text-sm py-3">
-                    <MessageSquare className="w-4 h-4 mr-1.5" />
-                    NL Editor
-                  </TabsTrigger>
-                </TabsList>
-              </motion.div>
-
-              {/* Titles Tab */}
-              <TabsContent value="titles">
-                <motion.div 
-                  className="grid lg:grid-cols-2 gap-8"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <motion.div variants={itemVariants}>
-                    <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Wand2 className="w-5 h-5 text-primary" />
-                          Generate Stream Titles
-                        </CardTitle>
-                        <CardDescription>
-                          Enter your stream details for AI-optimized title suggestions
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="game">Game / Category *</Label>
-                          <Input
-                            id="game"
-                            placeholder="e.g., Valorant, Just Chatting, Minecraft"
-                            value={game}
-                            onChange={(e) => setGame(e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="theme">Stream Theme</Label>
-                          <Input
-                            id="theme"
-                            placeholder="e.g., ranked grind, chill vibes, speedrun"
-                            value={theme}
-                            onChange={(e) => setTheme(e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="audience">Target Audience</Label>
-                          <Input
-                            id="audience"
-                            placeholder="e.g., competitive gamers, casual viewers"
-                            value={targetAudience}
-                            onChange={(e) => setTargetAudience(e.target.value)}
-                          />
-                        </div>
-                        
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Button 
-                            className="w-full" 
-                            size="lg"
-                            onClick={handleGenerateTitles}
-                            disabled={titleLoading}
-                          >
-                            {titleLoading ? (
-                              <>
-                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                Generating...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-5 h-5 mr-2" />
-                                Generate Titles
-                              </>
-                            )}
-                          </Button>
-                        </motion.div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                  <motion.div variants={itemVariants}>
-                    <Card className="glass-card h-full">
-                      <CardHeader>
-                        <CardTitle>Generated Titles</CardTitle>
-                        <CardDescription>
-                          Click to copy any title to your clipboard
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {titleResult?.titles?.length ? (
-                          titleResult.titles.map((title, index) => (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                                selectedTitle === title 
-                                  ? 'border-primary bg-primary/10' 
-                                  : 'border-border hover:border-primary/50 bg-card/50'
-                              }`}
-                              onClick={() => setSelectedTitle(title)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{title}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCopyTitle(title);
-                                  }}
-                                >
-                                  {copiedTitle === title ? (
-                                    <Check className="w-4 h-4 text-success" />
-                                  ) : (
-                                    <Copy className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ))
-                        ) : (
-                          <div className="text-center py-12 text-muted-foreground">
-                            <Type className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>Your AI-generated titles will appear here</p>
-                          </div>
-                        )}
-
-                        {titleResult?.descriptions?.length > 0 && (
-                          <div className="mt-6 pt-6 border-t">
-                            <h4 className="font-semibold mb-3">Description Options</h4>
-                            {titleResult.descriptions.map((desc, index) => (
-                              <motion.div
-                                key={index}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5 + index * 0.1 }}
-                                className="p-3 rounded-lg bg-muted/50 mb-2 text-sm cursor-pointer hover:bg-muted"
-                                onClick={() => handleCopyTitle(desc)}
-                              >
-                                {desc}
-                              </motion.div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </motion.div>
-              </TabsContent>
-
-              {/* Thumbnails Tab */}
-              <TabsContent value="thumbnails">
-                <motion.div 
-                  className="space-y-8"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <motion.div variants={itemVariants}>
-                    <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Image className="w-5 h-5 text-primary" />
-                          Generate Stream Thumbnails
-                        </CardTitle>
-                        <CardDescription>
-                          Create eye-catching thumbnails with AI image generation
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="thumbTitle">Stream Title *</Label>
-                            <Input
-                              id="thumbTitle"
-                              placeholder="e.g., Road to Radiant"
-                              value={thumbnailTitle}
-                              onChange={(e) => setThumbnailTitle(e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="thumbGame">Game *</Label>
-                            <Input
-                              id="thumbGame"
-                              placeholder="e.g., Valorant, Fortnite"
-                              value={thumbnailGame}
-                              onChange={(e) => setThumbnailGame(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Button 
-                            className="w-full" 
-                            size="lg"
-                            onClick={handleGenerateThumbnails}
-                            disabled={thumbnailLoading}
-                          >
-                            {thumbnailLoading ? (
-                              <>
-                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                Generating Thumbnails...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-5 h-5 mr-2" />
-                                Generate Thumbnails
-                              </>
-                            )}
-                          </Button>
-                        </motion.div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                  <motion.div variants={itemVariants}>
-                    <Card className="glass-card">
-                      <CardHeader>
-                        <CardTitle>Generated Thumbnails</CardTitle>
-                        <CardDescription>
-                          Click on a thumbnail to select, then download
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {thumbnails.length > 0 ? (
-                          <div className="grid md:grid-cols-3 gap-6">
-                            {thumbnails.map((thumb, index) => (
-                              <motion.div
-                                key={index}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: index * 0.15 }}
-                                className={`relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all ${
-                                  selectedThumbnail === index 
-                                    ? 'border-primary shadow-glow-primary' 
-                                    : 'border-transparent hover:border-primary/50'
-                                }`}
-                                onClick={() => setSelectedThumbnail(index)}
-                              >
-                                <div className="aspect-video bg-muted">
-                                  <img 
-                                    src={thumb.url} 
-                                    alt={`Thumbnail ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDownloadThumbnail(thumb.url, index);
-                                    }}
-                                  >
-                                    <Download className="w-4 h-4 mr-1" />
-                                    Download
-                                  </Button>
-                                </div>
-                                
-                                <Badge 
-                                  variant="secondary" 
-                                  className="absolute top-2 left-2 capitalize"
-                                >
-                                  {thumb.style}
-                                </Badge>
-                                
-                                {selectedThumbnail === index && (
-                                  <div className="absolute top-2 right-2">
-                                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                      <Check className="w-4 h-4 text-primary-foreground" />
-                                    </div>
-                                  </div>
-                                )}
-                              </motion.div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-16 text-muted-foreground">
-                            <Image className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                            <p className="text-lg mb-2">Your AI-generated thumbnails will appear here</p>
-                            <p className="text-sm">Generate 3 unique thumbnail options for your stream</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </motion.div>
-              </TabsContent>
-
-              {/* Analyzer Tab */}
-              <TabsContent value="analyzer">
-                <motion.div variants={itemVariants}>
-                  <ThumbnailAnalyzer />
-                </motion.div>
-              </TabsContent>
-
-              {/* Recreator Tab */}
-              <TabsContent value="recreator">
-                <motion.div variants={itemVariants}>
-                  <ThumbnailRecreator />
-                </motion.div>
-              </TabsContent>
-
-              {/* Natural Language Editor Tab */}
-              <TabsContent value="editor">
-                <motion.div variants={itemVariants}>
-                  <NaturalLanguageEditor />
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-
-            {/* Quick Actions */}
-            <motion.div 
-              className="mt-12 text-center"
-              variants={itemVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              <Card className="glass-card border-primary/20">
-                <CardContent className="py-8">
-                  <h3 className="text-2xl font-bold mb-4">Ready to Go Live?</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Launch the streaming studio with your AI-generated content
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-4">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button size="lg" onClick={() => navigate('/studio')}>
-                        <Zap className="w-5 h-5 mr-2" />
-                        Open Studio
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button size="lg" variant="outline" onClick={() => navigate('/download')}>
-                        <Download className="w-5 h-5 mr-2" />
-                        Download Desktop App
-                      </Button>
-                    </motion.div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
-        </section>
-      </div>
-    </PageTransition>
+      <WizardShell
+        steps={STEPS}
+        currentIndex={index}
+        onChangeIndex={setIndex}
+        canAdvance={canAdvance}
+        onFinish={handleFinish}
+      >
+        {index === 0 && <SetupStep draft={draft} onChange={onChange} />}
+        {index === 1 && <MediaStep draft={draft} onChange={onChange} />}
+        {index === 2 && <StreamConfigStep draft={draft} onChange={onChange} />}
+        {index === 3 && <ReviewStep draft={draft} />}
+      </WizardShell>
+    </div>
   );
 };
 

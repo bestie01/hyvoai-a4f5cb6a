@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
@@ -9,10 +10,30 @@ import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { ProductTour } from "@/components/onboarding/ProductTour";
 import { StreamHealthOverlay } from "@/components/dashboard/StreamHealthOverlay";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useToast } from "@/hooks/use-toast";
+import { getDraftStream, clearDraftStream } from "@/lib/draftStream";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { showWelcome, showTour, completeWelcome, completeTour } = useOnboarding();
+  const location = useLocation();
+  const { toast } = useToast();
+
+  // Hand-off from /create: if a draft is staged, surface it once.
+  useEffect(() => {
+    const fromState = (location.state as any)?.draftStream;
+    const draft = fromState ?? getDraftStream();
+    if (draft && draft.title) {
+      toast({
+        title: "Draft loaded from Create",
+        description: `"${draft.title}" — ${draft.quality} @ ${draft.fps}fps, ${draft.platforms.join(", ")}.`,
+      });
+      // Clear after surfacing so it doesn't re-fire on every visit.
+      clearDraftStream();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   return (
     <div className="flex gap-6 h-full" data-tour="dashboard">
