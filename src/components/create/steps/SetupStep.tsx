@@ -129,5 +129,7 @@ export function SetupStep({ draft, onChange }: Props) {
         </div>
       )}
     </GlassPanel>
+    </div>
   );
 }
+
