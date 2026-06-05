@@ -37,3 +37,11 @@ export const FEATURES = {
   enableAIFeatures: true,
   enableMultiStream: true,
 } as const;
+
+// RTMP ingest config (single source of truth — swap this when a real media
+// server like Node-Media-Server or AWS IVS is deployed).
+export const RTMP_INGEST = {
+  serverUrl: "rtmps://ingest.hyvo.live/live",
+  fallbackServerUrl: "rtmp://ingest.hyvo.live/live",
+  region: "auto",
+} as const;

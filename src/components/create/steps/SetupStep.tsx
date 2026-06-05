@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useState } from "react";
+import { AITitleHelper } from "@/components/create/AITitleHelper";
 
 const SUGGESTED_TAGS = ["Gaming", "Just Chatting", "Music", "Art", "IRL", "Coding", "Esports", "Speedrun"];
 
@@ -26,6 +27,12 @@ export function SetupStep({ draft, onChange }: Props) {
   };
 
   return (
+    <div className="space-y-6">
+    <AITitleHelper
+      category={draft.category}
+      description={draft.description}
+      onPick={(title) => onChange({ title })}
+    />
     <GlassPanel variant="raised" className="p-6 space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Stream title *</Label>
@@ -122,5 +129,7 @@ export function SetupStep({ draft, onChange }: Props) {
         </div>
       )}
     </GlassPanel>
+    </div>
   );
 }
+
