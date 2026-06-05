@@ -61,10 +61,17 @@ const Dashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="liquid-glass-panel">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white/20">Overview</TabsTrigger>
+            <TabsTrigger value="broadcast" className="data-[state=active]:bg-white/20">Broadcast</TabsTrigger>
             <TabsTrigger value="ai-insights" data-tour="ai-tools" className="data-[state=active]:bg-white/20">AI Insights</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="mt-6" data-tour="analytics">
             <DashboardMain />
+          </TabsContent>
+          <TabsContent value="broadcast" className="mt-6">
+            <div className="grid lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-3"><StreamCanvasPreview /></div>
+              <div className="lg:col-span-2"><IngestPanel /></div>
+            </div>
           </TabsContent>
           <TabsContent value="ai-insights" className="mt-6">
             <AIPredictiveDashboard />
