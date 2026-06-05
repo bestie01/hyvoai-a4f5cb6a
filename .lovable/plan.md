@@ -1,103 +1,87 @@
-# Hyvo.ai Premium Overhaul Plan
+# Hyvo.ai Next-Level Streaming Engine
 
-A focused four-part pass: design system, navigation, the Create page, and a global polish sweep. No backend / DB / business-logic changes.
-
----
-
-## 1. Unified Premium Design System & Image Fixes
-
-**Tokens (`src/index.css` + `tailwind.config.ts`)**
-- Promote the existing dark theme to the **default root** (cyberpunk-minimalist). Keep light tokens under `.light` only.
-- Lock a single radius scale: `--radius: 12px` → enforce `rounded-xl` as the standard, `rounded-2xl` for hero panels.
-- Standard spacing: page `p-6`, card `p-5`, section gap `gap-6`.
-- Add neon accent tokens: `--neon-cyan`, `--neon-magenta`, `--neon-violet`, plus `--glow-cyan/magenta/violet` shadow tokens. All HSL.
-- Promote `liquid-glass-panel` / `liquid-glass-mesh` to first-class utilities (backdrop-blur 30px, 1px hairline border `hsl(var(--border)/0.6)`, inner highlight).
-
-**Reusable primitives**
-- New `src/components/ui/glass-panel.tsx` — wraps `Card` with the glass + neon-border variant (`variant: "default" | "neon" | "raised"`).
-- New `src/components/ui/SmartImage.tsx` — `<img>` with: lazy loading, `decoding="async"`, explicit `width/height` to kill CLS, `onError` fallback to a branded SVG placeholder, optional skeleton shimmer while loading.
-
-**Image audit**
-- Sweep every `<img>` and `background-image` reference. Replace broken/placeholder paths with `SmartImage`. Use the existing `hyvo-logo.png` + `placeholder.svg` as fallbacks. Add explicit dimensions everywhere.
-- Hero / marketing pages: confirm assets resolve; swap any 404 → branded gradient SVG.
+Builds on the existing wizard, sidebar, glass tokens, and `stripe-webhook` work. Scope is strictly frontend + one new edge function (`ai-title-generator` already exists — we'll just call it). No schema changes.
 
 ---
 
-## 2. Seamless Navigation & Architecture
+## 1. Next-Level Navigation & Immersive Animations
 
-**Router map (single source of truth in `src/lib/routes.ts`)**
-```text
-Public:   /  /download  /pricing  /auth  /changelog  /native/*
-App:      /dashboard (= /ready-to-stream)
-          /studio  /create  /schedule  /growth  /community
-          /profile  /settings  /subscription  /subscription-success
-```
-- Remove duplicate `/studio` entry in `ROUTES` (currently listed twice).
-- Add a `group` field (`"main" | "create" | "account"`) so the sidebar can render section headers + active-group highlighting.
+`**src/components/animations/PageTransition.tsx**`
 
-**Transitions (`src/components/animations/PageTransition.tsx`)**
-- Upgrade to a layered fade+slide (8px y, 200ms, easeOut) with `mode="wait"`. Honor `prefers-reduced-motion`.
-- Wrap only the in-shell `<Routes>` so marketing pages don't double-animate with their own hero motion.
+- Add a `direction`-aware variant: forward navigation slides left (`x: 24 → 0`), back slides right, sibling tabs crossfade only. Use `useLocation` history depth tracked in a small `useNavStack` hook (`sessionStorage`-backed) to determine direction.
+- Wrap content in `motion.div` with `layout` so cards that share `layoutId` (sidebar active pill, hero card) morph between routes.
 
-**Sidebar (`HyvoSidebar.tsx`)**
-- Active state already exists via `NavLink`; add a left neon accent bar (2px, `--neon-cyan`) and subtle glow on the active item.
-- When a user is on `/create/*`, auto-expand a "Create" sub-group showing the wizard step labels (Setup → Media → Stream Keys → Review).
-- Collapsed state keeps icon + tooltip (already done); add active-route ring even when collapsed.
+`**src/components/layout/HyvoSidebar.tsx**`
+
+- Replace per-item color highlight with a single `motion.div` `layoutId="sidebar-active-pill"` so the active glow slides between items.
+- Auto-collapse rule: already collapses on `/studio`. Extend to `/create` and `/ready-to-stream` while keeping a hover-to-peek floating panel (Radix `HoverCard`).
+- Audit `ROUTES` + sidebar entries against `App.tsx` routes; remove any dead links, ensure every entry resolves.
 
 ---
 
-## 3. Feature-Complete `/create` Page
+## 2. Real Account Sync & Live Streaming Core
 
-Rebuild `src/pages/StreamCreator.tsx` as a 4-step wizard. Pure frontend — config is stashed in `localStorage` (`hyvo.draftStream`) and handed off to `/ready-to-stream` via router state.
+**Account sync (frontend only, reads existing data):**
 
-**Wizard steps**
-1. **Setup** — Stream title, description, category tag picker (chips), scheduled vs. go-live-now toggle, date/time picker when scheduled.
-2. **Media** — Drag-and-drop thumbnail upload zone (uses existing `useNativeFileSystem` / plain `<input type=file>`), live preview tile (16:9), optional AI title/thumbnail suggestion buttons (already wired hooks).
-3. **Stream Config** — Quality switch (720p/1080p/1440p/4K), bitrate slider, FPS (30/60), platforms multi-select (Twitch / YouTube / Custom RTMP), per-platform stream-key reveal/regenerate toggle.
-4. **Review & Launch** — Read-only summary card, "Save as Draft" (localStorage) and "Send to Studio" (navigates to `/ready-to-stream` with state).
+- `src/components/dashboard/DashboardHeader.tsx` + `src/components/layout/HyvoSidebar.tsx`: pull `user.user_metadata.full_name | email`, `avatar_url`, and `useSubscription().isPro` to render a real avatar + name + "PRO" badge chip (gradient ring when Pro). Fallback to initials avatar.
+- `src/pages/Profile.tsx`: ensure displayed fields read from `profiles` table via existing query; show Stripe plan name + renewal date from `useSubscription`.
 
-**Shared wizard chrome**
-- New `src/components/create/WizardShell.tsx` — stepper header, progress bar, Back/Next footer, validation gating.
-- Animated step transitions (slide 16px x, 180ms).
-- Each step in its own file under `src/components/create/steps/`.
+**Streaming core on `/ready-to-stream` (Dashboard.tsx):**
 
-**Hand-off**
-- `useEffect` on `Dashboard` reads `location.state.draftStream` (or localStorage) and pre-populates the Ready-to-Stream "Stream Setup" card with a toast: "Loaded draft from Create".
+- New `src/components/streaming/IngestPanel.tsx`:
+  - Displays RTMP **Server URL** (`rtmps://ingest.hyvo.live/live` placeholder constant) and a **Stream Key** masked field with copy / regenerate / reveal controls. Key persisted per-user in `localStorage` (`hyvo.streamKey`) generated client-side via `crypto.randomUUID()` — flagged clearly as a dev-mode key until a real ingest service is wired.
+  - "OBS Quick-Setup" card with copy-all button.
+- New `src/components/streaming/StreamCanvasPreview.tsx`:
+  - `<video>` + `<canvas>` pair. Tabs: **Local Camera** (uses existing `useCamera` / `getUserMedia`), **Screen Share** (`getDisplayMedia`), **Test Pattern** (animated canvas SMPTE-style bars so the preview is never empty).
+  - Audio meter using existing `AudioMeter.tsx`.
+  - "Go Live" button stub that toggles a `streaming` state and emits to `StreamHealthOverlay`.
 
 ---
 
-## 4. Global Page Audit & Polish
+## 3. Create Wizard Completion
 
-Apply the new `GlassPanel` + token rules to:
-- **Settings** — replace raw `Card` with `GlassPanel`, group tabs in a sticky glass header, fix any unstyled `Input` borders (use `bg-white/5 border-white/10 focus:border-primary/60`).
-- **Studio (`StreamingApp`)** — confirm bleed layout still works; restyle floating panels to glass + neon border.
-- **Subscription / Billing** — premium tier cards with neon glow on current plan, consistent CTA buttons.
-- **Profile, Schedule, Growth, Community** — same primitives, no raw web borders, consistent page header (`PageHeader` component) and padding.
-- Replace any leftover `border border-gray-*` / `bg-white` with semantic tokens.
+Existing `WizardShell` + 4 steps stay. Upgrades only:
+
+- `**SetupStep.tsx**`: add category tag selector (chip multi-select, suggested chips: Gaming, IRL, Music, Coding, Just Chatting, Art), keep title/description.
+- `**MediaStep.tsx**`: replace file input with a real drag-and-drop zone (`onDragOver` / `onDrop`, image preview, 5MB guard, stored as data URL in draft).
+- `**StreamConfigStep.tsx**`: add bitrate slider (2000–8000 kbps) bound to `draft.bitrate`, fps toggle 30/60, quality select already present.
+- `**ReviewStep.tsx**`: show thumbnail, all chips, ingestion summary.
+- On finish: `navigate("/ready-to-stream", { state: { draftStream } })` (already does this) — Dashboard reads state and **prefills `IngestPanel` title + tags**.
+
+---
+
+## 4. Native Desktop Power Features
+
+**Stream Health Overlay (`StreamHealthOverlay.tsx` + `PulseDot.tsx`):**
+
+- Compute a single `health` score from fps/bitrate/latency; pass it to `PulseDot` which already maps to good/warn/bad.
+- Make `PulseDot` ring **animation speed dynamic**: pass `intensity` prop (0–1); shorter `duration` + larger `scale` when degraded. Already 70% done — extend the SPEED map to a continuous function.
+- Wire a global `window.dispatchEvent("hyvo:stream-metrics", { fps, bitrate, latency })` from `StreamCanvasPreview` so the overlay reflects the actual preview when running, otherwise falls back to simulated drift.
+
+**AI Title & Tag Generator (Create page):**
+
+- New `src/components/create/AITitleHelper.tsx` mounted inside `SetupStep`.
+- Inputs: game/category + mood chips (Hype, Chill, Competitive, Educational).
+- Calls existing `ai-title-generator` edge function via `supabase.functions.invoke`. If response shape differs, adapt; otherwise add a thin request body `{ category, mood, description }` and render 3 suggestion cards — clicking one fills `draft.title` and appends suggested tags.
+- Loading + error states; gated behind `isPro` consistent with the rest of `/create`.
 
 ---
 
 ## Technical Notes
 
-**Files created**
-- `src/components/ui/glass-panel.tsx`
-- `src/components/ui/SmartImage.tsx`
-- `src/components/create/WizardShell.tsx`
-- `src/components/create/steps/{SetupStep,MediaStep,StreamConfigStep,ReviewStep}.tsx`
-- `src/lib/draftStream.ts` (typed localStorage helpers)
+- No DB migrations, no new tables, no new secrets.
+- New files:
+  - `src/hooks/useNavStack.ts`
+  - `src/components/streaming/IngestPanel.tsx`
+  - `src/components/streaming/StreamCanvasPreview.tsx`
+  - `src/components/create/AITitleHelper.tsx`
+- Edited files: `PageTransition.tsx`, `HyvoSidebar.tsx`, `Dashboard.tsx`, `DashboardHeader.tsx`, `Profile.tsx`, `StreamHealthOverlay.tsx`, `PulseDot.tsx`, `SetupStep.tsx`, `MediaStep.tsx`, `StreamConfigStep.tsx`, `ReviewStep.tsx`, `lib/routes.ts` (if dead links found).
+- Constants for RTMP ingest URL live in `src/lib/constants.ts`.
+- Out of scope: real RTMP relay backend, real video transcoding, multi-platform restream wiring (already partially handled by `multi-stream-relay` function — left untouched).
 
-**Files edited**
-- `src/index.css`, `tailwind.config.ts` — token + utility additions
-- `src/lib/routes.ts` — dedupe + `group` field
-- `src/components/animations/PageTransition.tsx` — refined motion
-- `src/components/layout/HyvoSidebar.tsx` — active accent + Create sub-group
-- `src/pages/StreamCreator.tsx` — rewritten as wizard host
-- `src/pages/Dashboard.tsx` — read draft hand-off
-- `src/pages/{Settings,Subscription,Profile,Schedule,Growth,Community,StreamingApp}.tsx` — polish pass (visual only)
+---
 
-**Out of scope**
-- No DB migrations, no edge functions, no auth/Stripe changes, no new npm packages, no AI feature additions.
-- Marketing landing page content unchanged (visual tokens only).
+## Open Questions
 
-**Risk**
-- StreamCreator rewrite is the biggest change; existing AI title/thumbnail features get re-mounted inside the Media step, not removed.
+1. **RTMP ingest URL** — **Keep the** `rtmps://ingest.hyvo.live/live` **placeholder constant.** Since you don't have a live cloud-transcoding server running yet, treating this as a high-fidelity client-side environment is the smartest choice. Lovable will build the logic to look for this variable in a central `src/lib/constants.ts` file. When you do eventually deploy an OBS media server (like Node-Media-Server or AWS IVS), you will only have to change that single line of text to hook the entire app up to your live servers.
+2. **AI title generator** — **Reuse the existing** `ai-title-generator` **edge function.** There is no need to deploy a brand new function and write redundant backend code. We will simply pass the `{ category, mood, description }` payload to your current function using `supabase.functions.invoke('ai-title-generator', { body: ... })`. Lovable can easily write the frontend logic to parse the text output into those 3 clean suggestion cards.
