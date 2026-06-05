@@ -27,6 +27,12 @@ export function SetupStep({ draft, onChange }: Props) {
   };
 
   return (
+    <div className="space-y-6">
+    <AITitleHelper
+      category={draft.category}
+      description={draft.description}
+      onPick={(title) => onChange({ title })}
+    />
     <GlassPanel variant="raised" className="p-6 space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Stream title *</Label>
