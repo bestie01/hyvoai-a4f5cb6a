@@ -9,6 +9,8 @@ import { AIPredictiveDashboard } from "@/components/ai/AIPredictiveDashboard";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { ProductTour } from "@/components/onboarding/ProductTour";
 import { StreamHealthOverlay } from "@/components/dashboard/StreamHealthOverlay";
+import { IngestPanel } from "@/components/streaming/IngestPanel";
+import { StreamCanvasPreview } from "@/components/streaming/StreamCanvasPreview";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useToast } from "@/hooks/use-toast";
 import { getDraftStream, clearDraftStream } from "@/lib/draftStream";
