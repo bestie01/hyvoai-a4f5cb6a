@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useState } from "react";
+import { AITitleHelper } from "@/components/create/AITitleHelper";
 
 const SUGGESTED_TAGS = ["Gaming", "Just Chatting", "Music", "Art", "IRL", "Coding", "Esports", "Speedrun"];
 
