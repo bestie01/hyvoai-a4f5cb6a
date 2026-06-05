@@ -24,35 +24,51 @@ function statusFor(value: number, good: number, warn: number, invert = false): P
   return "bad";
 }
 
+interface Metrics { fps: number; bitrate: number; latency: number; }
+
 export function StreamHealthOverlay() {
   const [state, setState] = useState(loadState);
-  const [fps, setFps] = useState(60);
-  const [bitrate, setBitrate] = useState(6000);
-  const [latency, setLatency] = useState(38);
+  const [metrics, setMetrics] = useState<Metrics>({ fps: 60, bitrate: 6000, latency: 38 });
+  const [live, setLive] = useState(false);
+  const liveTimeout = useRef<number | null>(null);
   const dragRef = useRef<{ ox: number; oy: number; sx: number; sy: number } | null>(null);
 
-  // Persist position/open state
   useEffect(() => {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Listen for header toggle event
   useEffect(() => {
-    const handler = () => setState((s: any) => ({ ...s, open: !s.open }));
-    window.addEventListener("hyvo:toggle-stream-health", handler);
-    return () => window.removeEventListener("hyvo:toggle-stream-health", handler);
+    const toggle = () => setState((s: any) => ({ ...s, open: !s.open }));
+    const onMetrics = (e: Event) => {
+      const detail = (e as CustomEvent<Metrics>).detail;
+      if (!detail) return;
+      setMetrics(detail);
+      setLive(true);
+      if (liveTimeout.current) window.clearTimeout(liveTimeout.current);
+      // If no metrics for 4s, fall back to simulated drift
+      liveTimeout.current = window.setTimeout(() => setLive(false), 4000);
+    };
+    window.addEventListener("hyvo:toggle-stream-health", toggle);
+    window.addEventListener("hyvo:stream-metrics", onMetrics as EventListener);
+    return () => {
+      window.removeEventListener("hyvo:toggle-stream-health", toggle);
+      window.removeEventListener("hyvo:stream-metrics", onMetrics as EventListener);
+      if (liveTimeout.current) window.clearTimeout(liveTimeout.current);
+    };
   }, []);
 
-  // Simulated diagnostics — gentle drift so the panel feels live.
+  // Simulated drift only when no live metrics are arriving.
   useEffect(() => {
-    if (!state.open) return;
+    if (!state.open || live) return;
     const id = setInterval(() => {
-      setFps((v) => Math.max(45, Math.min(60, v + (Math.random() - 0.5) * 3)));
-      setBitrate((v) => Math.max(3500, Math.min(8000, v + (Math.random() - 0.5) * 400)));
-      setLatency((v) => Math.max(18, Math.min(120, v + (Math.random() - 0.5) * 10)));
+      setMetrics((m) => ({
+        fps: Math.max(45, Math.min(60, m.fps + (Math.random() - 0.5) * 3)),
+        bitrate: Math.max(3500, Math.min(8000, m.bitrate + (Math.random() - 0.5) * 400)),
+        latency: Math.max(18, Math.min(120, m.latency + (Math.random() - 0.5) * 10)),
+      }));
     }, 1200);
     return () => clearInterval(id);
-  }, [state.open]);
+  }, [state.open, live]);
 
   if (!state.open) return null;
 
@@ -72,41 +88,15 @@ export function StreamHealthOverlay() {
   };
   const onDragEnd = () => { dragRef.current = null; };
 
-  const metrics: { node: React.ReactNode; key: string }[] = [
-    {
-      key: "fps",
-      node: (
-        <Row
-          label="FPS"
-          value={Math.round(fps)}
-          unit=""
-          status={statusFor(fps, 58, 50, true)}
-        />
-      ),
-    },
-    {
-      key: "bitrate",
-      node: (
-        <Row
-          label="Bitrate"
-          value={Math.round(bitrate)}
-          unit="kbps"
-          status={statusFor(bitrate, 4000, 5000, true)}
-        />
-      ),
-    },
-    {
-      key: "latency",
-      node: (
-        <Row
-          label="Latency"
-          value={Math.round(latency)}
-          unit="ms"
-          status={statusFor(latency, 50, 90)}
-        />
-      ),
-    },
-  ];
+  const { fps, bitrate, latency } = metrics;
+
+  // Composite health score → drives the pulse intensity of every row & headline.
+  const fpsScore = Math.max(0, Math.min(1, (60 - fps) / 15));
+  const brScore = Math.max(0, Math.min(1, (5000 - bitrate) / 2500));
+  const latScore = Math.max(0, Math.min(1, (latency - 40) / 80));
+  const composite = Math.max(fpsScore, brScore, latScore);
+
+  const overallStatus: PulseStatus = composite < 0.33 ? "good" : composite < 0.66 ? "warn" : "bad";
 
   return (
     <motion.div
@@ -125,6 +115,7 @@ export function StreamHealthOverlay() {
           <GripVertical className="w-3.5 h-3.5 text-white/40" />
           <Activity className="w-4 h-4 text-emerald-400" />
           <span className="text-xs font-semibold tracking-wide">Stream Health</span>
+          <PulseDot status={overallStatus} intensity={composite} />
         </div>
         <button
           aria-label="Close stream health"
@@ -135,22 +126,23 @@ export function StreamHealthOverlay() {
         </button>
       </div>
       <div className="p-3 space-y-2.5">
-        {metrics.map((m) => (
-          <div key={m.key}>{m.node}</div>
-        ))}
-        <div className="pt-2 mt-1 border-t border-white/5 text-[10px] uppercase tracking-wider text-white/40">
-          Live diagnostics
+        <Row label="FPS"     value={Math.round(fps)}     unit=""     status={statusFor(fps, 58, 50, true)}        intensity={fpsScore} />
+        <Row label="Bitrate" value={Math.round(bitrate)} unit="kbps" status={statusFor(bitrate, 4000, 5000, true)} intensity={brScore} />
+        <Row label="Latency" value={Math.round(latency)} unit="ms"   status={statusFor(latency, 50, 90)}            intensity={latScore} />
+        <div className="pt-2 mt-1 border-t border-white/5 flex items-center justify-between text-[10px] uppercase tracking-wider text-white/40">
+          <span>{live ? "Live diagnostics" : "Simulated"}</span>
+          {live && <span className="text-emerald-400">● LIVE</span>}
         </div>
       </div>
     </motion.div>
   );
 }
 
-function Row({ label, value, unit, status }: { label: string; value: number; unit: string; status: PulseStatus }) {
+function Row({ label, value, unit, status, intensity }: { label: string; value: number; unit: string; status: PulseStatus; intensity: number }) {
   return (
     <div className="flex items-center justify-between text-sm">
       <div className="flex items-center gap-2.5">
-        <PulseDot status={status} />
+        <PulseDot status={status} intensity={intensity} />
         <span className="text-white/70">{label}</span>
       </div>
       <div className="font-mono tabular-nums">
@@ -160,4 +152,3 @@ function Row({ label, value, unit, status }: { label: string; value: number; uni
     </div>
   );
 }
-
