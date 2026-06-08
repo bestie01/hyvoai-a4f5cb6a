@@ -20,6 +20,7 @@ import { PageTransition } from "@/components/animations/PageTransition";
 import { AppShell } from "@/components/layout/AppShell";
 import { TitleBar } from "@/components/desktop/TitleBar";
 import { Analytics } from "@vercel/analytics/react";
+import { RouteSeo } from "@/components/RouteSeo";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -121,6 +122,7 @@ const Protected = ({ children, bleed = false }: { children: React.ReactNode; ble
 const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
     <ElectronRouteGuard>
+      <RouteSeo />
       <main id="main-content">
         <PageTransition>
           <Routes>
