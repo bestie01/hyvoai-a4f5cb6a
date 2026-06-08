@@ -207,6 +207,17 @@ All colors MUST be HSL.
     border: 1px solid hsl(var(--primary) / 0.5);
     box-shadow: 0 0 24px -8px hsl(var(--primary) / 0.55), inset 0 0 0 1px hsl(var(--primary) / 0.1);
   }
+
+  /* Unified surface + focus ring tokens for production parity */
+  .surface {
+    @apply bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl;
+  }
+  .surface-strong {
+    @apply bg-zinc-900/70 backdrop-blur-xl border border-zinc-800 rounded-xl;
+  }
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--neon-cyan)/0.6)] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))];
+  }
 }
 
 body {
