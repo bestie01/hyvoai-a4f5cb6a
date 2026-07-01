@@ -23,15 +23,16 @@ function isAllowedExternalUrl(rawUrl) {
 }
 
 // ===== IPC sender validation =====
-// Only accept IPC from our own packaged file:// origin or the dev server.
+// Only accept IPC from our top-level packaged file:// origin or the dev server.
+// Reject any sub-frame (iframe) sender.
 function isValidSender(event) {
   try {
     if (!event || !event.senderFrame) return false;
+    // Reject child frames — only the top window may invoke IPC.
+    if (event.senderFrame.parent) return false;
     const url = event.senderFrame.url || '';
-    if (app.isPackaged) {
-      return url.startsWith('file://');
-    }
-    return url.startsWith('http://localhost:5173') || url.startsWith('http://127.0.0.1:5173') || url.startsWith('file://');
+    if (app.isPackaged) return url.startsWith('file://');
+    return url.startsWith('http://localhost:5173') || url.startsWith('http://127.0.0.1:5173');
   } catch { return false; }
 }
 function secureHandle(channel, handler) {
