@@ -125,10 +125,10 @@ function CommandsTab() {
     if (!user) return toast({ title: "Sign in to save" });
     const { error } = await supabase.from("chat_commands").insert({
       user_id: user.id,
-      trigger: c.trigger,
+      command: c.trigger,
       response: c.response,
-      cooldown_seconds: c.cooldown,
-      is_active: true,
+      cooldown: c.cooldown,
+      is_enabled: true,
     } as any);
     toast({ title: error ? "Save failed" : "Saved to Chat Commands", description: error?.message });
   };
