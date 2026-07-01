@@ -1,59 +1,82 @@
-## Production Polish Plan: Visual Harmony, SEO, & Security
+# Hyvo.ai — Streaming Copilot, Security Lockdown & Style Continuity
 
-### 1. Visual Harmonization (Uniform UI/UX)
+## 1. Real-Time AI Streaming Copilot
 
-**Centralized tokens** — `src/index.css`
-- Lock dark mode to `bg #0B0B0F` (`--background: 240 9% 5%`), surfaces `#18181B/50` with backdrop-blur, borders `zinc-800`.
-- Add semantic tokens: `--surface`, `--surface-glass`, `--surface-border`, `--radius: 0.75rem` (12px), unified `--ring` (neon cyan @ 60% alpha) for global focus.
-- Standardize typography scale (`text-display`, `text-h1–h4`, `text-body`, `text-caption`) using existing Inter/Space Grotesk/JetBrains Mono.
+**New floating panel on `/ready-to-stream` (Dashboard).**
 
-**Shared primitives**
-- Promote `GlassPanel` as THE container — refactor `Card` variants to delegate to it.
-- Update `button.tsx`, `input.tsx`, `slider.tsx`, `switch.tsx`, `select.tsx`, `textarea.tsx`, `dialog.tsx`, `tabs.tsx` in `src/components/ui/` to use `rounded-xl`, the unified focus ring, and zinc-800 borders.
-- Add a `PageContainer` wrapper (`px-6 md:px-10 py-8 max-w-7xl`) and replace ad-hoc page paddings.
+- `src/components/ai/StreamCopilotPanel.tsx` — draggable/collapsible glass panel (reuse `GlassPanel`, `rounded-xl`, `border-zinc-800`, `bg-zinc-900/50 backdrop-blur-md`). Docked bottom-right on desktop, bottom-sheet on mobile. Tabs: **Chat**, **Commands**, **Icebreakers**, **Social Hook**. Persistent minimize state in `localStorage`.
+- Wire panel into `src/pages/Dashboard.tsx` (Broadcast tab) behind a "Copilot" toggle in the header. Reads current game/category/mood from `draftStream` + active stream config so tools are context-aware.
 
-**Page sweep** — apply `PageContainer` + `GlassPanel` to:
-`Dashboard.tsx`, `StreamCreator.tsx`, `StreamingApp.tsx` (Studio), `Settings.tsx`, `Profile.tsx`, `Subscription.tsx`, `Schedule.tsx`, `Growth.tsx`, `Community.tsx`, `Changelog.tsx`, `native/*`.
-- Strip inline `bg-*`, `border-white/*`, raw `rounded-*` overrides; keep only semantic tokens.
+**Central Edge Function: `supabase/functions/stream-copilot/index.ts`**
+- Single entry, `mode: 'chat' | 'commands' | 'icebreakers' | 'social'`.
+- Uses AI SDK + Lovable AI Gateway (`google/gemini-3-flash-preview`), `LOVABLE_API_KEY` already set.
+- `verify_jwt = true`; Zod-validated body; standard CORS; 402/429 surfaced to UI as toasts.
+- `chat` mode streams via `toUIMessageStreamResponse`; other modes return structured JSON via `Output.object`.
 
-### 2. SEO Enhancement
+**Sub-tools (client hooks in `src/hooks/`):**
+- `useStreamCopilotChat` — `useChat` transport pointed at the function (mode=chat). Renders `message.parts` with react-markdown.
+- `useCopilotQuickAction` — one-shot invoke for commands / icebreakers / social hook, returns typed arrays.
 
-**Dynamic head per route** — react-helmet-async already installed (`HelmetProvider` in `main.tsx`, `Seo.tsx` exists).
-- Create `src/lib/seo-config.ts` with per-route metadata map (title, description, OG image, JSON-LD type).
-- Drop `<Seo />` into every public/page-level route (currently used inconsistently). Auto-derive canonical from `useLocation`.
-- Add a `<RouteSeo />` helper that reads from the map by `pathname` so new routes only need a config entry.
+**Quick-action tab specs:**
+- **Chat Command Generator** → returns `{ trigger, response, cooldown, mood }[]` (5 items). Copy-to-clipboard + "Save to Chat Commands" (inserts into `chat_commands` table when authed).
+- **Icebreakers** → 5 high-energy talking points scoped to current game + audience size band.
+- **Social Hook Writer** → single post ≤ 240 chars for X, plus a longer Discord variant, with hashtag suggestions and CTA link placeholder.
 
-**Premium OG cards**
-- Generate one branded 1200×630 OG image (`public/og-default.jpg`) — dark Hyvo gradient + wordmark + tagline.
-- Per-feature OG variants: `og-pricing.jpg`, `og-create.jpg`, `og-studio.jpg`, `og-download.jpg` (imagegen, premium tier for legible text).
-- Add `og:image:width/height`, `og:site_name`, `twitter:creator`, `twitter:card=summary_large_image`.
-- Sitewide JSON-LD already has Organization + WebSite; add `SoftwareApplication` schema (price, ratings placeholder, OS support) on `/` and `/download`.
+## 2. Security Hardening
 
-**Sitemap/robots audit** — confirm `public/sitemap.xml` lists all public routes (`/`, `/pricing`, `/download`, `/changelog`, `/community`, `/auth`); robots.txt already correct.
-
-### 3. Security Hardening
-
-**Electron IPC sender validation** — `electron/src/index.js`
-- Add `validateSender(event)` helper checking `event.senderFrame.url` starts with `file://` (packaged) or `http://localhost:5173` (dev); reject otherwise.
-- Wrap every `ipcMain.handle(...)` callback with the validator. Affects: `save-recording`, `register-hotkey`, `window-*`, `open-external`, `check-for-updates`, `install-update`, etc.
-- `open-external`: tighten allowlist to known hosts (stripe.com, supabase.co, twitch.tv, youtube.com, hyvoai.lovable.app, github.com).
-- `BrowserWindow.webPreferences`: add `sandbox: true`, `webSecurity: true`, `allowRunningInsecureContent: false`; intercept `setWindowOpenHandler` to deny all `window.open`.
+**Electron IPC (`electron/src/index.js`, `preload.js`)**
+- Current code already has `secureHandle` + `isValidSender`. Tighten it:
+  - Reject IPC when `event.senderFrame` is a child frame (`senderFrame !== event.senderFrame.top`).
+  - Add per-channel argument schemas (small inline validators) on `save-recording`, `register-hotkey`, `open-external`.
+  - Remove the `file://` allowance in dev mode; only accept `http://localhost:5173` there.
+  - `preload.js`: freeze the exposed `electronAPI` object (`Object.freeze`) and expose only the narrow function list already there — no dynamic invoker.
+  - `will-navigate` + `setWindowOpenHandler` already deny; add `webContents.on('will-frame-navigate', ...)` guard.
 
 **Content Security Policy**
-- Add CSP `<meta http-equiv>` to `index.html`:  
-  `default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.gpteng.co https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com; frame-src https://js.stripe.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'`
-- Add Electron `session.defaultSession.webRequest.onHeadersReceived` enforcing the same CSP for packaged builds.
+- `index.html`: drop `'unsafe-inline'` from `script-src` (GPT-Engineer script is loaded via `<script src="https://cdn.gpteng.co/...">` — keep host, drop inline). Tighten to:
+  - `script-src 'self' 'wasm-unsafe-eval' https://cdn.gpteng.co https://va.vercel-scripts.com`
+  - `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://ai.gateway.lovable.dev https://api.github.com https://*.vercel-insights.com`
+  - Keep `frame-src` limited to Stripe.
+- Electron `CSP` in `electron/src/index.js`: mirror the tightened directives; already headers-only, keep `frame-ancestors 'none'`.
 
-**Supabase RLS optimization** — single migration:
-- Re-write policies on `profiles`, `subscribers`, `stream_settings`, `device_sessions`, `social_connections`, `referrals`, `stream_schedules`, and other user-scoped tables to use `(select auth.uid()) = user_id` instead of bare `auth.uid()` — initPlan caching avoids per-row re-evaluation.
-- Run `supabase--linter` afterward to confirm no new advisories.
+**Supabase RLS audit (migration)**
+- Audit every user-scoped table: `profiles`, `subscribers`, `stream_settings`, `stream_schedules`, `stream_scenes`, `social_connections`, `device_sessions`, `referrals`, `chat_commands`, `banned_words`, `stream_clips`, `stream_highlights`, `stream_vods`, `ai_generated_content`, `ai_predictions`, `chat_analysis`, `chat_moderation_actions`, `donations`, `fan_content`, `viewer_engagement`, `poll_votes`, `stream_polls`, `scheduled_posts`, `stream_locations`, `stream_analytics`, `stream_health_metrics`, `viewer_qa_knowledge`, `vip_users`, `platform_streaming_configs`, `streams`.
+- Rewrite every policy expression using `auth.uid() = user_id` → `(select auth.uid()) = user_id` (initPlan caching). Drop + recreate policies in one migration.
+- Verify every table has SELECT/INSERT/UPDATE/DELETE policies scoped to owner; add missing owner-only policies where gaps exist (flagged during audit).
+- Confirm GRANTs to `authenticated` + `service_role` exist; add where missing.
+- Add `chat_commands` INSERT policy so the Copilot save action works: `(select auth.uid()) = user_id`.
 
-### Files Touched
-- **New**: `src/lib/seo-config.ts`, `src/components/RouteSeo.tsx`, `src/components/layout/PageContainer.tsx`, `public/og-default.jpg` (+ variants).
-- **Edited**: `src/index.css`, `tailwind.config.ts`, `src/components/ui/{button,input,slider,switch,select,textarea,dialog,tabs,card}.tsx`, all listed page files, `index.html`, `electron/src/index.js`, `electron/src/preload.js` (no API change but tightening).
-- **Migration**: RLS policy refactor across user-scoped tables.
+## 3. Global Style Continuity & Perf
 
-### Open Questions
-1. **OG branding**: generate 5 unique OG images (default + pricing/create/studio/download), or one default-only?
-2. **External URL allowlist**: only the hosts I listed above, or do you need others (e.g., Discord, custom OAuth providers)?
-3. **CSP `connect-src`**: any third-party analytics/APIs beyond Supabase + Stripe to whitelist (e.g., ElevenLabs, OpenAI proxies)? Edge functions go through Supabase so they're covered.
+- Sweep pages (`Dashboard`, `StreamCreator`, `StreamingApp`/Studio, `Settings`, `Profile`, `Subscription`, `Pricing`, `Download`, `Growth`, `Schedule`, `Community`, `Changelog`) and force:
+  - Root wrapper → `PageContainer` + `bg-background` (already `240 9% 5%` = ~#0B0B0F).
+  - Cards → `surface` utility (already added) or `GlassPanel` — remove ad-hoc `bg-white/5`, `bg-black/40`, `rounded-2xl`, `rounded-lg` overrides in favor of `rounded-xl`.
+  - Borders → `border-zinc-800/60`. Typography → `font-display` for h1/h2, `font-sans` body, weights 500/600/700 only.
+- `PageTransition.tsx`: confirm `layoutId` transitions use `spring, stiffness: 220, damping: 26`; guard against layout-shift for iframes.
+- Remove `public/placeholder.svg` references from live views; replace remaining dummy assets in landing components with real illustrations already in `src/components/illustrations/`.
+- Boot audit: run `pnpm dev` → check console; silence any `Missing key`, `key prop`, and `defaultProps deprecated` warnings encountered in the sweep.
+
+## Technical Details
+
+**New files**
+- `src/components/ai/StreamCopilotPanel.tsx`
+- `src/components/ai/copilot/{ChatTab,CommandsTab,IcebreakersTab,SocialHookTab}.tsx`
+- `src/hooks/useStreamCopilotChat.ts`, `src/hooks/useCopilotQuickAction.ts`
+- `supabase/functions/stream-copilot/index.ts`
+
+**Edited files**
+- `src/pages/Dashboard.tsx` (mount Copilot on Broadcast tab)
+- `index.html` (CSP tighten)
+- `electron/src/index.js`, `electron/src/preload.js` (IPC + CSP tighten)
+- Page-level sweeps: `src/pages/*.tsx`
+- Single Supabase migration: RLS rewrite + missing owner policies + `chat_commands` insert policy
+
+**Not touching**
+- `src/integrations/supabase/types.ts`
+- `supabase/config.toml` other than as required
+- Existing AI edge functions (only adding `stream-copilot`)
+
+## Open questions
+1. **Copilot chat memory**: keep it ephemeral per-session (localStorage), or persist to a new `copilot_conversations` table for history?
+2. **Save-to-DB from Copilot**: allow one-click save of generated chat commands into `chat_commands`, or copy-only?
+3. **Social Hook targets**: X + Discord only, or also YouTube community + Twitch announcement?
