@@ -91,6 +91,7 @@ const Dashboard = () => {
       </aside>
 
       <StreamHealthOverlay />
+      <StreamCopilotPanel />
     </div>
   );
 };
