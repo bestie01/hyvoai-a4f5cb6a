@@ -100,7 +100,7 @@ const CSP = [
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.github.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://ai.gateway.lovable.dev https://api.github.com",
   "frame-src https://js.stripe.com https://checkout.stripe.com",
   "object-src 'none'",
   "base-uri 'self'",
