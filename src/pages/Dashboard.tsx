@@ -50,15 +50,20 @@ const Dashboard = () => {
             <h1 className="text-3xl font-display font-bold tracking-tight">Ready to Stream</h1>
             <p className="text-white/60 mt-1">Your streaming command center.</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="liquid-glass-button"
-            onClick={() => window.dispatchEvent(new Event("hyvo:toggle-stream-health"))}
-          >
-            <Activity className="w-4 h-4 mr-2 text-emerald-400" />
-            Stream Health
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline" size="sm" className="liquid-glass-button"
+              onClick={() => window.dispatchEvent(new Event("hyvo:toggle-copilot"))}
+            >
+              <Sparkles className="w-4 h-4 mr-2 text-primary" /> AI Copilot
+            </Button>
+            <Button
+              variant="outline" size="sm" className="liquid-glass-button"
+              onClick={() => window.dispatchEvent(new Event("hyvo:toggle-stream-health"))}
+            >
+              <Activity className="w-4 h-4 mr-2 text-emerald-400" /> Stream Health
+            </Button>
+          </div>
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="liquid-glass-panel">
