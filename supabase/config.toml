@@ -92,3 +92,8 @@ verify_jwt = true
 
 [functions.resume-subscription]
 verify_jwt = true
+[functions.provision-stream]
+verify_jwt = true
+
+[functions.stream-copilot]
+verify_jwt = true
