@@ -55,7 +55,7 @@ export const RealtimePlatformStats = ({ onRefresh }: RealtimePlatformStatsProps)
     {
       name: "Twitch",
       icon: Twitch,
-      color: "from-purple-500/20 to-purple-600/20",
+      color: "from-primary/20 to-[hsl(var(--neon-cyan))]/20",
       borderColor: "border-purple-500/30",
       iconColor: "text-purple-500",
       stats: twitchStats,
