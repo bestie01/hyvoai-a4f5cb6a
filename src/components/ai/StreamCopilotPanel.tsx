@@ -264,7 +264,7 @@ export function StreamCopilotPanel() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 shadow-[0_0_30px_-4px_hsl(var(--primary)/0.8)] flex items-center justify-center hover:scale-105 transition"
+          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-[hsl(var(--neon-cyan))] shadow-[0_0_30px_-4px_hsl(var(--primary)/0.8)] flex items-center justify-center hover:scale-105 transition"
           aria-label="Open AI Copilot"
         >
           <Bot className="w-6 h-6 text-white" />
@@ -287,7 +287,7 @@ export function StreamCopilotPanel() {
             <GlassPanel variant="raised" glow="cyan" className="flex flex-col h-full overflow-hidden border-zinc-800">
               <header className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-fuchsia-500 flex items-center justify-center">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-[hsl(var(--neon-cyan))] flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <div>

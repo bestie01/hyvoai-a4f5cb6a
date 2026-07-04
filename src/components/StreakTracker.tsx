@@ -106,7 +106,7 @@ export const StreakTracker = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className={`mt-4 text-sm ${
-            isAtRisk ? "text-yellow-500" : isLegendary ? "text-purple-400" : isOnFire ? "text-orange-400" : "text-muted-foreground"
+            isAtRisk ? "text-primary" : isLegendary ? "text-purple-400" : isOnFire ? "text-orange-400" : "text-muted-foreground"
           }`}
         >
           {isLegendary 

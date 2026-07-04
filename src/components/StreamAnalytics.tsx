@@ -104,7 +104,7 @@ export function StreamAnalytics({ viewers, streamTime, isStreaming }: StreamAnal
   const getQualityColor = (quality: string) => {
     switch (quality) {
       case 'Good': return 'bg-success';
-      case 'Fair': return 'bg-yellow-500';
+      case 'Fair': return 'bg-orange-500';
       case 'Poor': return 'bg-destructive';
       default: return 'bg-muted';
     }

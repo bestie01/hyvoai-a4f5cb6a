@@ -33,7 +33,7 @@ export function TitleBar() {
       style={{ ['-webkit-app-region' as any]: 'drag' }}
     >
       <div className="flex items-center gap-2 px-3">
-        <div className="w-2 h-2 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 shadow-[0_0_8px_rgba(96,165,250,0.6)]" />
+        <div className="w-2 h-2 rounded-full bg-gradient-to-br from-primary to-[hsl(var(--neon-cyan))] shadow-[0_0_8px_rgba(96,165,250,0.6)]" />
         <span className="text-xs font-semibold tracking-wide text-white/80">Hyvo.ai · Stream Studio</span>
       </div>
       <div

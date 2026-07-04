@@ -597,7 +597,7 @@ const StreamingApp = () => {
                 Chat
                 <span className={`w-2 h-2 rounded-full ${
                   liveChat.isConnected ? 'bg-green-500' : 
-                  liveChat.isLoading ? 'bg-yellow-500 animate-pulse' : 
+                  liveChat.isLoading ? 'bg-orange-500 animate-pulse' : 
                   'bg-muted-foreground/40'
                 }`} />
               </TabsTrigger>

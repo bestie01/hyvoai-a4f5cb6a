@@ -43,7 +43,7 @@ export function ReleaseStatus() {
       case 'success':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'pending':
-        return <Clock className="h-5 w-5 text-yellow-500" />;
+        return <Clock className="h-5 w-5 text-primary" />;
       case 'failed':
         return <XCircle className="h-5 w-5 text-red-500" />;
       default:
