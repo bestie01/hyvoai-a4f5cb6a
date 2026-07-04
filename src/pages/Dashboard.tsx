@@ -9,7 +9,7 @@ import { AIPredictiveDashboard } from "@/components/ai/AIPredictiveDashboard";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { ProductTour } from "@/components/onboarding/ProductTour";
 import { StreamHealthOverlay } from "@/components/dashboard/StreamHealthOverlay";
-import { IngestPanel } from "@/components/streaming/IngestPanel";
+import { GoLivePanel } from "@/components/streaming/GoLivePanel";
 import { StreamCanvasPreview } from "@/components/streaming/StreamCanvasPreview";
 import { StreamCopilotPanel } from "@/components/ai/StreamCopilotPanel";
 import { Sparkles } from "lucide-react";
@@ -77,7 +77,7 @@ const Dashboard = () => {
           <TabsContent value="broadcast" className="mt-6">
             <div className="grid lg:grid-cols-5 gap-6">
               <div className="lg:col-span-3"><StreamCanvasPreview /></div>
-              <div className="lg:col-span-2"><IngestPanel /></div>
+              <div className="lg:col-span-2"><GoLivePanel /></div>
             </div>
           </TabsContent>
           <TabsContent value="ai-insights" className="mt-6">
