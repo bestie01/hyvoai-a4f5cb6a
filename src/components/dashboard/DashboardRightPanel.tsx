@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StreamAnalytics } from "@/components/StreamAnalytics";
@@ -6,40 +6,111 @@ import { RealtimeDashboard } from "@/components/dashboard/RealtimeDashboard";
 import { AIChatAnalysis } from "@/components/ai/AIChatAnalysis";
 import { AIHighlights } from "@/components/ai/AIHighlights";
 import { LiquidGlassCard, LiquidGlassBadge } from "@/components/ui/liquid-glass-card";
-import { 
-  MessageSquare, 
-  Users, 
-  Settings, 
-  Sparkles,
-  Brain,
-  Zap,
-  TrendingUp,
-  Layers
+import { supabase } from "@/integrations/supabase/client";
+import {
+  MessageSquare, Sparkles, Brain, Zap, TrendingUp, Layers, Radio,
 } from "lucide-react";
 
+interface RtChat { username: string; message: string; timestamp: string }
+interface StreamRow { id: string; is_live: boolean; created_at: string }
+
+function useLiveStream() {
+  const [stream, setStream] = useState<StreamRow | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("streams")
+        .select("id, is_live, created_at")
+        .eq("user_id", user.id)
+        .eq("is_live", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (mounted) setStream(data as StreamRow | null);
+
+      const channel = supabase
+        .channel(`streams-user-${user.id}`)
+        .on("postgres_changes",
+          { event: "*", schema: "public", table: "streams", filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as StreamRow;
+            if (row?.is_live) setStream(row);
+            else if (stream?.id === row?.id) setStream(null);
+          },
+        )
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
+    })();
+    return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return stream;
+}
+
+function useLiveChat(streamId: string | null) {
+  const [messages, setMessages] = useState<RtChat[]>([]);
+  useEffect(() => {
+    if (!streamId) { setMessages([]); return; }
+    const channel = supabase
+      .channel(`chat-${streamId}`)
+      .on("broadcast", { event: "chat" }, ({ payload }) => {
+        setMessages((prev) => [
+          ...prev.slice(-49),
+          { username: payload.username, message: payload.message, timestamp: new Date().toLocaleTimeString() },
+        ]);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [streamId]);
+  return messages;
+}
+
 export function DashboardRightPanel() {
-  const isStreaming = true;
-  const viewers = 1247;
-  const streamTime = "2:34:12";
+  const stream = useLiveStream();
+  const isStreaming = !!stream?.is_live;
+  const streamId = stream?.id ?? "preview";
   const platform = "twitch";
-  const streamId = "stream_" + Date.now();
 
-  const chatMessages = [
-    { username: "StreamFan123", message: "Great stream!", timestamp: "2:34:10" },
-    { username: "GamerPro", message: "How did you do that move?", timestamp: "2:34:08" },
-    { username: "ChatBot", message: "Welcome to the stream!", timestamp: "2:34:05" },
-    { username: "NewViewer", message: "First time watching, love it!", timestamp: "2:34:02" },
-    { username: "RegularViewer", message: "Been watching for months, keep it up!", timestamp: "2:33:58" },
-  ];
+  const [viewers, setViewers] = useState(0);
+  const [streamTime, setStreamTime] = useState("0:00:00");
 
+  useEffect(() => {
+    if (!stream) { setStreamTime("0:00:00"); setViewers(0); return; }
+    const start = new Date(stream.created_at).getTime();
+    const tick = () => {
+      const s = Math.max(0, Math.floor((Date.now() - start) / 1000));
+      const h = String(Math.floor(s / 3600)).padStart(1, "0");
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+      const sec = String(s % 60).padStart(2, "0");
+      setStreamTime(`${h}:${m}:${sec}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [stream]);
+
+  useEffect(() => {
+    if (!isStreaming) return;
+    const channel = supabase
+      .channel(`stats-${streamId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "stream_analytics", filter: `stream_id=eq.${streamId}` },
+        (payload) => {
+          const row: any = payload.new;
+          if (typeof row?.viewer_count === "number") setViewers(row.viewer_count);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isStreaming, streamId]);
+
+  const chatMessages = useLiveChat(isStreaming ? streamId : null);
   const audioLevels = Array.from({ length: 120 }, () => Math.floor(Math.random() * 100));
-  
-  const streamData = {
-    id: streamId,
-    duration: streamTime,
-    viewers: viewers,
-    category: "Gaming"
-  };
+  const streamData = { id: streamId, duration: streamTime, viewers, category: "Gaming" };
 
   const scenes = ["Main Scene", "BRB Screen", "Chat Only", "Full Screen"];
   const sources = ["Webcam", "Game Capture", "Overlay", "Chat Widget"];
@@ -48,8 +119,18 @@ export function DashboardRightPanel() {
     <div className="h-full">
       <ScrollArea className="h-[calc(100vh-2rem)]">
         <div className="space-y-4 p-4">
-          {/* Real-time Dashboard */}
-          <RealtimeDashboard 
+          <LiquidGlassCard variant="panel" className="p-3 flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full ${isStreaming ? "bg-destructive animate-pulse" : "bg-white/30"}`} />
+            <div className="flex-1">
+              <div className="text-xs text-white/60">Broadcast</div>
+              <div className="text-sm text-white font-medium">
+                {isStreaming ? `Live · ${streamTime}` : "Offline"}
+              </div>
+            </div>
+            <Radio className={`h-4 w-4 ${isStreaming ? "text-destructive" : "text-white/30"}`} />
+          </LiquidGlassCard>
+
+          <RealtimeDashboard
             streamId={streamId}
             platform={platform}
             viewers={viewers}
@@ -57,29 +138,17 @@ export function DashboardRightPanel() {
             isStreaming={isStreaming}
           />
 
-          {/* AI Chat Analysis */}
-          <AIChatAnalysis 
+          <AIChatAnalysis
             messages={chatMessages}
             streamId={streamId}
             platform={platform}
-            autoAnalyze={true}
+            autoAnalyze={isStreaming && chatMessages.length > 3}
           />
 
-          {/* AI Highlights */}
-          <AIHighlights 
-            streamData={streamData}
-            chatMessages={chatMessages}
-            audioLevels={audioLevels}
-          />
+          <AIHighlights streamData={streamData} chatMessages={chatMessages} audioLevels={audioLevels} />
 
-          {/* Stream Analytics */}
-          <StreamAnalytics 
-            viewers={viewers}
-            streamTime={streamTime}
-            isStreaming={isStreaming}
-          />
+          <StreamAnalytics viewers={viewers} streamTime={streamTime} isStreaming={isStreaming} />
 
-          {/* Scene Management */}
           <LiquidGlassCard variant="panel" className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Layers className="h-4 w-4 text-primary" />
@@ -97,7 +166,6 @@ export function DashboardRightPanel() {
             </div>
           </LiquidGlassCard>
 
-          {/* Sources */}
           <LiquidGlassCard variant="panel" className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Zap className="h-4 w-4 text-primary" />
@@ -108,15 +176,14 @@ export function DashboardRightPanel() {
                 <div key={index} className="flex items-center justify-between p-2 rounded-lg liquid-glass-panel">
                   <span className="text-sm text-white">{source}</span>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-white/60">Active</span>
+                    <div className={`w-2 h-2 rounded-full ${isStreaming ? "bg-emerald-500 animate-pulse" : "bg-white/20"}`} />
+                    <span className="text-xs text-white/60">{isStreaming ? "Live" : "Idle"}</span>
                   </div>
                 </div>
               ))}
             </div>
           </LiquidGlassCard>
 
-          {/* AI Features */}
           <LiquidGlassCard variant="glow-primary" className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="h-4 w-4 text-primary" />
@@ -128,14 +195,14 @@ export function DashboardRightPanel() {
                   <Sparkles className="h-3 w-3 text-accent" />
                   <span className="text-sm text-white">Auto Highlights</span>
                 </div>
-                <LiquidGlassBadge className="text-xs">Active</LiquidGlassBadge>
+                <LiquidGlassBadge className="text-xs">{isStreaming ? "Active" : "Idle"}</LiquidGlassBadge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-3 w-3 text-accent" />
                   <span className="text-sm text-white">Chat Analysis</span>
                 </div>
-                <LiquidGlassBadge className="text-xs">Running</LiquidGlassBadge>
+                <LiquidGlassBadge className="text-xs">{isStreaming ? "Running" : "Idle"}</LiquidGlassBadge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
