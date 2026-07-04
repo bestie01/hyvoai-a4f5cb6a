@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 interface RtChat { username: string; message: string; timestamp: string }
-interface StreamRow { id: string; is_live: boolean; created_at: string }
+interface StreamRow { id: number | string; is_live: boolean; created_at: string }
 
 function useLiveStream() {
   const [stream, setStream] = useState<StreamRow | null>(null);
@@ -29,14 +29,14 @@ function useLiveStream() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (mounted) setStream(data as StreamRow | null);
+      if (mounted) setStream((data as unknown as StreamRow) ?? null);
 
       const channel = supabase
         .channel(`streams-user-${user.id}`)
         .on("postgres_changes",
           { event: "*", schema: "public", table: "streams", filter: `user_id=eq.${user.id}` },
           (payload) => {
-            const row = (payload.new ?? payload.old) as StreamRow;
+            const row = ((payload.new ?? payload.old) as unknown) as StreamRow;
             if (row?.is_live) setStream(row);
             else if (stream?.id === row?.id) setStream(null);
           },
@@ -72,7 +72,7 @@ function useLiveChat(streamId: string | null) {
 export function DashboardRightPanel() {
   const stream = useLiveStream();
   const isStreaming = !!stream?.is_live;
-  const streamId = stream?.id ?? "preview";
+  const streamId = String(stream?.id ?? "preview");
   const platform = "twitch";
 
   const [viewers, setViewers] = useState(0);
