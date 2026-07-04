@@ -45,7 +45,7 @@ export function StreamHealthMonitor() {
     switch (quality) {
       case 'excellent': return 'bg-green-500/20 text-green-500';
       case 'good': return 'bg-blue-500/20 text-blue-500';
-      case 'fair': return 'bg-yellow-500/20 text-yellow-500';
+      case 'fair': return 'bg-orange-500/20 text-orange-400';
       case 'poor': return 'bg-red-500/20 text-red-500';
       default: return 'bg-gray-500/20 text-gray-500';
     }

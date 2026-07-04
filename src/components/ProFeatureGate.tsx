@@ -31,7 +31,7 @@ export const ProFeatureGate = ({
   }
 
   return (
-    <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+    <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-[hsl(var(--neon-cyan))]/10">
       <CardHeader className="text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Crown className="w-5 h-5 text-amber-600" />

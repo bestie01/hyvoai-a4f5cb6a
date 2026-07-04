@@ -164,7 +164,7 @@ export function HyvoSidebar() {
         {/* Real account card */}
         {user && !collapsed && (
           <div className="mt-2 mx-1 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-2.5">
-            <div className={`relative ${showProBadge ? "p-[1.5px] rounded-full bg-gradient-to-tr from-amber-400 via-pink-400 to-[hsl(var(--neon-violet))]" : ""}`}>
+            <div className={`relative ${showProBadge ? "p-[1.5px] rounded-full bg-gradient-to-tr from-primary via-[hsl(var(--neon-cyan))] to-primary" : ""}`}>
               <Avatar className="w-8 h-8">
                 <AvatarImage src={avatarUrl} alt={displayName} />
                 <AvatarFallback className="text-[11px] bg-primary/20 text-white">{initialsOf(displayName)}</AvatarFallback>
@@ -175,7 +175,7 @@ export function HyvoSidebar() {
               <div className="text-[10px] text-white/40 truncate">{user.email}</div>
             </div>
             {showProBadge && (
-              <Badge className="h-5 px-1.5 text-[9px] bg-gradient-to-r from-amber-400 to-amber-600 text-black border-0 font-bold">
+              <Badge className="h-5 px-1.5 text-[9px] bg-gradient-to-r from-primary to-[hsl(var(--neon-cyan))] text-white border-0 font-bold">
                 <Crown className="w-2.5 h-2.5 mr-0.5" />
                 {tierLabel}
               </Badge>

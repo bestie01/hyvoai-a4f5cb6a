@@ -60,7 +60,7 @@ export function NotificationCenter() {
     switch (type) {
       case 'success': return 'bg-success';
       case 'error': return 'bg-destructive';
-      case 'warning': return 'bg-yellow-500';
+      case 'warning': return 'bg-orange-500';
       default: return 'bg-primary';
     }
   };
