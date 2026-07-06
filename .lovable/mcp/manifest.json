@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://fxvvcyjwgxxxezqzucwm.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "hyvo-mcp",
+      "version": "0.1.0",
+      "title": "Hyvo.ai Streaming Assistant"
+    },
+    "tools": [
+      {
+        "name": "list_streams",
+        "title": "List streams",
+        "description": "List the signed-in user's Hyvo streams (live and past).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max rows to return (default 20)."
+            },
+            "only_live": {
+              "type": "boolean",
+              "description": "If true, only currently live streams."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_stream_analytics",
+        "title": "Get stream analytics",
+        "description": "Fetch recent analytics snapshots (viewer counts, chat rate, etc.) for the signed-in user's streams.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max snapshots (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "schedule_stream",
+        "title": "Schedule a stream",
+        "description": "Create a scheduled stream on the user's Hyvo calendar.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Stream title."
+            },
+            "platform": {
+              "type": "string",
+              "description": "Platform slug, e.g. 'twitch' or 'youtube'."
+            },
+            "scheduled_start_time": {
+              "type": "string",
+              "description": "ISO 8601 datetime for when the stream starts."
+            },
+            "duration": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Planned duration in minutes."
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title",
+            "platform",
+            "scheduled_start_time"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_scheduled_streams",
+        "title": "List scheduled streams",
+        "description": "List the signed-in user's upcoming scheduled streams.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "generate_stream_title",
+        "title": "Generate stream titles",
+        "description": "Generate catchy, click-worthy stream title ideas for a given game and vibe using Hyvo AI.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "game": {
+              "type": "string",
+              "description": "Game or content category, e.g. 'Valorant'."
+            },
+            "mood": {
+              "type": "string",
+              "description": "Vibe/mood, e.g. 'hype', 'chill', 'chaotic'."
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "description": "How many titles (default 5)."
+            }
+          },
+          "required": [
+            "game"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
