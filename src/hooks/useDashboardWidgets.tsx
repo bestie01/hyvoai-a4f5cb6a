@@ -9,11 +9,10 @@ export interface DashboardWidget {
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
-  { id: "rank", title: "Hunter Rank", type: "custom", visible: true, order: 0 },
-  { id: "stats", title: "Quick Stats", type: "stats", visible: true, order: 1 },
-  { id: "ai-features", title: "AI Features", type: "ai-features", visible: true, order: 2 },
-  { id: "analytics", title: "Pro Analytics", type: "analytics", visible: true, order: 3 },
-  { id: "schedule", title: "Stream Schedule", type: "schedule", visible: true, order: 4 },
+  { id: "stats", title: "Quick Stats", type: "stats", visible: true, order: 0 },
+  { id: "ai-features", title: "AI Features", type: "ai-features", visible: true, order: 1 },
+  { id: "analytics", title: "Pro Analytics", type: "analytics", visible: true, order: 2 },
+  { id: "schedule", title: "Stream Schedule", type: "schedule", visible: true, order: 3 },
 ];
 
 const STORAGE_KEY = "dashboard-widgets-config";
