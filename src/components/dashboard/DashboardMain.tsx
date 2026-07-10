@@ -51,16 +51,6 @@ export function DashboardMain() {
     checkViewerMilestone,
   } = useDashboardCelebrations();
 
-  const rankMetrics = {
-    totalStreams: metrics?.totalStreams ?? 0,
-    totalViewers: metrics?.totalViewers ?? 0,
-    peakViewers: metrics?.peakViewers ?? 0,
-    avgEngagement: metrics?.avgEngagement ?? 0,
-    totalMessages: metrics?.totalMessages ?? 0,
-  };
-  const { state: rankState, rankUp, dismissRankUp } = useStreamerRank(
-    metrics ? rankMetrics : null,
-  );
 
   useEffect(() => {
     getAnalytics(7);
