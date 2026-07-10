@@ -6,9 +6,6 @@ import { DraggableWidget } from "./DraggableWidget";
 import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { useDashboardCelebrations } from "@/hooks/useDashboardCelebrations";
-import { useStreamerRank } from "@/hooks/useStreamerRank";
-import { StreamerRankHUD } from "./StreamerRankHUD";
-import { RankUpReveal } from "./RankUpReveal";
 import { Confetti } from "@/components/effects/Confetti";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -54,16 +51,6 @@ export function DashboardMain() {
     checkViewerMilestone,
   } = useDashboardCelebrations();
 
-  const rankMetrics = {
-    totalStreams: metrics?.totalStreams ?? 0,
-    totalViewers: metrics?.totalViewers ?? 0,
-    peakViewers: metrics?.peakViewers ?? 0,
-    avgEngagement: metrics?.avgEngagement ?? 0,
-    totalMessages: metrics?.totalMessages ?? 0,
-  };
-  const { state: rankState, rankUp, dismissRankUp } = useStreamerRank(
-    metrics ? rankMetrics : null,
-  );
 
   useEffect(() => {
     getAnalytics(7);
@@ -158,8 +145,6 @@ export function DashboardMain() {
 
   const renderWidget = (widgetId: string) => {
     switch (widgetId) {
-      case "rank":
-        return <StreamerRankHUD state={rankState} metrics={rankMetrics} />;
       case "stats":
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -258,9 +243,6 @@ export function DashboardMain() {
 
   return (
     <div className="space-y-8">
-      {/* Rank-up ceremony */}
-      <RankUpReveal from={rankUp?.from ?? null} to={rankUp?.to ?? null} onDismiss={dismissRankUp} />
-
       {/* Confetti Celebration */}
       <Confetti 
         isActive={celebration.showConfetti} 
