@@ -243,9 +243,6 @@ export function DashboardMain() {
 
   return (
     <div className="space-y-8">
-      {/* Rank-up ceremony */}
-      <RankUpReveal from={rankUp?.from ?? null} to={rankUp?.to ?? null} onDismiss={dismissRankUp} />
-
       {/* Confetti Celebration */}
       <Confetti 
         isActive={celebration.showConfetti} 
