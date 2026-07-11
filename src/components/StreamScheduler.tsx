@@ -65,8 +65,10 @@ export const StreamScheduler = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gradient-primary">Stream Schedule</h2>
-          <p className="text-muted-foreground text-sm mt-1">Plan and manage your upcoming streams</p>
+          <h2 className="text-lg font-semibold text-white">Upcoming streams</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            {loading ? "Loading…" : `${schedules.length} scheduled`}
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -82,8 +84,8 @@ export const StreamScheduler = () => {
             <Tabs defaultValue="manual" className="w-full">
               <TabsList className="grid w-full grid-cols-3 liquid-glass-panel p-1">
                 <TabsTrigger value="manual" className="data-[state=active]:bg-primary/20">Manual</TabsTrigger>
-                <TabsTrigger value="ai-title" className="data-[state=active]:bg-primary/20">🤖 AI Title</TabsTrigger>
-                <TabsTrigger value="ai-thumbnail" className="data-[state=active]:bg-primary/20">🎨 AI Thumbnail</TabsTrigger>
+                <TabsTrigger value="ai-title" className="data-[state=active]:bg-primary/20">AI Title</TabsTrigger>
+                <TabsTrigger value="ai-thumbnail" className="data-[state=active]:bg-primary/20">AI Thumbnail</TabsTrigger>
               </TabsList>
               <TabsContent value="manual" className="space-y-4 mt-4">
                 <div className="grid gap-4 py-4">
