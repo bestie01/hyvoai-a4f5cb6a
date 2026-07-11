@@ -40,30 +40,61 @@ function useStreamContext() {
 }
 
 /* ------------------------------ Chat Tab ------------------------------ */
+const HISTORY_KEY = "hyvo.copilot.history";
+const WELCOME: ChatMsg = {
+  role: "assistant",
+  content:
+    "I'm your streaming Copilot. I can suggest titles, tune thumbnails, recommend go-live times, and brainstorm growth tactics. What are we working on?",
+};
+const SUGGESTED_PROMPTS = [
+  { label: "Punchy title ideas", prompt: "Give me 5 punchy stream title ideas for tonight based on my current draft." },
+  { label: "Best time to go live", prompt: "Based on typical Twitch/YouTube audience patterns, when should I go live this week?" },
+  { label: "Thumbnail concepts", prompt: "Suggest 3 thumbnail concepts that would maximize CTR for my next stream." },
+  { label: "Grow to 100 followers", prompt: "Give me a concrete 7-day plan to grow from where I am to 100 followers." },
+  { label: "Fix quiet chat", prompt: "My chat has been quiet lately. Give me 5 tactics to re-engage viewers in real time." },
+];
+
 function ChatTab() {
   const ctx = useStreamContext();
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { role: "assistant", content: "Yo! I'm your Copilot 🎮 Ask me anything mid-stream — chat ideas, quick facts, bit hype-ups. What do you need?" },
-  ]);
+  const [messages, setMessages] = useState<ChatMsg[]>(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      const parsed = raw ? (JSON.parse(raw) as ChatMsg[]) : null;
+      return parsed && parsed.length ? parsed : [WELCOME];
+    } catch { return [WELCOME]; }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: 9e9, behavior: "smooth" }); }, [messages, loading]);
+  useEffect(() => {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-40))); } catch {}
+  }, [messages]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    const next: ChatMsg[] = [...messages, { role: "user", content: text }];
+  const sendText = async (text: string) => {
+    if (!text.trim() || loading) return;
+    const next: ChatMsg[] = [...messages, { role: "user", content: text.trim() }];
     setMessages(next); setInput(""); setLoading(true);
     try {
       const res = await invoke("chat", { ...ctx, messages: next });
       setMessages([...next, { role: "assistant", content: res.reply || "…" }]);
     } catch (e: any) {
-      toast({ title: "Copilot error", description: e.message || "Try again", variant: "destructive" });
-    } finally { setLoading(false); }
+      const msg = e?.message || "Copilot is unavailable — try again in a moment.";
+      setMessages([...next, { role: "assistant", content: `⚠️ ${msg}` }]);
+      toast({ title: "Copilot error", description: msg, variant: "destructive" });
+    } finally { setLoading(false); inputRef.current?.focus(); }
   };
+
+  const reset = () => {
+    setMessages([WELCOME]);
+    try { localStorage.removeItem(HISTORY_KEY); } catch {}
+  };
+
+  const showChips = messages.length <= 1 && !loading;
 
   return (
     <div className="flex flex-col h-full">
@@ -83,19 +114,43 @@ function ChatTab() {
             <Loader2 className="w-3 h-3 animate-spin" /> thinking…
           </div>
         )}
+        {showChips && (
+          <div className="pt-1 space-y-2">
+            <div className="text-[10px] uppercase tracking-widest text-white/40">Try one</div>
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_PROMPTS.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => sendText(s.prompt)}
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-primary/40 text-white/80 transition"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      <div className="pt-3 flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-          placeholder="Ask your Copilot…"
-          className="bg-white/[0.04] border-white/10 rounded-xl"
-          disabled={loading}
-        />
-        <Button size="icon" onClick={send} disabled={loading || !input.trim()} className="rounded-xl">
-          <Send className="w-4 h-4" />
-        </Button>
+      <div className="pt-3 space-y-2">
+        <div className="flex gap-2">
+          <Input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendText(input))}
+            placeholder="Ask your Copilot…"
+            className="bg-white/[0.04] border-white/10 rounded-xl"
+            disabled={loading}
+          />
+          <Button size="icon" onClick={() => sendText(input)} disabled={loading || !input.trim()} className="rounded-xl">
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+        {messages.length > 1 && (
+          <button onClick={reset} className="text-[10px] text-white/40 hover:text-white/70 transition">
+            Clear conversation
+          </button>
+        )}
       </div>
     </div>
   );
