@@ -15,7 +15,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 interface ProvisionRequest {
-  action: "provision" | "go_live" | "end_live";
+  action: "provision" | "go_live" | "end_live" | "update_title";
   platforms?: ("twitch" | "youtube")[];
   title?: string;
   description?: string;
@@ -160,6 +160,72 @@ serve(async (req) => {
     if (body.action === "end_live") {
       await admin.from("streams").update({ is_live: false }).eq("user_id", user.id).eq("is_live", true);
       return json({ ok: true });
+    }
+
+    if (body.action === "update_title") {
+      const title = (body.title ?? "").trim();
+      if (!title) return json({ error: "Title required" }, 400);
+
+      const { data: conns } = await admin
+        .from("social_connections")
+        .select("platform, access_token, platform_user_id")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+
+      const clientId = Deno.env.get("TWITCH_CLIENT_ID");
+      const results: any[] = [];
+      for (const c of conns ?? []) {
+        try {
+          if (c.platform === "twitch" && c.access_token && c.platform_user_id && clientId) {
+            const r = await fetch(
+              `https://api.twitch.tv/helix/channels?broadcaster_id=${c.platform_user_id}`,
+              {
+                method: "PATCH",
+                headers: {
+                  "Client-ID": clientId,
+                  Authorization: `Bearer ${c.access_token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ title }),
+              },
+            );
+            results.push({ platform: "twitch", ok: r.ok });
+          } else if (c.platform === "youtube" && c.access_token) {
+            // Find the current active broadcast and update its title.
+            const list = await fetch(
+              "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&broadcastType=all",
+              { headers: { Authorization: `Bearer ${c.access_token}` } },
+            );
+            const listData = await list.json();
+            const broadcastId = listData?.items?.[0]?.id;
+            const snippet = listData?.items?.[0]?.snippet;
+            if (broadcastId && snippet) {
+              const upd = await fetch(
+                "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet",
+                {
+                  method: "PUT",
+                  headers: { Authorization: `Bearer ${c.access_token}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: broadcastId,
+                    snippet: { ...snippet, title },
+                  }),
+                },
+              );
+              results.push({ platform: "youtube", ok: upd.ok });
+            } else {
+              results.push({ platform: "youtube", ok: false, error: "No active broadcast" });
+            }
+          }
+          await admin
+            .from("platform_streaming_configs")
+            .update({ stream_title: title })
+            .eq("user_id", user.id)
+            .eq("platform", c.platform);
+        } catch (err) {
+          results.push({ platform: c.platform, ok: false, error: (err as Error).message });
+        }
+      }
+      return json({ ok: true, results });
     }
 
     return json({ error: "Invalid action" }, 400);

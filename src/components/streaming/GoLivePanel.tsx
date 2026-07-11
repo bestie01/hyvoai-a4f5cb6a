@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Radio, CheckCircle2, Loader2, Twitch, Youtube, PlugZap, AlertTriangle, Square } from "lucide-react";
+import {
+  Radio, CheckCircle2, Loader2, Twitch, Youtube, PlugZap, AlertTriangle,
+  Square, Users, Timer, Megaphone, Pencil,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +14,14 @@ import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 
 type PlatformResult = { platform: string; ready: boolean; username?: string; error?: string };
 
+function formatElapsed(ms: number) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
 export function GoLivePanel() {
   const { toast } = useToast();
   const { twitchConnection, youtubeConnection, connectTwitch, connectYouTube, refreshConnections } = usePlatformOAuth();
@@ -18,8 +29,42 @@ export function GoLivePanel() {
   const [status, setStatus] = useState<"idle" | "provisioning" | "ready" | "live">("idle");
   const [results, setResults] = useState<PlatformResult[]>([]);
   const [streamId, setStreamId] = useState<string | null>(null);
+  const [viewers, setViewers] = useState<number>(0);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState<string>("0:00:00");
+  const [updatingTitle, setUpdatingTitle] = useState(false);
+  const tickRef = useRef<number | null>(null);
 
   useEffect(() => { refreshConnections(); }, [refreshConnections]);
+
+  // Elapsed timer
+  useEffect(() => {
+    if (status !== "live" || !startedAt) {
+      setElapsed("0:00:00");
+      if (tickRef.current) window.clearInterval(tickRef.current);
+      return;
+    }
+    const tick = () => setElapsed(formatElapsed(Date.now() - startedAt));
+    tick();
+    tickRef.current = window.setInterval(tick, 1000);
+    return () => { if (tickRef.current) window.clearInterval(tickRef.current); };
+  }, [status, startedAt]);
+
+  // Real-time viewer count via stream_analytics inserts
+  useEffect(() => {
+    if (status !== "live" || !streamId) return;
+    const ch = supabase
+      .channel(`golive-stats-${streamId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "stream_analytics", filter: `stream_id=eq.${streamId}` },
+        (payload) => {
+          const row: any = payload.new;
+          if (typeof row?.viewer_count === "number") setViewers(row.viewer_count);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [status, streamId]);
 
   const noConnections = !twitchConnection && !youtubeConnection;
 
@@ -44,6 +89,7 @@ export function GoLivePanel() {
       });
       if (lErr) throw lErr;
       setStreamId(live.streamId);
+      setStartedAt(Date.now());
       setStatus("live");
       toast({ title: "You're live 🔴", description: "Broadcast started on connected platforms." });
     } catch (err: any) {
@@ -57,11 +103,37 @@ export function GoLivePanel() {
       await supabase.functions.invoke("provision-stream", { body: { action: "end_live" } });
       setStatus("idle");
       setStreamId(null);
+      setStartedAt(null);
+      setViewers(0);
       toast({ title: "Stream ended" });
     } catch (err: any) {
       toast({ title: "Failed to end", description: err.message, variant: "destructive" });
     }
   };
+
+  const updateTitle = async () => {
+    if (!title.trim()) return;
+    setUpdatingTitle(true);
+    try {
+      const { error } = await supabase.functions.invoke("provision-stream", {
+        body: { action: "update_title", title: title.trim() },
+      });
+      if (error) throw error;
+      toast({ title: "Title updated on connected platforms" });
+    } catch (err: any) {
+      toast({ title: "Couldn't update title", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingTitle(false);
+    }
+  };
+
+  const announce = () => {
+    // Open the Copilot's Social tab so the streamer can post "we're LIVE" hooks.
+    window.dispatchEvent(new Event("hyvo:toggle-copilot"));
+    toast({ title: "Copilot opened", description: "Use the Post tab to draft an announcement." });
+  };
+
+  const isLive = status === "live";
 
   return (
     <GlassPanel variant="raised" className="p-6 space-y-5">
@@ -75,12 +147,32 @@ export function GoLivePanel() {
             <div className="text-xs text-white/50">Auto-provisioned via OAuth — no stream keys, ever.</div>
           </div>
         </div>
-        {status === "live" && (
+        {isLive && (
           <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full border border-destructive/40 text-destructive bg-destructive/10 animate-pulse">
             Live
           </span>
         )}
       </div>
+
+      {/* Live stats */}
+      {isLive && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3">
+            <Users className="w-4 h-4 text-emerald-400" />
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Viewers</div>
+              <div className="text-lg font-semibold text-white tabular-nums">{viewers.toLocaleString()}</div>
+            </div>
+          </div>
+          <div className="rounded-xl bg-white/[0.03] border border-white/10 p-3 flex items-center gap-3">
+            <Timer className="w-4 h-4 text-primary" />
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-white/40">Elapsed</div>
+              <div className="text-lg font-semibold text-white tabular-nums">{elapsed}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <PlatformChip
@@ -101,16 +193,29 @@ export function GoLivePanel() {
 
       <div className="space-y-1.5">
         <Label className="text-xs text-white/60">Stream title</Label>
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Ranked grind — road to Diamond"
-          className="bg-white/[0.04] border-white/10"
-          disabled={status === "provisioning" || status === "live"}
-        />
+        <div className="flex gap-2">
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Ranked grind — road to Diamond"
+            className="bg-white/[0.04] border-white/10"
+            disabled={status === "provisioning"}
+          />
+          {isLive && (
+            <Button
+              variant="outline"
+              onClick={updateTitle}
+              disabled={updatingTitle || !title.trim()}
+              className="shrink-0 border-white/10"
+              title="Push title update to connected platforms"
+            >
+              {updatingTitle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {results.length > 0 && (
+      {results.length > 0 && !isLive && (
         <div className="space-y-1">
           {results.map((r) => (
             <div key={r.platform} className="flex items-center gap-2 text-xs">
@@ -126,21 +231,42 @@ export function GoLivePanel() {
         </div>
       )}
 
-      {status !== "live" ? (
-        <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          onClick={goLive}
-          disabled={status === "provisioning" || noConnections}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-primary to-[hsl(var(--neon-cyan))] text-white font-semibold shadow-[0_0_28px_-6px_hsl(var(--primary)/0.7)] hover:opacity-95 disabled:opacity-50 transition-all"
-        >
-          {status === "provisioning" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
-          {status === "provisioning" ? "Provisioning…" : noConnections ? "Connect a platform to go live" : "Go Live"}
-        </motion.button>
+      {!isLive ? (
+        <>
+          {noConnections && (
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
+              <div className="text-sm text-white/80 font-medium mb-1">You're not live yet</div>
+              <p className="text-xs text-white/50 mb-3">Connect Twitch or YouTube to go live in one click.</p>
+              <div className="flex gap-2 justify-center">
+                <Button size="sm" variant="outline" onClick={connectTwitch} className="border-white/10">
+                  <Twitch className="w-3.5 h-3.5 mr-1.5" /> Twitch
+                </Button>
+                <Button size="sm" variant="outline" onClick={connectYouTube} className="border-white/10">
+                  <Youtube className="w-3.5 h-3.5 mr-1.5" /> YouTube
+                </Button>
+              </div>
+            </div>
+          )}
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={goLive}
+            disabled={status === "provisioning" || noConnections}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-primary to-[hsl(var(--neon-cyan))] text-white font-semibold shadow-[0_0_28px_-6px_hsl(var(--primary)/0.7)] hover:opacity-95 disabled:opacity-50 transition-all"
+          >
+            {status === "provisioning" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
+            {status === "provisioning" ? "Provisioning…" : noConnections ? "Connect a platform to go live" : "Go Live"}
+          </motion.button>
+        </>
       ) : (
-        <Button onClick={endLive} variant="destructive" className="w-full rounded-xl">
-          <Square className="w-4 h-4 mr-2" /> End stream
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={announce} variant="outline" className="rounded-xl border-white/10">
+            <Megaphone className="w-4 h-4 mr-2" /> Announce
+          </Button>
+          <Button onClick={endLive} variant="destructive" className="rounded-xl">
+            <Square className="w-4 h-4 mr-2" /> End stream
+          </Button>
+        </div>
       )}
 
       <p className="text-[10px] text-white/40 text-center leading-relaxed">

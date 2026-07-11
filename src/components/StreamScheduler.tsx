@@ -65,8 +65,10 @@ export const StreamScheduler = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gradient-primary">Stream Schedule</h2>
-          <p className="text-muted-foreground text-sm mt-1">Plan and manage your upcoming streams</p>
+          <h2 className="text-lg font-semibold text-white">Upcoming streams</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            {loading ? "Loading…" : `${schedules.length} scheduled`}
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -82,8 +84,8 @@ export const StreamScheduler = () => {
             <Tabs defaultValue="manual" className="w-full">
               <TabsList className="grid w-full grid-cols-3 liquid-glass-panel p-1">
                 <TabsTrigger value="manual" className="data-[state=active]:bg-primary/20">Manual</TabsTrigger>
-                <TabsTrigger value="ai-title" className="data-[state=active]:bg-primary/20">🤖 AI Title</TabsTrigger>
-                <TabsTrigger value="ai-thumbnail" className="data-[state=active]:bg-primary/20">🎨 AI Thumbnail</TabsTrigger>
+                <TabsTrigger value="ai-title" className="data-[state=active]:bg-primary/20">AI Title</TabsTrigger>
+                <TabsTrigger value="ai-thumbnail" className="data-[state=active]:bg-primary/20">AI Thumbnail</TabsTrigger>
               </TabsList>
               <TabsContent value="manual" className="space-y-4 mt-4">
                 <div className="grid gap-4 py-4">
@@ -186,70 +188,88 @@ export const StreamScheduler = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {schedules.map((schedule, index) => (
-          <motion.div
-            key={schedule.id}
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: index * 0.1 }}
-          >
-            <LiquidGlassCard className="h-full">
-              <div className="p-5 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg truncate">{schedule.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{schedule.description}</p>
-                  </div>
-                  <Badge variant="outline" className={`ml-2 shrink-0 ${getStatusColor(schedule.status)}`}>
-                    {schedule.status}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CalendarIcon className="h-4 w-4" />
-                    {format(new Date(schedule.scheduled_start_time), 'PPp')}
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <Monitor className="h-4 w-4 text-primary" />
-                      <span className="capitalize font-medium">{schedule.platform}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{schedule.duration} min</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => deleteSchedule(schedule.id)}
-                  className="w-full liquid-glass-button text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
+      {loading && schedules.length === 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <LiquidGlassCard key={i} className="h-full">
+              <div className="p-5 space-y-4 animate-pulse">
+                <div className="h-5 w-3/4 rounded bg-white/10" />
+                <div className="h-3 w-full rounded bg-white/5" />
+                <div className="h-3 w-2/3 rounded bg-white/5" />
+                <div className="h-9 w-full rounded bg-white/5 mt-2" />
               </div>
             </LiquidGlassCard>
-          </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {schedules.map((schedule, index) => (
+            <motion.div
+              key={schedule.id}
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: index * 0.05 }}
+            >
+              <LiquidGlassCard className="h-full">
+                <div className="p-5 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg truncate">{schedule.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{schedule.description}</p>
+                    </div>
+                    <Badge variant="outline" className={`ml-2 shrink-0 ${getStatusColor(schedule.status)}`}>
+                      {schedule.status}
+                    </Badge>
+                  </div>
 
-      {schedules.length === 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CalendarIcon className="h-4 w-4" />
+                      {format(new Date(schedule.scheduled_start_time), 'PPp')}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Monitor className="h-4 w-4 text-primary" />
+                        <span className="capitalize font-medium">{schedule.platform}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>{schedule.duration} min</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteSchedule(schedule.id)}
+                    className="w-full liquid-glass-button text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </LiquidGlassCard>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {!loading && schedules.length === 0 && (
         <motion.div variants={itemVariants} initial="hidden" animate="visible">
           <LiquidGlassCard>
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
               <div className="p-4 rounded-full bg-primary/10 mb-4">
-                <CalendarIcon className="h-12 w-12 text-muted-foreground" />
+                <CalendarIcon className="h-12 w-12 text-primary" />
               </div>
-              <p className="text-lg font-medium text-muted-foreground">No scheduled streams</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Create your first stream schedule to get started
+              <p className="text-lg font-medium text-white">No scheduled streams yet</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                Plan ahead — schedule a stream so your community knows when to tune in. Use AI to draft titles and thumbnails in seconds.
               </p>
+              <Button className="mt-5 btn-glow" onClick={() => setOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Schedule your first stream
+              </Button>
             </div>
           </LiquidGlassCard>
         </motion.div>
