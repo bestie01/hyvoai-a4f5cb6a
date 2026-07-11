@@ -15,7 +15,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 interface ProvisionRequest {
-  action: "provision" | "go_live" | "end_live";
+  action: "provision" | "go_live" | "end_live" | "update_title";
   platforms?: ("twitch" | "youtube")[];
   title?: string;
   description?: string;
