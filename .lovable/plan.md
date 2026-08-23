@@ -1,56 +1,54 @@
-## Goal
-Remove all manual stream-key friction, retire the yellow/purple accents, and make every live surface reflect real-time data.
+# Hyvo Co-Pilot — Always-On Voice Agent
 
-## 1. One-click "Go Live" (no stream key prompts)
+Turn the existing Copilot panel into a real background co-host: it listens, speaks, watches chat, and executes stream actions.
 
-Streamlabs-style: user connects Twitch/YouTube via OAuth once, then Hyvo provisions the RTMP target automatically.
+## 1. The Hyvo persona
 
-- **Twitch**: use the stored OAuth token from `platform_connections` to call Helix `/streams/key` on the user's behalf. Cache the returned key server-side; never show it in the UI.
-- **YouTube**: call `liveBroadcasts.insert` + `liveStreams.insert` via the stored Google OAuth token, bind them, and return the ingest URL + auto-generated key. Persist the `broadcastId` so Stop Live can transition it to `complete`.
-- New edge function `provision-stream` (`verify_jwt=true`) with actions `provision`, `go_live`, `end_live`. Writes into `platform_streaming_configs` with `stream_key` marked internal.
-- Client changes:
-  - Delete `IngestPanel` from the Broadcast tab (no more Server URL / Stream Key UI).
-  - Replace with a single **GoLivePanel** showing: connected platform chips, title/category inputs, and one primary **Go Live** button that calls `provision-stream` → starts WebRTC/RTMP relay → flips `streams.is_live=true`.
-  - If a platform is not yet connected, the chip opens the existing OAuth flow inline instead of asking for a key.
-- Keep manual RTMP as an **Advanced** collapsible (hidden by default) for power users on OBS — but pre-filled, read-only, copy-only. Never asks the user to paste anything.
+One shared persona/system prompt used by every AI surface (copilot chat, voice commands, chat moderation, viewer Q&A) so Hyvo sounds like one entity everywhere: calm, hyper-competent, witty, punchy, TTS-friendly. Short sentences, no filler, no jargon — "Clipped that." not "I have successfully created a clip."
 
-## 2. Kill the yellow + purple, unify accents
+## 2. Voice in — wake word + push to talk
 
-Audit reveals these are the offenders: `--neon-violet`, `--neon-amber`, purple/yellow gradients in `Hero`, `StreamCopilotPanel`, `IngestPanel` CTA, some AI cards, and a few `from-yellow-*`/`from-purple-*` Tailwind classes.
+- Continuous mic listening in the browser (Web Speech API), reacting only after hearing "Hyvo, ...".
+- A push-to-talk hotkey (and the mic button) always works as fallback, even with the wake word off.
+- A persistent Hyvo dock on the dashboard/studio: mic status (idle / listening / thinking / speaking), live transcript of what it heard, and a mute switch.
+- Wake word, hotkey, voice, and autonomy toggles live in Settings and persist per user.
 
-- Redefine the accent palette in `src/index.css` around the existing primary cyan/blue:
-  - `--primary` stays `#3B82F6`
-  - `--accent` → cool cyan `#22D3EE`
-  - `--accent-2` → soft emerald `#34D399` (for success/live states only)
-  - Remove `--neon-violet` and `--neon-amber` tokens.
-- Global sweep replacing:
-  - `from-primary/… to-[hsl(var(--neon-violet))]/…` → `from-primary/… to-accent/…`
-  - `text-yellow-*`, `bg-yellow-*`, `from-amber-*`, `from-purple-*`, `to-violet-*`, `to-fuchsia-*` → semantic tokens.
-- Files touched (scan already done): `Hero.tsx`, `CTA.tsx`, `StreamCopilotPanel.tsx`, `IngestPanel.tsx` (removed anyway), `AIPredictiveDashboard.tsx`, `StreamHealthOverlay.tsx`, `PulseDot.tsx`, `tailwind.config.ts` neon color entries.
-- Live/recording indicators stay red (`--destructive`) — that's a streaming convention, not the "yellow/purple" the user objected to.
+## 3. Voice out — ElevenLabs
 
-## 3. Real-time everywhere it matters
+- Hyvo speaks replies through the existing ElevenLabs function, streamed so speech starts immediately.
+- Speech queue so overlapping events never talk over each other; a "shut up" command / mute instantly stops playback.
+- Selectable co-host voice in Settings.
 
-Wire every live surface to Supabase Realtime + platform pollers instead of static/mock data.
+## 4. Actions Hyvo can actually perform
 
-- **Dashboard right panel & DashboardMain**: subscribe to `streams`, `stream_analytics`, `chat_messages` via `supabase.channel(...).on('postgres_changes', ...)` inside `useEffect` with proper cleanup (per project memory).
-- **LiveViewerStats / RealtimePlatformStats**: switch from interval-only to Realtime channel on `platform_stats_snapshots`, keep the 30-second `platform-stats` edge poll as backfill.
-- **StreamHealthOverlay**: bind bitrate/fps/dropped-frames to the active `useWebRTCStream` peer connection stats loop (already emits every 1s) instead of the current placeholder values.
-- **LiveChatPanel**: already realtime for Twitch IRC; add YouTube continuous poll fallback wired into the same message stream so both platforms surface in one feed.
-- **StreamCopilotPanel Chat tab**: pass the live viewer count + last 10 chat messages into the `stream-copilot` prompt each request so suggestions reflect what's happening *now*.
-- **PulseDot** everywhere gets driven by the actual `is_live` boolean from Realtime, not local state.
+Voice commands are parsed into structured actions and executed, then acknowledged in one short line:
+
+- **Stream control** — go live, end stream, mute/unmute mic, switch scene (wired to the existing Go-Live and studio state).
+- **Clip & bookmark** — "clip that" saves a timestamped highlight to the database with an AI-written label; clips appear in a Highlights list.
+- **Chat actions** — post an announcement to connected chat, timeout/ban a viewer, launch a poll.
+- **Info lookup** — game stats, patch notes, trivia, song ID; answered by the model and spoken aloud, with longer detail dropped into a notes panel instead of being read out.
+
+Anything Hyvo can't do yet is refused honestly in one line, never faked.
+
+## 5. Background autonomy
+
+A background monitor running while live:
+
+- **Auto-moderation** — every incoming chat message is screened; toxic ones are actioned silently and logged to the moderation feed. Only critical events (raids, a ban wave, a dead-air stretch) are spoken aloud.
+- **Auto-answer** — repetitive viewer questions matched against the existing Q&A knowledge base are answered in chat automatically.
+- **Chat vibe** — rolling sentiment/topic read, spoken on request ("Hyvo, how's chat?").
+- **Talking points** — if chat goes quiet, Hyvo offers one icebreaker instead of nagging.
+- Autonomy level is user-controlled: Off / Assist (ask first) / Autopilot (act silently).
+
+## 6. Activity log
+
+A single feed showing everything Hyvo did — commands executed, messages moderated, questions auto-answered, clips saved — so nothing happens invisibly.
 
 ## Technical notes
 
-- OAuth scopes required — Twitch: `channel:read:stream_key`, `channel:manage:broadcast`; YouTube: `youtube` + `youtube.force-ssl`. If a connected account is missing them, the Go Live button triggers a reconnect flow.
-- `provision-stream` stores the key encrypted at rest (existing `SUPABASE_SECRET_KEYS`) and never returns it to the client — the client only sees `{ status: 'ready', platforms: [...] }`.
-- Realtime: enable publication on `streams`, `stream_analytics`, `chat_messages`, `platform_stats_snapshots` if not already (idempotent `ALTER PUBLICATION`).
-- Color migration is CSS-token only; component structure untouched to avoid regressions.
-
-## Out of scope
-- No new pricing/subscription changes.
-- No new AI models.
-- No Electron/desktop packaging changes.
-
-## Open question
-For YouTube auto-provisioning, do you want each Go Live to create a **new broadcast every time** (fresh URL, cleaner analytics) or **reuse a single persistent broadcast** (same URL viewers can bookmark)? Streamlabs defaults to new-every-time — I'll go with that unless you say otherwise.
+- New `hyvo-agent` edge function: shared persona, intent parsing into a strict action schema, and info lookup. Existing `stream-copilot`, `ai-chat-moderator`, `ai-viewer-qa`, `ai-voice-assistant` functions are consolidated behind it where they overlap; `provision-stream` handles stream control and title/announce actions.
+- Client: `useHyvoAgent` (wake word, transcript, intent dispatch), `useHyvoVoice` (streaming TTS queue), `useHyvoBackground` (chat monitor via existing Realtime subscriptions).
+- TTS switched to SSE streaming with a PCM Web Audio player for low latency; ElevenLabs stays the provider.
+- Actions dispatch through a typed registry so each capability is one small handler, testable in isolation.
+- New tables only where needed: an agent activity log; clips/highlights/moderation reuse `stream_highlights`, `stream_clips`, `chat_moderation_actions`. All new tables get RLS scoped to the owner plus explicit grants.
+- All AI and TTS calls stay server-side; no keys reach the browser. Visual style stays the existing dark SaaS dashboard.
