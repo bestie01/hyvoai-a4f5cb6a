@@ -6,27 +6,31 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { text, voiceId = "JBFqnCBsd6RMkjVDRZzb" } = await req.json();
-    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+    const {
+      text,
+      voiceId = "JBFqnCBsd6RMkjVDRZzb",
+      // "live" = low-latency turbo model, streamed. "studio" = highest quality.
+      quality = "live",
+    } = await req.json();
 
+    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     if (!ELEVENLABS_API_KEY) {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
-
-    if (!text || text.trim().length === 0) {
+    if (!text || String(text).trim().length === 0) {
       throw new Error("Text is required for speech synthesis");
     }
 
-    console.log(`Generating speech for text: "${text.substring(0, 50)}..." with voice: ${voiceId}`);
+    const input = String(text).slice(0, 2500);
+    const live = quality === "live";
 
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}${live ? "/stream" : ""}?output_format=mp3_44100_128`,
       {
         method: "POST",
         headers: {
@@ -34,40 +38,40 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          text,
-          model_id: "eleven_multilingual_v2",
+          text: input,
+          model_id: live ? "eleven_turbo_v2_5" : "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.5,
+            stability: 0.45,
             similarity_boost: 0.75,
-            style: 0.3,
+            style: 0.35,
             use_speaker_boost: true,
           },
         }),
-      }
+      },
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ElevenLabs API error:", errorText);
-      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+    if (!response.ok || !response.body) {
+      const errorText = await response.text().catch(() => "");
+      console.error("ElevenLabs API error:", response.status, errorText);
+      return new Response(
+        JSON.stringify({ error: `ElevenLabs error ${response.status}`, details: errorText }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    const audioBuffer = await response.arrayBuffer();
-
-    return new Response(audioBuffer, {
+    // Pass the stream straight through so playback can start immediately.
+    return new Response(response.body, {
       headers: {
         ...corsHeaders,
         "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {
-    console.error("Error in elevenlabs-tts function:", error);
+    console.error("[elevenlabs-tts]", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: (error as Error).message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

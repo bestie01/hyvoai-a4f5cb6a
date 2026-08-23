@@ -422,6 +422,81 @@ export type Database = {
         }
         Relationships: []
       }
+      hyvo_agent_events: {
+        Row: {
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          spoken: boolean
+          stream_id: string | null
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          spoken?: boolean
+          stream_id?: string | null
+          summary: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          spoken?: boolean
+          stream_id?: string | null
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hyvo_agent_settings: {
+        Row: {
+          auto_answer: boolean
+          auto_moderate: boolean
+          autonomy: string
+          created_at: string
+          push_to_talk_key: string
+          updated_at: string
+          user_id: string
+          voice_enabled: boolean
+          voice_id: string
+          wake_word: string
+          wake_word_enabled: boolean
+        }
+        Insert: {
+          auto_answer?: boolean
+          auto_moderate?: boolean
+          autonomy?: string
+          created_at?: string
+          push_to_talk_key?: string
+          updated_at?: string
+          user_id: string
+          voice_enabled?: boolean
+          voice_id?: string
+          wake_word?: string
+          wake_word_enabled?: boolean
+        }
+        Update: {
+          auto_answer?: boolean
+          auto_moderate?: boolean
+          autonomy?: string
+          created_at?: string
+          push_to_talk_key?: string
+          updated_at?: string
+          user_id?: string
+          voice_enabled?: boolean
+          voice_id?: string
+          wake_word?: string
+          wake_word_enabled?: boolean
+        }
+        Relationships: []
+      }
       platform_streaming_configs: {
         Row: {
           created_at: string
