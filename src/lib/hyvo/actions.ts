@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { HYVO_EVENTS, HyvoIntent } from "./types";
 
 export interface HyvoActionContext {
