@@ -33,7 +33,7 @@ export async function logHyvoEvent(
       user_id: ctx.userId,
       kind: entry.kind,
       summary: entry.summary.slice(0, 300),
-      detail: entry.detail ?? {},
+      detail: (entry.detail ?? {}) as Json,
       stream_id: ctx.streamId,
       spoken: entry.spoken ?? false,
     });
