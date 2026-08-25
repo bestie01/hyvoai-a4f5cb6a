@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { HyvoSidebar } from "./HyvoSidebar";
+import { HyvoDock } from "@/components/hyvo/HyvoDock";
 
 interface AppShellProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ export function AppShell({ children, bleed = false }: AppShellProps) {
       <main className={`flex-1 h-full overflow-auto ${bleed ? "" : "p-6"}`}>
         {children}
       </main>
+      <HyvoDock />
     </div>
   );
 }
