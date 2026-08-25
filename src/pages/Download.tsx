@@ -203,8 +203,12 @@ const DownloadPage = () => {
               <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
                 Get Hyvo Stream Studio
               </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-3">
                 Download the desktop app for advanced features, or launch instantly in your browser.
+              </p>
+              <p className="text-sm text-primary/90 max-w-2xl mx-auto mb-6 flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Includes the full Hyvo voice co-pilot — wake word and push-to-talk control while you stream.
               </p>
 
               {isLoading ? (

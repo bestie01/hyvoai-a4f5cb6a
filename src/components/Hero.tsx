@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Radio, ArrowRight, Download, Zap, Monitor, Mic, Video, Layers, Wand2, ChevronRight } from "lucide-react";
+import { Radio, ArrowRight, Download, Zap, Monitor, Mic, Video, Layers, Wand2, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useGitHubReleases } from "@/hooks/useGitHubReleases";
-import heroImage from "@/assets/hero-dashboard.jpg";
+import heroJarvis from "@/assets/hyvo-jarvis-hero.jpg.asset.json";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SlideIn } from "@/components/animations/SlideIn";
 import { MagneticButton } from "@/components/animations/MagneticButton";
@@ -217,6 +217,21 @@ const Hero = () => {
               </MagneticButton>
             </motion.div>
 
+            {/* Desktop co-pilot note */}
+            <motion.p
+              className="text-sm text-muted-foreground/90 flex items-center gap-2 justify-center lg:justify-start"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+            >
+              <Mic className="w-4 h-4 text-primary" />
+              The full always-on voice co-pilot runs in the{" "}
+              <button onClick={() => navigate("/download")} className="text-primary font-semibold hover:underline">
+                desktop app
+              </button>
+              .
+            </motion.p>
+
             {/* Trust badges */}
             <motion.div
               className="flex items-center gap-8 justify-center lg:justify-start text-sm text-muted-foreground"
@@ -248,11 +263,11 @@ const Hero = () => {
                 transition={{ type: "spring", stiffness: 200 }}
               >
                 <img
-                  src={heroImage}
-                  alt="Hyvo.ai Dashboard Preview - AI-powered streaming analytics"
+                  src={heroJarvis.url}
+                  alt="Hyvo.ai command center — JARVIS-style AI core linking your streaming platforms"
                   className="w-full h-auto object-cover"
-                  width={1600}
-                  height={900}
+                  width={1408}
+                  height={768}
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -272,18 +287,18 @@ const Hero = () => {
                   </div>
                 </SlideIn>
 
-                {/* Stats card */}
+                {/* Co-pilot card */}
                 <SlideIn direction="left" delay={0.8} className="absolute bottom-6 left-6">
                   <div className="glass-strong p-5 rounded-xl border border-primary/30 shadow-large">
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow-primary">
-                        <TrendingUp className="w-7 h-7 text-primary-foreground" />
+                        <Mic className="w-7 h-7 text-primary-foreground" />
                       </div>
                       <div>
-                        <div className="text-base font-bold text-foreground">Stream Health</div>
+                        <div className="text-base font-bold text-foreground">Hyvo Co-Pilot</div>
                         <div className="text-sm text-success font-semibold flex items-center gap-1.5">
-                          <span className="w-2 h-2 bg-success rounded-full"></span>
-                          Excellent • 60 FPS
+                          <span className="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+                          Voice Active • Listening
                         </div>
                       </div>
                     </div>

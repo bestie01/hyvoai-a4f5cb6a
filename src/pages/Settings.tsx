@@ -15,8 +15,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import { User, Settings2, Bell, CreditCard, Crown, ExternalLink, Video, Key, Calendar, Eye, EyeOff, Download, RefreshCw, CheckCircle } from 'lucide-react';
+import { User, Settings2, Bell, CreditCard, Crown, ExternalLink, Video, Key, Calendar, Eye, EyeOff, Download, RefreshCw, CheckCircle, Mic } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
+import { useHyvoSettings } from '@/hooks/useHyvoSettings';
+import { HYVO_VOICES, HyvoAutonomy } from '@/lib/hyvo/types';
 import { LiquidGlassCard } from '@/components/ui/liquid-glass-card';
 import Footer from '@/components/Footer';
 
@@ -36,6 +38,7 @@ const Settings = () => {
   const { settings, loading, updateSettings } = useSettings();
   const { subscription, isPro, loading: subLoading, openCustomerPortal } = useSubscription();
   const { currentVersion, latestVersion, hasUpdate, isDesktop, updateStatus, downloadProgress, checkForUpdates, installUpdate } = useVersionCheck();
+  const { settings: hyvo, update: updateHyvo } = useHyvoSettings();
   
   const [bitrate, setBitrate] = useState(2500);
   const [resolution, setResolution] = useState('1920x1080');
@@ -69,7 +72,7 @@ const Settings = () => {
 
   if (loading) return <LoadingScreen message="Loading Settings..." />;
 
-  const tabCount = 5; // stream, api, notifications, billing, updates
+  const tabCount = 6; // copilot, stream, api, notifications, billing, updates
 
   return (
     <div className="min-h-screen liquid-glass-bg relative overflow-hidden">
@@ -81,9 +84,12 @@ const Settings = () => {
       <PageHeader title="Settings" description="Configure your streaming preferences" icon={Settings2} showBackButton={true} />
       
       <motion.main className="container mx-auto px-4 py-8 max-w-4xl" variants={containerVariants} initial="hidden" animate="visible">
-        <Tabs defaultValue="stream" className="w-full space-y-6">
+        <Tabs defaultValue="copilot" className="w-full space-y-6">
           <motion.div variants={itemVariants}>
-            <TabsList className={`grid w-full grid-cols-${tabCount} liquid-glass-panel p-1`}>
+            <TabsList className="grid w-full liquid-glass-panel p-1" style={{ gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }}>
+              <TabsTrigger value="copilot" className="gap-2 data-[state=active]:bg-primary/20">
+                <Mic className="w-4 h-4" /><span className="hidden sm:inline">Co-Pilot</span>
+              </TabsTrigger>
               <TabsTrigger value="stream" className="gap-2 data-[state=active]:bg-primary/20">
                 <Video className="w-4 h-4" /><span className="hidden sm:inline">Stream</span>
               </TabsTrigger>
@@ -102,6 +108,72 @@ const Settings = () => {
               </TabsTrigger>
             </TabsList>
           </motion.div>
+
+          {/* Hyvo Co-Pilot Tab */}
+          <TabsContent value="copilot" className="space-y-4">
+            <motion.div variants={itemVariants}>
+              <LiquidGlassCard>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Mic className="w-5 h-5 text-primary" />Hyvo Co-Pilot</CardTitle>
+                  <CardDescription>Voice commands, background automation, and co-host voice. Changes save automatically.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 liquid-glass-panel rounded-xl">
+                    <div><Label htmlFor="wake-enabled" className="font-medium">Wake Word</Label><p className="text-sm text-muted-foreground">Say the wake word to give Hyvo a command</p></div>
+                    <Switch id="wake-enabled" checked={hyvo.wake_word_enabled} onCheckedChange={(v) => void updateHyvo({ wake_word_enabled: v })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wake-word">Wake Word Phrase</Label>
+                    <Input id="wake-word" value={hyvo.wake_word} disabled={!hyvo.wake_word_enabled} onChange={(e) => void updateHyvo({ wake_word: e.target.value.toLowerCase().trim() || 'hyvo' })} placeholder="hyvo" className="liquid-glass-button" />
+                    <p className="text-xs text-muted-foreground">Example: "hyvo, clip that"</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ptt-key">Push-to-Talk Key</Label>
+                    <Input id="ptt-key" value={hyvo.push_to_talk_key} maxLength={1} onChange={(e) => void updateHyvo({ push_to_talk_key: e.target.value.toLowerCase() || 'v' })} className="liquid-glass-button w-24" />
+                    <p className="text-xs text-muted-foreground">Hold Ctrl+Shift+{hyvo.push_to_talk_key.toUpperCase()} to talk without the wake word</p>
+                  </div>
+                  <div className="flex items-center justify-between p-4 liquid-glass-panel rounded-xl">
+                    <div><Label htmlFor="voice-enabled" className="font-medium">Voice Replies</Label><p className="text-sm text-muted-foreground">Hyvo speaks back through ElevenLabs</p></div>
+                    <Switch id="voice-enabled" checked={hyvo.voice_enabled} onCheckedChange={(v) => void updateHyvo({ voice_enabled: v })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="voice-id">Co-Host Voice</Label>
+                    <Select value={hyvo.voice_id} onValueChange={(v) => void updateHyvo({ voice_id: v })}>
+                      <SelectTrigger className="liquid-glass-button"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {HYVO_VOICES.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="autonomy">Autonomy Level</Label>
+                    <Select value={hyvo.autonomy} onValueChange={(v) => void updateHyvo({ autonomy: v as HyvoAutonomy })}>
+                      <SelectTrigger className="liquid-glass-button"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="off">Off — co-pilot disabled</SelectItem>
+                        <SelectItem value="assist">Assist — acts when you ask</SelectItem>
+                        <SelectItem value="autopilot">Autopilot — moderates & answers in the background</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between p-4 liquid-glass-panel rounded-xl">
+                    <div><Label htmlFor="auto-mod" className="font-medium">Auto-Moderate Chat</Label><p className="text-sm text-muted-foreground">Silently screen toxic messages in the background</p></div>
+                    <Switch id="auto-mod" checked={hyvo.auto_moderate} onCheckedChange={(v) => void updateHyvo({ auto_moderate: v })} />
+                  </div>
+                  <div className="flex items-center justify-between p-4 liquid-glass-panel rounded-xl">
+                    <div><Label htmlFor="auto-answer" className="font-medium">Auto-Answer Viewers</Label><p className="text-sm text-muted-foreground">Reply to repetitive viewer questions automatically</p></div>
+                    <Switch id="auto-answer" checked={hyvo.auto_answer} onCheckedChange={(v) => void updateHyvo({ auto_answer: v })} />
+                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-2 pt-2">
+                    <Download className="w-3.5 h-3.5 text-primary" />
+                    Continuous background listening is most reliable in the <a href="/download" className="text-primary hover:underline">desktop app</a>.
+                  </p>
+                </CardContent>
+              </LiquidGlassCard>
+            </motion.div>
+          </TabsContent>
 
           {/* Stream Tab */}
           <TabsContent value="stream" className="space-y-4">
