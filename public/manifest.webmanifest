@@ -1,0 +1,27 @@
+{
+  "name": "Hyvo.ai — AI Streaming Assistant",
+  "short_name": "Hyvo.ai",
+  "description": "Automate streaming with AI. Schedule smarter, engage in real-time, create highlights automatically.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0A0A0F",
+  "background_color": "#0A0A0F",
+  "categories": ["video", "productivity", "entertainment"],
+  "icons": [
+    {
+      "src": "/app-icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon-1024.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
