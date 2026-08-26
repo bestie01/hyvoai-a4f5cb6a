@@ -4,7 +4,7 @@ import { Radio, ArrowRight, Download, Zap, Monitor, Mic, Video, Layers, Wand2, C
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useGitHubReleases } from "@/hooks/useGitHubReleases";
-import heroJarvis from "@/assets/hyvo-jarvis-hero.jpg.asset.json";
+const HERO_JARVIS_URL = "/lovable-uploads/hyvo-jarvis-hero.jpg";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SlideIn } from "@/components/animations/SlideIn";
 import { MagneticButton } from "@/components/animations/MagneticButton";
@@ -263,13 +263,12 @@ const Hero = () => {
                 transition={{ type: "spring", stiffness: 200 }}
               >
                 <img
-                  src={heroJarvis.url}
+                  src={HERO_JARVIS_URL}
                   alt="Hyvo.ai command center — JARVIS-style AI core linking your streaming platforms"
                   className="w-full h-auto object-cover"
                   width={1408}
                   height={768}
                   loading="eager"
-                  fetchPriority="high"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
 
