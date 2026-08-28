@@ -48,6 +48,7 @@ const GeolocationFeatures = React.lazy(() => import("./pages/native/GeolocationF
 const DeviceFeatures = React.lazy(() => import("./pages/native/DeviceFeatures"));
 const Changelog = React.lazy(() => import("./pages/Changelog"));
 const OAuthConsent = React.lazy(() => import("./pages/OAuthConsent"));
+const Cockpit = React.lazy(() => import("./pages/Cockpit"));
 
 // Smarter React Query defaults: avoid refetch storms on focus, reasonable retries
 const queryClient = new QueryClient({
@@ -72,7 +73,7 @@ const isElectron = typeof window !== 'undefined' && (
 const Router = isElectron ? HashRouter : BrowserRouter;
 
 const VALID_PATHS = [
-  '/', '/download', '/pricing', '/dashboard', '/ready-to-stream', '/studio', '/native',
+  '/', '/cockpit', '/download', '/pricing', '/dashboard', '/ready-to-stream', '/studio', '/native',
   '/auth', '/profile', '/subscription', '/subscription-success', '/settings', '/schedule',
   '/growth', '/community', '/create', '/changelog', '/.lovable/oauth/consent'
 ];
@@ -85,7 +86,7 @@ if (isElectron && typeof window !== 'undefined') {
     cleaned.includes('C:') || cleaned.includes('.html') || cleaned.includes('\\') || cleaned.includes('file://');
   if (!cleaned || cleaned === '/' || looksLikeFilePath) {
     // Default desktop landing — RequireAuth will bounce to /auth if not signed in.
-    window.location.hash = '#/dashboard';
+    window.location.hash = '#/cockpit';
   }
 }
 
@@ -144,6 +145,7 @@ const AppRoutes = () => (
             <Route path="/native/device" element={<Page><DeviceFeatures /></Page>} />
 
             {/* In-app (authenticated) routes — wrapped in the persistent AppShell */}
+            <Route path="/cockpit" element={<ErrorBoundary><RequireAuth><Cockpit /></RequireAuth></ErrorBoundary>} />
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
             <Route path="/ready-to-stream" element={<Protected><Dashboard /></Protected>} />
             <Route path="/studio" element={<Protected bleed><StreamingApp /></Protected>} />
