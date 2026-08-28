@@ -92,7 +92,7 @@ export default function Cockpit() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
-      <Seo title="Hyvo Command Center" description="The Hyvo desktop cockpit — live stream telemetry, platform links and voice control in one screen." noindex />
+      <Seo title="Hyvo Command Center" description="The Hyvo desktop cockpit — live stream telemetry, platform links and voice control in one screen." path="/cockpit" />
 
       <AnimatePresence>{booting && <BootSequence onDone={finishBoot} />}</AnimatePresence>
 
