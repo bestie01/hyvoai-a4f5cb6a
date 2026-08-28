@@ -180,18 +180,21 @@ function createWindow() {
   });
   // Deny any permission request (camera/mic come via getUserMedia which is
   // handled by the renderer; OS-level prompts are not needed here).
-  mainWindow.webContents.session.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+  // Hyvo needs the microphone (voice control) and camera (studio capture);
+  // everything else stays denied.
+  mainWindow.webContents.session.setPermissionRequestHandler((_wc, perm, cb) =>
+    cb(perm === 'media' || perm === 'audioCapture' || perm === 'videoCapture'));
 
   if (saved?.maximized) mainWindow.maximize();
   if (saved?.fullScreen) mainWindow.setFullScreen(true);
 
   if (app.isPackaged) {
     const indexPath = path.join(__dirname, '../app/index.html');
-    mainWindow.loadFile(indexPath).catch((err) => {
+    mainWindow.loadFile(indexPath, { hash: '/cockpit' }).catch((err) => {
       dialog.showErrorBox('Failed to Load App', `Could not load the application.\n\n${err.message}`);
     });
   } else {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5173/#/cockpit');
   }
 
   mainWindow.once('ready-to-show', () => {
