@@ -31,6 +31,7 @@ export default function Cockpit() {
   const { status, micActive, toggleListening, supported } = useHyvoAgent();
   const { twitchStats, youtubeStats, startPolling, stopPolling } = useRealPlatformStats();
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
+  const { currentVersion, isDesktop } = useVersionCheck();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
