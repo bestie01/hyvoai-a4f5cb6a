@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Cpu } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { CoreOrb } from "@/components/cockpit/CoreOrb";
 import { SystemRail } from "@/components/cockpit/SystemRail";
@@ -12,6 +12,7 @@ import { BootSequence } from "@/components/cockpit/BootSequence";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { executeHyvoAction } from "@/lib/hyvo/actions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
