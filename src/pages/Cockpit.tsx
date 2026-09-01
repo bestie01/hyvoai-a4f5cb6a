@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Cpu } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { CoreOrb } from "@/components/cockpit/CoreOrb";
 import { SystemRail } from "@/components/cockpit/SystemRail";
@@ -12,6 +12,7 @@ import { BootSequence } from "@/components/cockpit/BootSequence";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { executeHyvoAction } from "@/lib/hyvo/actions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ export default function Cockpit() {
   const { status, micActive, toggleListening, supported } = useHyvoAgent();
   const { twitchStats, youtubeStats, startPolling, stopPolling } = useRealPlatformStats();
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
+  const { currentVersion, isDesktop } = useVersionCheck();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -106,6 +108,11 @@ export default function Cockpit() {
         <header className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
           <span className="inline-flex items-center gap-2 text-[hsl(var(--neon-cyan))]">
             <ShieldCheck className="h-3.5 w-3.5" /> Status: Secure
+          </span>
+          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-border/50 bg-background/40">
+            <Cpu className="h-3 w-3 text-[hsl(var(--neon-cyan))]" />
+            Build <span className="text-foreground">v{currentVersion}</span>
+            <span className="hidden sm:inline text-muted-foreground/70">· {isDesktop ? "Desktop" : "Web"}</span>
           </span>
           <span>Hyvo-AI protocol active</span>
         </header>
