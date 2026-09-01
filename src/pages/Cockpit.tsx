@@ -109,6 +109,11 @@ export default function Cockpit() {
           <span className="inline-flex items-center gap-2 text-[hsl(var(--neon-cyan))]">
             <ShieldCheck className="h-3.5 w-3.5" /> Status: Secure
           </span>
+          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-border/50 bg-background/40">
+            <Cpu className="h-3 w-3 text-[hsl(var(--neon-cyan))]" />
+            Build <span className="text-foreground">v{currentVersion}</span>
+            <span className="hidden sm:inline text-muted-foreground/70">· {isDesktop ? "Desktop" : "Web"}</span>
+          </span>
           <span>Hyvo-AI protocol active</span>
         </header>
 
