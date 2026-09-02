@@ -7,7 +7,9 @@ import { CoreOrb } from "@/components/cockpit/CoreOrb";
 import { SystemRail } from "@/components/cockpit/SystemRail";
 import { LiveRail } from "@/components/cockpit/LiveRail";
 import { PlatformNodes } from "@/components/cockpit/PlatformNodes";
-import { CommandRow } from "@/components/cockpit/CommandRow";
+import { CommandRow, type CommandId } from "@/components/cockpit/CommandRow";
+import { CommandConsole, type ConsoleResult } from "@/components/cockpit/CommandConsole";
+import { DestinationsDialog } from "@/components/cockpit/DestinationsDialog";
 import { BootSequence } from "@/components/cockpit/BootSequence";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
@@ -19,12 +21,24 @@ import { useToast } from "@/hooks/use-toast";
 
 const BOOT_KEY = "hyvo-cockpit-booted";
 
+const LABELS: Record<string, string> = {
+  titles: "Title ideas",
+  icebreakers: "Break the silence",
+  commands: "Chat commands",
+  social: "Go-live post",
+  live: "Broadcast control",
+  clip: "Clip that",
+};
+
 /** Desktop-only JARVIS command center. Every readout is wired to real data. */
 export default function Cockpit() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [booting, setBooting] = useState(() => sessionStorage.getItem(BOOT_KEY) !== "1");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<CommandId | null>(null);
+  const [result, setResult] = useState<ConsoleResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [destOpen, setDestOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
@@ -64,27 +78,115 @@ export default function Cockpit() {
       viewers: (t?.viewers ?? 0) + (y?.viewers ?? 0),
       followers: (t?.followers ?? 0) + (y?.followers ?? 0),
       title: t?.title || y?.title || "",
+      game: (t as { game?: string } | null)?.game || "",
     };
   }, [twitchStats, youtubeStats]);
 
-  const run = useCallback(
-    async (action: "go_live" | "end_stream" | "clip") => {
+  const runAction = useCallback(
+    async (action: "go_live" | "end_stream" | "clip", id: CommandId) => {
       if (!userId) {
-        toast({ title: "Sign in required", variant: "destructive" });
+        setError("Sign in required to control your broadcast.");
         return;
       }
-      setBusy(true);
-      try {
-        const res = await executeHyvoAction(
-          { action, parameters: action === "clip" ? { label: "Cockpit clip" } : {}, speak: "" } as never,
-          { userId, streamId: null },
-        );
-        toast({ title: res.speak, variant: res.ok ? "default" : "destructive" });
-      } finally {
-        setBusy(false);
+      const res = await executeHyvoAction(
+        { action, parameters: action === "clip" ? { label: "Cockpit clip" } : {}, speak: "" } as never,
+        { userId, streamId: null },
+      );
+      toast({ title: res.speak, variant: res.ok ? "default" : "destructive" });
+      if (!res.ok) {
+        setError(res.speak || "Command failed.");
+        return;
       }
+      setResult({ title: LABELS[id] ?? "Done", items: [{ text: res.speak || "Done." }] });
     },
     [userId, toast],
+  );
+
+  const runCopilot = useCallback(
+    async (mode: "icebreakers" | "commands" | "social") => {
+      const { data, error: fnError } = await supabase.functions.invoke("stream-copilot", {
+        body: {
+          mode,
+          streamTitle: live.title || undefined,
+          game: live.game || undefined,
+          audience: live.viewers ? `${live.viewers} live viewers` : undefined,
+        },
+      });
+      if (fnError) throw new Error(fnError.message || "Copilot unavailable.");
+      if (data?.error) throw new Error(data.error);
+
+      if (mode === "icebreakers") {
+        const items = (data?.icebreakers ?? []).map((i: { text: string; tag?: string }) => ({
+          text: i.text,
+          tag: i.tag,
+        }));
+        return { title: LABELS.icebreakers, items };
+      }
+      if (mode === "commands") {
+        const items = (data?.commands ?? []).map((c: { trigger: string; response: string }) => ({
+          text: `${c.trigger} → ${c.response}`,
+          tag: c.mood as string | undefined,
+        }));
+        return { title: LABELS.commands, items };
+      }
+      const items = [
+        data?.twitter && { text: data.twitter as string, tag: "X" },
+        data?.discord && { text: data.discord as string, tag: "Discord" },
+        Array.isArray(data?.hashtags) && data.hashtags.length && {
+          text: (data.hashtags as string[]).join(" "),
+          tag: "Tags",
+        },
+      ].filter(Boolean) as { text: string; tag?: string }[];
+      return { title: LABELS.social, items };
+    },
+    [live.title, live.game, live.viewers],
+  );
+
+  const runTitles = useCallback(async () => {
+    const { data, error: fnError } = await supabase.functions.invoke("ai-title-generator", {
+      body: {
+        game: live.game || live.title || "Live stream",
+        theme: live.title || "engaging gameplay",
+        targetAudience: "gaming enthusiasts",
+      },
+    });
+    if (fnError) throw new Error(fnError.message || "Title generator unavailable.");
+    if (data?.error) throw new Error(data.error);
+    const items = ((data?.titles ?? []) as string[]).map((t) => ({ text: t }));
+    return { title: LABELS.titles, items };
+  }, [live.game, live.title]);
+
+  const onRun = useCallback(
+    async (id: CommandId) => {
+      if (busy) return;
+
+      if (id === "talk") return toggleListening();
+      if (id === "studio") return navigate("/studio");
+      if (id === "dash") return navigate("/dashboard");
+      if (id === "destinations") return setDestOpen(true);
+
+      setBusy(id);
+      setError(null);
+      setResult(null);
+      try {
+        if (id === "live") {
+          await runAction(live.isLive ? "end_stream" : "go_live", id);
+        } else if (id === "clip") {
+          await runAction("clip", id);
+        } else if (id === "titles") {
+          setResult(await runTitles());
+        } else {
+          setResult(await runCopilot(id as "icebreakers" | "commands" | "social"));
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Command failed.";
+        setError(message);
+        toast({ title: message, variant: "destructive" });
+      } finally {
+        setBusy(null);
+      }
+    },
+    [busy, live.isLive, navigate, runAction, runCopilot, runTitles, toggleListening, toast],
   );
 
   const finishBoot = useCallback(() => {
@@ -130,6 +232,7 @@ export default function Cockpit() {
             <PlatformNodes
               twitchConnected={Boolean(twitchConnection?.isConnected)}
               youtubeConnected={Boolean(youtubeConnection?.isConnected)}
+              onOpenDestinations={() => setDestOpen(true)}
             />
           </motion.div>
 
@@ -138,17 +241,20 @@ export default function Cockpit() {
           </motion.div>
         </div>
 
-        <CommandRow
-          isLive={live.isLive}
-          micActive={micActive}
-          busy={busy}
-          onGoLive={() => run(live.isLive ? "end_stream" : "go_live")}
-          onTalk={toggleListening}
-          onClip={() => run("clip")}
-          onStudio={() => navigate("/studio")}
-          onDashboard={() => navigate("/dashboard")}
+        <CommandRow isLive={live.isLive} micActive={micActive} busy={busy} onRun={onRun} />
+
+        <CommandConsole
+          running={busy ? LABELS[busy] ?? null : null}
+          result={result}
+          error={error}
+          onClear={() => {
+            setResult(null);
+            setError(null);
+          }}
         />
       </div>
+
+      <DestinationsDialog open={destOpen} onOpenChange={setDestOpen} />
     </div>
   );
 }
