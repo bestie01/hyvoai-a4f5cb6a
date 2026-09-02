@@ -123,9 +123,9 @@ export default function Cockpit() {
         return { title: LABELS.icebreakers, items };
       }
       if (mode === "commands") {
-        const items = (data?.commands ?? []).map((c: { trigger: string; response: string }) => ({
+        const items = (data?.commands ?? []).map((c: { trigger: string; response: string; mood?: string }) => ({
           text: `${c.trigger} → ${c.response}`,
-          tag: c.mood as string | undefined,
+          tag: c.mood,
         }));
         return { title: LABELS.commands, items };
       }
