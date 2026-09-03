@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GITHUB_CONFIG } from '@/lib/constants';
+import { formatAssetSize, normalizeVersion, pickReleaseAsset, versionFromAssetName } from '@/lib/releaseAssets';
 
 interface ReleaseAsset {
   name: string;
@@ -30,6 +31,8 @@ interface UseGitHubReleasesReturn {
   getAssetUrl: (pattern: string) => string | null;
   getAssetSize: (pattern: string) => string | null;
   getAssetDownloads: (pattern: string) => number | null;
+  /** Version embedded in the resolved asset filename, e.g. "2.3.0". */
+  getAssetVersion: (pattern: string) => string | null;
   refresh: () => Promise<void>;
 }
 
@@ -76,38 +79,35 @@ export const useGitHubReleases = (): UseGitHubReleasesReturn => {
     fetchLatestRelease();
   }, [fetchLatestRelease]);
 
-  const getAssetUrl = useCallback((pattern: string): string | null => {
-    if (!release?.assets) return null;
-    const asset = release.assets.find(a => 
-      a.name.toLowerCase().includes(pattern.toLowerCase())
-    );
-    return asset?.browser_download_url || null;
-  }, [release]);
+  const version = normalizeVersion(release?.tag_name);
 
-  const getAssetSize = useCallback((pattern: string): string | null => {
-    if (!release?.assets) return null;
-    const asset = release.assets.find(a => 
-      a.name.toLowerCase().includes(pattern.toLowerCase())
-    );
-    if (!asset) return null;
-    
-    const bytes = asset.size;
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }, [release]);
+  const find = useCallback(
+    (pattern: string) => pickReleaseAsset(release?.assets, pattern, release?.tag_name),
+    [release],
+  );
 
-  const getAssetDownloads = useCallback((pattern: string): number | null => {
-    if (!release?.assets) return null;
-    const asset = release.assets.find(a => 
-      a.name.toLowerCase().includes(pattern.toLowerCase())
-    );
-    return asset?.download_count ?? null;
-  }, [release]);
+  const getAssetUrl = useCallback(
+    (pattern: string) => find(pattern)?.browser_download_url ?? null,
+    [find],
+  );
+
+  const getAssetSize = useCallback((pattern: string) => {
+    const asset = find(pattern);
+    return asset ? formatAssetSize(asset.size) : null;
+  }, [find]);
+
+  const getAssetDownloads = useCallback(
+    (pattern: string) => find(pattern)?.download_count ?? null,
+    [find],
+  );
+
+  const getAssetVersion = useCallback((pattern: string) => {
+    const asset = find(pattern);
+    return asset ? versionFromAssetName(asset.name) ?? version : null;
+  }, [find, version]);
 
   return {
-    latestVersion: release?.tag_name?.replace('v', '') || null,
+    latestVersion: version,
     releaseUrl: release?.html_url || null,
     releaseDate: release?.published_at || null,
     releaseNotes: release?.body || null,
@@ -118,6 +118,7 @@ export const useGitHubReleases = (): UseGitHubReleasesReturn => {
     getAssetUrl,
     getAssetSize,
     getAssetDownloads,
+    getAssetVersion,
     refresh: fetchLatestRelease,
   };
 };
