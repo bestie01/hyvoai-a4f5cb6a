@@ -60,6 +60,15 @@ export function DestinationsDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/40 px-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            {destinations.filter((d) => d.is_enabled).length} of {destinations.length} configured destinations live
+          </p>
+          <Button size="sm" variant="outline" onClick={() => void enableAll()} disabled={!destinations.length}>
+            <Check className="mr-1.5 h-3.5 w-3.5" /> Enable all
+          </Button>
+        </div>
+
         <ScrollArea className="max-h-[60vh] pr-3">
           <div className="space-y-2">
             {STREAMING_PLATFORMS.map((p) => {
