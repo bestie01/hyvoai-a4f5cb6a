@@ -110,6 +110,8 @@ const DownloadPage = () => {
     hasReleases,
     getAssetUrl,
     getAssetSize,
+    getAssetVersion,
+
     getAssetDownloads,
   } = useGitHubReleases();
 
