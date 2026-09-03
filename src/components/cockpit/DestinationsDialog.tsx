@@ -17,7 +17,7 @@ interface Props {
 
 /** Connect Hyvo to every known streaming service — OAuth or RTMP ingest. */
 export function DestinationsDialog({ open, onOpenChange }: Props) {
-  const { destinations, loading, save, toggle, remove } = useStreamDestinations();
+  const { destinations, loading, save, toggle, remove, enableAll } = useStreamDestinations();
   const { twitchConnection, youtubeConnection, connectTwitch, connectYouTube } = usePlatformOAuth();
   const [editing, setEditing] = useState<string | null>(null);
   const [url, setUrl] = useState("");
