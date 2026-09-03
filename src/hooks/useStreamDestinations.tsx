@@ -88,5 +88,24 @@ export function useStreamDestinations() {
     [toast],
   );
 
-  return { destinations, loading, refresh, save, toggle, remove };
+  /** Turn every configured destination into a live broadcast target. */
+  const enableAll = useCallback(async () => {
+    const targets = destinations.filter((d) => !d.is_enabled && d.stream_key);
+    if (!targets.length) {
+      toast({ title: "All destinations already live" });
+      return;
+    }
+    const { error } = await supabase
+      .from("platform_streaming_configs")
+      .update({ is_enabled: true, updated_at: new Date().toISOString() })
+      .in("id", targets.map((d) => d.id));
+    if (error) {
+      toast({ title: "Could not enable destinations", description: error.message, variant: "destructive" });
+      return;
+    }
+    setDestinations((prev) => prev.map((d) => (d.stream_key ? { ...d, is_enabled: true } : d)));
+    toast({ title: `${targets.length} destination${targets.length > 1 ? "s" : ""} enabled` });
+  }, [destinations, toast]);
+
+  return { destinations, loading, refresh, save, toggle, remove, enableAll };
 }
