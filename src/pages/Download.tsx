@@ -110,6 +110,8 @@ const DownloadPage = () => {
     hasReleases,
     getAssetUrl,
     getAssetSize,
+    getAssetVersion,
+
     getAssetDownloads,
   } = useGitHubReleases();
 
@@ -283,12 +285,19 @@ const DownloadPage = () => {
                 let downloadUrl: string | null = null;
                 let size: string | null = null;
                 let downloads: number | null = null;
+                let assetVersion: string | null = null;
 
                 for (const pattern of platform.patterns) {
                   downloadUrl = getAssetUrl(pattern);
-                  if (downloadUrl) { size = getAssetSize(pattern); downloads = getAssetDownloads(pattern); break; }
+                  if (downloadUrl) { size = getAssetSize(pattern); downloads = getAssetDownloads(pattern); assetVersion = getAssetVersion(pattern); break; }
                 }
-                if (!downloadUrl) { downloadUrl = getAssetUrl(platform.fileExt); size = getAssetSize(platform.fileExt); downloads = getAssetDownloads(platform.fileExt); }
+                if (!downloadUrl) {
+                  downloadUrl = getAssetUrl(platform.fileExt);
+                  size = getAssetSize(platform.fileExt);
+                  downloads = getAssetDownloads(platform.fileExt);
+                  assetVersion = getAssetVersion(platform.fileExt);
+                }
+
 
                 const isAvailable = !!downloadUrl;
                 const isRecommended = platform.osKey === userOS;
