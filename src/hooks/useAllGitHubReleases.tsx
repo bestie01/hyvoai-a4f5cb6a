@@ -40,7 +40,20 @@ export const useAllGitHubReleases = () => {
       }
 
       const data: GitHubRelease[] = await response.json();
-      setReleases(data.filter(r => !r.draft));
+      // Strip assets that belong to an older build but were uploaded into this
+      // release (e.g. leftover 2.2.0 installers inside the v2.3.0 release).
+      const cleaned = data
+        .filter((r) => !r.draft)
+        .map((r) => {
+          const version = normalizeVersion(r.tag_name);
+          if (!version) return r;
+          const scoped = r.assets.filter(
+            (a) => !versionFromAssetName(a.name) || a.name.includes(version),
+          );
+          return { ...r, assets: scoped.length ? scoped : r.assets };
+        });
+      setReleases(cleaned);
+
     } catch (err) {
       console.error('Failed to fetch GitHub releases:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch releases');
