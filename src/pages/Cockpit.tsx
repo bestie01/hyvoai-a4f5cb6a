@@ -11,11 +11,13 @@ import { CommandRow, type CommandId } from "@/components/cockpit/CommandRow";
 import { CommandConsole, type ConsoleResult } from "@/components/cockpit/CommandConsole";
 import { DestinationsDialog } from "@/components/cockpit/DestinationsDialog";
 import { BootSequence } from "@/components/cockpit/BootSequence";
+import { ActivityFeed } from "@/components/cockpit/ActivityFeed";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
+import { useLiveChat } from "@/hooks/useLiveChat";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
-import { executeHyvoAction } from "@/lib/hyvo/actions";
+import { executeHyvoAction, logHyvoEvent } from "@/lib/hyvo/actions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +30,8 @@ const LABELS: Record<string, string> = {
   social: "Go-live post",
   live: "Broadcast control",
   clip: "Clip that",
+  sentiment: "Chat mood",
+  growth: "What should I do next",
 };
 
 /** Desktop-only JARVIS command center. Every readout is wired to real data. */
@@ -43,6 +47,7 @@ export default function Cockpit() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
   const { status, micActive, toggleListening, supported } = useHyvoAgent();
+  const { messages: chatMessages } = useLiveChat();
   const { twitchStats, youtubeStats, startPolling, stopPolling } = useRealPlatformStats();
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
   const { currentVersion, isDesktop } = useVersionCheck();
@@ -156,6 +161,35 @@ export default function Cockpit() {
     return { title: LABELS.titles, items };
   }, [live.game, live.title]);
 
+  const runSentiment = useCallback(async () => {
+    const recent = chatMessages.slice(-60).map((m) => ({ username: m.username, message: m.message }));
+    if (recent.length === 0) throw new Error("No chat captured yet — connect a platform and wait for messages.");
+    const { data, error: fnError } = await supabase.functions.invoke("ai-chat-analysis", {
+      body: { messages: recent },
+    });
+    if (fnError) throw new Error(fnError.message || "Chat analysis unavailable.");
+    if (data?.error) throw new Error(data.error);
+    const a = (data?.analysis ?? data) as Record<string, unknown>;
+    const items = Object.entries(a)
+      .filter(([, v]) => typeof v === "string" || typeof v === "number")
+      .map(([k, v]) => ({ tag: k.replace(/_/g, " "), text: String(v) }));
+    return { title: LABELS.sentiment, items: items.length ? items : [{ text: "Chat looks steady — nothing notable." }] };
+  }, [chatMessages]);
+
+  const runGrowth = useCallback(async () => {
+    const { data, error: fnError } = await supabase.functions.invoke("ai-predictive-analytics", { body: {} });
+    if (fnError) throw new Error(fnError.message || "Growth insights unavailable.");
+    if (data?.error) throw new Error(data.error);
+    const items = [
+      ...((data?.recommendations ?? []) as { title: string; description: string; impact?: string }[]).map((r) => ({
+        tag: r.impact,
+        text: `${r.title} — ${r.description}`,
+      })),
+      ...((data?.insights ?? []) as string[]).map((t) => ({ text: t })),
+    ];
+    return { title: LABELS.growth, items: items.length ? items : [{ text: "Not enough stream history yet." }] };
+  }, []);
+
   const onRun = useCallback(
     async (id: CommandId) => {
       if (busy) return;
@@ -175,8 +209,15 @@ export default function Cockpit() {
           await runAction("clip", id);
         } else if (id === "titles") {
           setResult(await runTitles());
+        } else if (id === "sentiment") {
+          setResult(await runSentiment());
+        } else if (id === "growth") {
+          setResult(await runGrowth());
         } else {
           setResult(await runCopilot(id as "icebreakers" | "commands" | "social"));
+        }
+        if (userId && id !== "live" && id !== "clip") {
+          void logHyvoEvent({ userId, streamId: null }, { kind: "ai", summary: `${LABELS[id] ?? id} generated` });
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Command failed.";
@@ -186,7 +227,7 @@ export default function Cockpit() {
         setBusy(null);
       }
     },
-    [busy, live.isLive, navigate, runAction, runCopilot, runTitles, toggleListening, toast],
+    [busy, live.isLive, navigate, runAction, runCopilot, runGrowth, runSentiment, runTitles, toggleListening, toast, userId],
   );
 
   const finishBoot = useCallback(() => {
@@ -252,6 +293,8 @@ export default function Cockpit() {
             setError(null);
           }}
         />
+
+        <ActivityFeed />
       </div>
 
       <DestinationsDialog open={destOpen} onOpenChange={setDestOpen} />
