@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GITHUB_CONFIG } from '@/lib/constants';
+import { normalizeVersion, versionFromAssetName } from '@/lib/releaseAssets';
 
 export interface ReleaseAsset {
   name: string;
