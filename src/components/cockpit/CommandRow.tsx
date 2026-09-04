@@ -29,6 +29,9 @@ export function CommandRow({ isLive, micActive, busy, onRun }: CommandRowProps) 
     { id: "icebreakers" as const, label: "Break the silence", icon: MessageSquareQuote },
     { id: "commands" as const, label: "Chat commands", icon: Terminal },
     { id: "social" as const, label: "Go-live post", icon: Megaphone },
+    { id: "sentiment" as const, label: "Chat mood", icon: HeartPulse },
+    { id: "growth" as const, label: "What next?", icon: TrendingUp },
+
   ];
 
   const render = (items: { id: CommandId; label: string; icon: any; primary?: boolean }[]) =>
