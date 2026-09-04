@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Loader2, Mic, MicOff, Radio, Scissors, SlidersHorizontal, LayoutDashboard, Sparkles, MessageSquareQuote, Terminal, Megaphone, Plug } from "lucide-react";
+import { Loader2, Mic, MicOff, Radio, Scissors, SlidersHorizontal, LayoutDashboard, Sparkles, MessageSquareQuote, Terminal, Megaphone, Plug, HeartPulse, TrendingUp } from "lucide-react";
 
 export type CommandId =
   | "live" | "talk" | "clip" | "studio" | "dash" | "destinations"
-  | "titles" | "icebreakers" | "commands" | "social";
+  | "titles" | "icebreakers" | "commands" | "social" | "sentiment" | "growth";
+
 
 interface CommandRowProps {
   isLive: boolean;
@@ -28,6 +29,9 @@ export function CommandRow({ isLive, micActive, busy, onRun }: CommandRowProps) 
     { id: "icebreakers" as const, label: "Break the silence", icon: MessageSquareQuote },
     { id: "commands" as const, label: "Chat commands", icon: Terminal },
     { id: "social" as const, label: "Go-live post", icon: Megaphone },
+    { id: "sentiment" as const, label: "Chat mood", icon: HeartPulse },
+    { id: "growth" as const, label: "What next?", icon: TrendingUp },
+
   ];
 
   const render = (items: { id: CommandId; label: string; icon: any; primary?: boolean }[]) =>
