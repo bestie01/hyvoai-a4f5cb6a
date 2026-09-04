@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Loader2, Mic, MicOff, Radio, Scissors, SlidersHorizontal, LayoutDashboard, Sparkles, MessageSquareQuote, Terminal, Megaphone, Plug } from "lucide-react";
+import { Loader2, Mic, MicOff, Radio, Scissors, SlidersHorizontal, LayoutDashboard, Sparkles, MessageSquareQuote, Terminal, Megaphone, Plug, HeartPulse, TrendingUp } from "lucide-react";
 
 export type CommandId =
   | "live" | "talk" | "clip" | "studio" | "dash" | "destinations"
-  | "titles" | "icebreakers" | "commands" | "social";
+  | "titles" | "icebreakers" | "commands" | "social" | "sentiment" | "growth";
+
 
 interface CommandRowProps {
   isLive: boolean;
