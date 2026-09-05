@@ -100,8 +100,9 @@ function ElectronRouteGuard({ children }: { children: React.ReactNode }) {
     const isValidRoute = path === '/' || VALID_PATHS.some(p => path === p || path.startsWith(p + '/'));
 
     if (isFilePath || !isValidRoute) {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/cockpit" replace />;
     }
+
   }
 
   return <>{children}</>;
