@@ -130,7 +130,9 @@ const AppRoutes = () => (
         <PageTransition>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Page><Index /></Page>} />
+            {/* Desktop app never shows the marketing site — it boots into the cockpit */}
+            <Route path="/" element={isElectron ? <Navigate to="/cockpit" replace /> : <Page><Index /></Page>} />
+
             <Route path="/download" element={<Page><Download /></Page>} />
             <Route path="/pricing" element={<Page><Pricing /></Page>} />
             <Route path="/auth" element={<Page><Auth /></Page>} />
