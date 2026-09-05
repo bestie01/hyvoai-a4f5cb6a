@@ -1,15 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Radio, ArrowRight, Download, Zap, Monitor, Mic, Video, Layers, Wand2, ChevronRight } from "lucide-react";
+import { Radio, ArrowRight, Download, Monitor, Mic, Video, Layers, Wand2, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useGitHubReleases } from "@/hooks/useGitHubReleases";
-const HERO_JARVIS_URL = "/lovable-uploads/hyvo-jarvis-hero.jpg";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { SlideIn } from "@/components/animations/SlideIn";
 import { MagneticButton } from "@/components/animations/MagneticButton";
-import { RippleEffect } from "@/components/effects/RippleEffect";
 import { motion } from "framer-motion";
+
+const HERO_JARVIS_URL = "/lovable-uploads/hyvo-jarvis-hero.jpg";
 
 const VersionBadge = () => {
   const { latestVersion, isLoading } = useGitHubReleases();
@@ -30,300 +29,165 @@ const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const streamlabsFeatures = [
+  const capabilities = [
     { icon: Monitor, label: "Multi-Platform" },
-    { icon: Mic, label: "Pro Audio" },
+    { icon: Mic, label: "Voice Co-Pilot" },
     { icon: Video, label: "Scene Manager" },
     { icon: Layers, label: "Sources" },
     { icon: Wand2, label: "AI Tools" },
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-hero overflow-hidden">
-      {/* Mesh gradient background */}
-      <div className="absolute inset-0 bg-mesh opacity-80" />
-
-      {/* Animated grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.15)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.15)_1px,transparent_1px)] bg-[size:5rem_5rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,#000_60%,transparent_100%)]" />
-
-      {/* Floating orbs */}
-      <motion.div
-        className="absolute top-[15%] left-[10%] w-64 h-64 bg-primary/20 rounded-full blur-[80px]"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-          x: [0, 20, 0],
-          y: [0, -20, 0],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute bottom-[20%] right-[15%] w-80 h-80 bg-accent/15 rounded-full blur-[100px]"
-        animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.2, 0.4, 0.2],
-          x: [0, -30, 0],
-          y: [0, 20, 0],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2,
-        }}
-      />
-      <motion.div
-        className="absolute top-[40%] right-[30%] w-48 h-48 bg-primary/10 rounded-full blur-[60px]"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.35, 0.2],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1,
-        }}
-      />
-
-      <div className="container mx-auto px-6 relative z-10 pt-24">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-          {/* Left column - Content */}
-          <FadeIn className="text-center lg:text-left space-y-10">
-            {/* Badge */}
-            <motion.div
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Badge
-                variant="secondary"
-                className="inline-flex items-center gap-2 py-2.5 px-5 glass-strong rounded-full border-primary/20"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                <span className="font-semibold tracking-wide text-sm">AI-Powered Streaming Assistant</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </Badge>
-              <VersionBadge />
-            </motion.div>
-
-            <div className="space-y-8">
-              {/* Logo */}
-              <div className="flex items-center gap-5 justify-center lg:justify-start">
-                <motion.div
-                  className="w-20 h-20 flex items-center justify-center bg-gradient-primary rounded-2xl p-4 shadow-glow-primary"
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <img
-                    src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.webp"
-                    alt="Hyvo.ai Logo"
-                    className="w-full h-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0"
-                  />
-                </motion.div>
-              </div>
-
-              {/* Headline */}
-              <h1 className="text-5xl lg:text-7xl xl:text-8xl font-display font-extrabold leading-[1.05] tracking-tight">
-                <motion.span
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-foreground inline-block"
-                >
-                  Streaming is
-                </motion.span>
-                <br />
-                <motion.span
-                  className="text-gradient-primary inline-block"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  hard.
-                </motion.span>
-              </h1>
-
-              {/* Subheadline */}
-              <motion.p
-                className="text-xl lg:text-2xl text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                Your <span className="text-foreground font-semibold">AI co-pilot</span> makes it easier.
-                Real-time assistance, post-stream insights, and smarter growth.
-              </motion.p>
-            </div>
-
-            {/* Feature pills */}
-            <motion.div
-              className="flex flex-wrap gap-3 justify-center lg:justify-start"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              {streamlabsFeatures.map((feature, idx) => (
-                <motion.div
-                  key={feature.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.7 + idx * 0.08 }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-card/80 border border-border/60 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-card transition-all duration-300 cursor-default shadow-soft"
-                >
-                  <feature.icon className="w-4 h-4 text-primary" />
-                  {feature.label}
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <MagneticButton>
-                <Button
-                  size="lg"
-                  className="group bg-gradient-primary hover:shadow-glow-primary-strong transition-all duration-500 font-bold text-lg px-10 py-7 rounded-2xl text-primary-foreground"
-                  onClick={() => (user ? navigate("/studio") : navigate("/auth"))}
-                >
-                  <Radio className="w-5 h-5 mr-2.5 group-hover:scale-110 transition-transform animate-pulse" />
-                  {user ? "Open Studio" : "Start Streaming with AI"}
-                  <ArrowRight className="w-5 h-5 ml-2.5 group-hover:translate-x-1.5 transition-transform" />
-                </Button>
-              </MagneticButton>
-              <MagneticButton>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="glass-strong hover:bg-primary/5 border-border/60 hover:border-primary/50 font-bold text-lg px-10 py-7 rounded-2xl transition-all duration-500 group"
-                  onClick={() => navigate("/download")}
-                >
-                  <Download className="w-5 h-5 mr-2.5 group-hover:scale-110 transition-transform" />
-                  Download App
-                </Button>
-              </MagneticButton>
-            </motion.div>
-
-            {/* Desktop co-pilot note */}
-            <motion.p
-              className="text-sm text-muted-foreground/90 flex items-center gap-2 justify-center lg:justify-start"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-            >
-              <Mic className="w-4 h-4 text-primary" />
-              The full always-on voice co-pilot runs in the{" "}
-              <button onClick={() => navigate("/download")} className="text-primary font-semibold hover:underline">
-                desktop app
-              </button>
-              .
-            </motion.p>
-
-            {/* Trust badges */}
-            <motion.div
-              className="flex items-center gap-8 justify-center lg:justify-start text-sm text-muted-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-2 h-2 bg-success rounded-full animate-pulse shadow-glow-success" />
-                <span className="font-medium">Free forever tier</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <div className="w-2 h-2 bg-success rounded-full animate-pulse shadow-glow-success" />
-                <span className="font-medium">No credit card</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Zap className="w-4 h-4 text-warning" />
-                <span className="font-medium">AI-powered</span>
-              </div>
-            </motion.div>
-          </FadeIn>
-
-          {/* Right column - Dashboard preview */}
-          <FadeIn delay={0.4} className="relative">
-            <RippleEffect>
-              <motion.div
-                className="relative overflow-hidden rounded-3xl glass-strong hover-lift transition-all duration-700 hover:shadow-glow-primary border border-border/50"
-                whileHover={{ scale: 1.01 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                <img
-                  src={HERO_JARVIS_URL}
-                  alt="Hyvo.ai command center — JARVIS-style AI core linking your streaming platforms"
-                  className="w-full h-auto object-cover"
-                  width={1408}
-                  height={768}
-                  loading="eager"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
-
-                {/* Live indicator */}
-                <SlideIn direction="right" delay={0.6} className="absolute top-6 right-6">
-                  <div className="glass-strong p-4 rounded-xl border border-destructive/40 shadow-large">
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-                      </span>
-                      <span className="text-foreground font-bold tracking-wide">LIVE</span>
-                      <span className="text-muted-foreground font-medium">1,247 viewers</span>
-                    </div>
-                  </div>
-                </SlideIn>
-
-                {/* Co-pilot card */}
-                <SlideIn direction="left" delay={0.8} className="absolute bottom-6 left-6">
-                  <div className="glass-strong p-5 rounded-xl border border-primary/30 shadow-large">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow-primary">
-                        <Mic className="w-7 h-7 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <div className="text-base font-bold text-foreground">Hyvo Co-Pilot</div>
-                        <div className="text-sm text-success font-semibold flex items-center gap-1.5">
-                          <span className="w-2 h-2 bg-success rounded-full animate-pulse"></span>
-                          Voice Active • Listening
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </SlideIn>
-
-                {/* AI indicator */}
-                <SlideIn direction="up" delay={1} className="absolute bottom-6 right-6">
-                  <div className="glass-strong p-4 rounded-xl border border-accent/30 shadow-large">
-                    <div className="flex items-center gap-2.5 text-sm">
-                      <Wand2 className="w-4 h-4 text-accent" />
-                      <span className="text-foreground font-semibold">AI Active</span>
-                    </div>
-                  </div>
-                </SlideIn>
-              </motion.div>
-            </RippleEffect>
-
-            {/* Enhanced glow effect */}
-            <div className="absolute -inset-8 bg-gradient-primary rounded-[2rem] opacity-10 blur-[60px] animate-pulse-glow -z-10" />
-          </FadeIn>
-        </div>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+      {/* Full-bleed holographic core */}
+      <div className="absolute inset-0">
+        <img
+          src={HERO_JARVIS_URL}
+          alt="Hyvo.ai holographic AI core linking Twitch, YouTube and Kick"
+          className="h-full w-full object-cover object-center"
+          width={1408}
+          height={768}
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-background/55" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_45%,transparent_10%,hsl(var(--background)/0.85)_75%,hsl(var(--background))_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-background via-background/80 to-transparent" />
       </div>
 
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+      {/* Scan grid */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.12)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.12)_1px,transparent_1px)] bg-[size:5rem_5rem] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,#000_55%,transparent_100%)]" />
+
+      {/* Breathing core glow */}
+      <motion.div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[38rem] w-[38rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[120px]"
+        animate={{ scale: [1, 1.12, 1], opacity: [0.35, 0.6, 0.35] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="container relative z-10 mx-auto px-6 pt-28 pb-20">
+        <FadeIn className="mx-auto flex max-w-4xl flex-col items-center gap-8 text-center">
+          <motion.div
+            className="flex flex-wrap items-center justify-center gap-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Badge
+              variant="secondary"
+              className="inline-flex items-center gap-2 rounded-full border-primary/25 glass-strong px-5 py-2.5"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              <span className="text-sm font-semibold tracking-wide">AI-Powered Streaming Assistant</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Badge>
+            <VersionBadge />
+          </motion.div>
+
+          <div className="flex items-center gap-4">
+            <motion.div
+              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary p-3.5 shadow-glow-primary"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <img
+                src="/lovable-uploads/93a389d8-e3c0-4363-b3f4-63260a76d2e6.webp"
+                alt="Hyvo.ai logo"
+                className="h-full w-full object-contain brightness-0 invert dark:brightness-100 dark:invert-0"
+              />
+            </motion.div>
+            <span className="font-display text-3xl font-extrabold tracking-tight text-foreground">Hyvo.ai</span>
+          </div>
+
+          <motion.h1
+            className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight lg:text-7xl xl:text-8xl"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <span className="text-foreground">Streaming is</span>
+            <br />
+            <span className="text-gradient-primary">hard.</span>
+          </motion.h1>
+
+          <motion.p
+            className="max-w-2xl text-xl font-medium leading-relaxed text-muted-foreground lg:text-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+          >
+            Your <span className="font-semibold text-foreground">AI co-pilot</span> makes it easier. Real-time
+            assistance, post-stream insights, and smarter growth.
+          </motion.p>
+
+          <motion.div
+            className="flex flex-wrap justify-center gap-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+          >
+            {capabilities.map((feature, idx) => (
+              <motion.div
+                key={feature.label}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.65 + idx * 0.07 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                className="flex cursor-default items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2.5 text-sm font-medium text-muted-foreground backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:text-foreground"
+              >
+                <feature.icon className="h-4 w-4 text-primary" />
+                {feature.label}
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
+            className="flex flex-col gap-4 sm:flex-row"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75 }}
+          >
+            <MagneticButton>
+              <Button
+                size="lg"
+                className="group rounded-2xl bg-gradient-primary px-10 py-7 text-lg font-bold text-primary-foreground transition-all duration-500 hover:shadow-glow-primary-strong"
+                onClick={() => (user ? navigate("/studio") : navigate("/auth"))}
+              >
+                <Radio className="mr-2.5 h-5 w-5 animate-pulse transition-transform group-hover:scale-110" />
+                {user ? "Open Studio" : "Start Streaming with AI"}
+                <ArrowRight className="ml-2.5 h-5 w-5 transition-transform group-hover:translate-x-1.5" />
+              </Button>
+            </MagneticButton>
+            <MagneticButton>
+              <Button
+                variant="outline"
+                size="lg"
+                className="group glass-strong rounded-2xl border-border/60 px-10 py-7 text-lg font-bold transition-all duration-500 hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => navigate("/download")}
+              >
+                <Download className="mr-2.5 h-5 w-5 transition-transform group-hover:scale-110" />
+                Download Desktop App
+              </Button>
+            </MagneticButton>
+          </motion.div>
+
+          <motion.p
+            className="flex items-center gap-2 text-sm text-muted-foreground/90"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+          >
+            <Mic className="h-4 w-4 text-primary" />
+            The always-on voice co-pilot lives in the{" "}
+            <button onClick={() => navigate("/download")} className="font-semibold text-primary hover:underline">
+              desktop command center
+            </button>
+            .
+          </motion.p>
+        </FadeIn>
+      </div>
     </section>
   );
 };
