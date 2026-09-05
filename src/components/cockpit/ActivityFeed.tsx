@@ -51,7 +51,7 @@ export function ActivityFeed() {
   }, []);
 
   return (
-    <section className="mx-auto w-full max-w-3xl rounded-2xl border border-border/50 bg-background/40 p-4 backdrop-blur-xl">
+    <section className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-border/50 bg-background/40 p-4 backdrop-blur-xl">
       <header className="flex items-center gap-2 border-b border-border/40 pb-2.5 font-mono text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--neon-cyan))]">
         <History className="h-3 w-3" /> Activity log
       </header>
@@ -61,7 +61,7 @@ export function ActivityFeed() {
           Nothing logged yet
         </p>
       ) : (
-        <ul className="mt-3 max-h-56 space-y-1 overflow-y-auto pr-1">
+        <ul className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
           <AnimatePresence initial={false}>
             {rows.map((r) => (
               <motion.li

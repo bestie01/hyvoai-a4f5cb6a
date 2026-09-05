@@ -45,7 +45,7 @@ export function CommandConsole({ running, result, error, onClear }: CommandConso
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       aria-live="polite"
-      className="mx-auto w-full max-w-3xl rounded-2xl border border-border/50 bg-background/40 p-4 backdrop-blur-xl"
+      className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-border/50 bg-background/40 p-4 backdrop-blur-xl"
     >
       <header className="flex items-center justify-between gap-3 border-b border-border/40 pb-2.5">
         <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--neon-cyan))]">
