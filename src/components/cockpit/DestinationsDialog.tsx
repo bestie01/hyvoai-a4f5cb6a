@@ -73,17 +73,28 @@ export function DestinationsDialog({ open, onOpenChange }: Props) {
           <div className="space-y-2">
             {STREAMING_PLATFORMS.map((p) => {
               const dest = byPlatform[p.id];
-              const linked = p.auth === "oauth" ? oauthState(p.id) || Boolean(dest) : Boolean(dest);
+              const oauthLinked = p.auth === "oauth" && oauthState(p.id);
+              const linked = p.auth === "oauth" ? oauthLinked || Boolean(dest) : Boolean(dest);
+              const ready = oauthLinked || Boolean(dest?.stream_key && dest.is_enabled);
+              const state = ready
+                ? { text: "Ready to broadcast", cls: "text-emerald-400" }
+                : dest?.stream_key
+                  ? { text: "Key saved — switch it on", cls: "text-amber-400" }
+                  : p.auth === "oauth"
+                    ? { text: "Needs sign-in", cls: "text-muted-foreground" }
+                    : { text: "Needs a stream key", cls: "text-muted-foreground" };
               return (
                 <div key={p.id} className="rounded-xl border border-border/50 bg-background/40 p-3">
                   <div className="flex items-center gap-3">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ background: p.accent }} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{p.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {linked ? (dest ? dest.rtmp_url || "Linked account" : "Linked account") : p.keyHint}
+                      <p className={`truncate text-xs ${state.cls}`}>
+                        {state.text}
+                        <span className="text-muted-foreground/70"> · {dest?.rtmp_url || p.keyHint}</span>
                       </p>
                     </div>
+
 
                     {dest && (
                       <Switch
