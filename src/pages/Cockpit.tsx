@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck, Cpu } from "lucide-react";
 import { Seo } from "@/components/Seo";
+import { HudFrame } from "@/components/cockpit/HudFrame";
 import { CoreOrb } from "@/components/cockpit/CoreOrb";
+import { VoiceStrip } from "@/components/cockpit/VoiceStrip";
 import { SystemRail } from "@/components/cockpit/SystemRail";
 import { LiveRail } from "@/components/cockpit/LiveRail";
 import { PlatformNodes } from "@/components/cockpit/PlatformNodes";
@@ -16,6 +18,7 @@ import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useLiveChat } from "@/hooks/useLiveChat";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
+import { useStreamDestinations } from "@/hooks/useStreamDestinations";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { executeHyvoAction, logHyvoEvent } from "@/lib/hyvo/actions";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,10 +49,14 @@ export default function Cockpit() {
   const [userId, setUserId] = useState<string | null>(null);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
-  const { status, micActive, toggleListening, supported } = useHyvoAgent();
+  const {
+    status, micActive, toggleListening, supported,
+    transcript, lastReply, ask, settings,
+  } = useHyvoAgent();
   const { messages: chatMessages } = useLiveChat();
   const { twitchStats, youtubeStats, startPolling, stopPolling } = useRealPlatformStats();
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
+  const { destinations } = useStreamDestinations();
   const { currentVersion, isDesktop } = useVersionCheck();
 
   useEffect(() => {
@@ -64,16 +71,21 @@ export default function Cockpit() {
     return () => stopPolling();
   }, [twitchConnection?.isConnected, youtubeConnection?.isConnected, startPolling, stopPolling]);
 
+  // Subtle parallax — paused while the mic is hot so the HUD stays readable.
   useEffect(() => {
+    if (micActive) {
+      setParallax({ x: 0, y: 0 });
+      return;
+    }
     const onMove = (e: MouseEvent) => {
       setParallax({
-        x: (e.clientX / window.innerWidth - 0.5) * 14,
-        y: (e.clientY / window.innerHeight - 0.5) * 14,
+        x: (e.clientX / window.innerWidth - 0.5) * 10,
+        y: (e.clientY / window.innerHeight - 0.5) * 10,
       });
     };
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
-  }, []);
+  }, [micActive]);
 
   const live = useMemo(() => {
     const t = twitchStats;
@@ -86,6 +98,20 @@ export default function Cockpit() {
       game: (t as { game?: string } | null)?.game || "",
     };
   }, [twitchStats, youtubeStats]);
+
+  /** Pre-flight: how many destinations can actually receive the broadcast. */
+  const readiness = useMemo(() => {
+    const ids = new Set<string>();
+    destinations.forEach((d) => {
+      if (d.is_enabled && d.stream_key) ids.add(d.platform);
+    });
+    if (twitchConnection?.isConnected) ids.add("twitch");
+    if (youtubeConnection?.isConnected) ids.add("youtube");
+    const configured = new Set<string>(destinations.map((d) => d.platform));
+    if (twitchConnection?.isConnected) configured.add("twitch");
+    if (youtubeConnection?.isConnected) configured.add("youtube");
+    return { ready: ids.size, total: configured.size };
+  }, [destinations, twitchConnection?.isConnected, youtubeConnection?.isConnected]);
 
   const runAction = useCallback(
     async (action: "go_live" | "end_stream" | "clip", id: CommandId) => {
@@ -235,38 +261,48 @@ export default function Cockpit() {
     setBooting(false);
   }, []);
 
+  const pttHint = `Ctrl+Shift+${(settings?.push_to_talk_key || "V").toUpperCase()}`;
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative h-screen overflow-hidden bg-background">
       <Seo title="Hyvo Command Center" description="The Hyvo desktop cockpit — live stream telemetry, platform links and voice control in one screen." path="/cockpit" />
 
       <AnimatePresence>{booting && <BootSequence onDone={finishBoot} />}</AnimatePresence>
 
-      {/* Ambient mesh */}
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute left-1/2 top-1/2 h-[46rem] w-[46rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,hsl(var(--neon-cyan)/0.12),transparent_65%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--border)/0.25)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border)/0.25)_1px,transparent_1px)] [background-size:56px_56px] opacity-30" />
-      </div>
+      <HudFrame />
 
-      <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-5 py-8">
-        <header className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+      <div className="relative flex h-full flex-col gap-4 px-5 py-4">
+        <header className="flex shrink-0 items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
           <span className="inline-flex items-center gap-2 text-[hsl(var(--neon-cyan))]">
             <ShieldCheck className="h-3.5 w-3.5" /> Status: Secure
           </span>
-          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-border/50 bg-background/40">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-background/40 px-2.5 py-1">
             <Cpu className="h-3 w-3 text-[hsl(var(--neon-cyan))]" />
             Build <span className="text-foreground">v{currentVersion}</span>
-            <span className="hidden sm:inline text-muted-foreground/70">· {isDesktop ? "Desktop" : "Web"}</span>
+            <span className="hidden text-muted-foreground/70 sm:inline">· {isDesktop ? "Desktop" : "Web"}</span>
           </span>
           <span>Hyvo-AI protocol active</span>
         </header>
 
-        <div className="grid flex-1 items-center gap-6 lg:grid-cols-[260px_1fr_260px]">
-          <motion.div style={{ x: parallax.x * -0.4, y: parallax.y * -0.4 }}>
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[320px_1fr_320px]">
+          {/* Left — diagnostics + activity */}
+          <motion.div
+            style={{ x: parallax.x * -0.3, y: parallax.y * -0.3 }}
+            className="flex min-h-0 flex-col gap-4 overflow-hidden"
+          >
             <SystemRail />
+            <div className="min-h-0 flex-1">
+              <ActivityFeed />
+            </div>
           </motion.div>
 
-          <motion.div style={{ x: parallax.x, y: parallax.y }} className="flex flex-col items-center gap-5">
+          {/* Center — core, voice, destinations ring */}
+          <motion.div
+            style={{ x: parallax.x, y: parallax.y }}
+            className="flex min-h-0 flex-col items-center justify-center gap-5 overflow-y-auto py-2"
+          >
             <CoreOrb status={status} micActive={micActive} onToggle={toggleListening} disabled={!supported} />
+            <VoiceStrip status={status} transcript={transcript} lastReply={lastReply} onAsk={(t) => void ask(t)} />
             {!supported && (
               <p className="text-xs text-muted-foreground">Voice control needs a Chromium-based desktop build.</p>
             )}
@@ -277,24 +313,35 @@ export default function Cockpit() {
             />
           </motion.div>
 
-          <motion.div style={{ x: parallax.x * -0.4, y: parallax.y * -0.4 }}>
+          {/* Right — live telemetry */}
+          <motion.div
+            style={{ x: parallax.x * -0.3, y: parallax.y * -0.3 }}
+            className="min-h-0 overflow-y-auto"
+          >
             <LiveRail isLive={live.isLive} viewers={live.viewers} followers={live.followers} title={live.title} />
           </motion.div>
         </div>
 
-        <CommandRow isLive={live.isLive} micActive={micActive} busy={busy} onRun={onRun} />
+        <div className="shrink-0 space-y-3">
+          <CommandRow
+            isLive={live.isLive}
+            micActive={micActive}
+            busy={busy}
+            onRun={onRun}
+            pttHint={pttHint}
+            readiness={readiness}
+          />
 
-        <CommandConsole
-          running={busy ? LABELS[busy] ?? null : null}
-          result={result}
-          error={error}
-          onClear={() => {
-            setResult(null);
-            setError(null);
-          }}
-        />
-
-        <ActivityFeed />
+          <CommandConsole
+            running={busy ? LABELS[busy] ?? null : null}
+            result={result}
+            error={error}
+            onClear={() => {
+              setResult(null);
+              setError(null);
+            }}
+          />
+        </div>
       </div>
 
       <DestinationsDialog open={destOpen} onOpenChange={setDestOpen} />
