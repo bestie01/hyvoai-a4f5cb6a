@@ -14,7 +14,17 @@ interface CommandRowProps {
   micActive: boolean;
   busy?: CommandId | null;
   onRun: (id: CommandId) => void;
+  /** Keyboard combo that holds the mic open, e.g. "Ctrl+Shift+V". */
+  pttHint?: string;
+  /** Pre-flight: destinations ready to receive the broadcast vs configured. */
+  readiness?: { ready: number; total: number };
 }
+
+type Item = { id: CommandId; label: string; icon: typeof Radio; tone?: "live" | "voice" };
+
+/** Command dock — an icon rail of real tasks, JARVIS style. */
+export function CommandRow({ isLive, micActive, busy, onRun, pttHint, readiness }: CommandRowProps) {
+
 
 type Item = { id: CommandId; label: string; icon: typeof Radio; tone?: "live" | "voice" };
 
