@@ -24,13 +24,8 @@ type Item = { id: CommandId; label: string; icon: typeof Radio; tone?: "live" | 
 
 /** Command dock — an icon rail of real tasks, JARVIS style. */
 export function CommandRow({ isLive, micActive, busy, onRun, pttHint, readiness }: CommandRowProps) {
-
-
-type Item = { id: CommandId; label: string; icon: typeof Radio; tone?: "live" | "voice" };
-
-/** Command dock — an icon rail of real tasks, JARVIS style. */
-export function CommandRow({ isLive, micActive, busy, onRun }: CommandRowProps) {
   const control: Item[] = [
+
     { id: "live", label: isLive ? "End broadcast" : "Go live", icon: Radio, tone: "live" },
     { id: "talk", label: micActive ? "Stop listening" : "Talk to Hyvo", icon: micActive ? Mic : MicOff, tone: "voice" },
     { id: "clip", label: "Clip that", icon: Scissors },
