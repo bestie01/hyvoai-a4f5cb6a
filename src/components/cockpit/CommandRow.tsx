@@ -72,11 +72,40 @@ export function CommandRow({ isLive, micActive, busy, onRun, pttHint, readiness 
     );
   };
 
+  const ready = readiness?.ready ?? 0;
+  const total = readiness?.total ?? 0;
+
   return (
-    <div className="flex items-center justify-center gap-3 rounded-2xl border border-border/40 bg-background/30 px-4 py-3 backdrop-blur-2xl">
-      <div className="flex items-center gap-2.5">{control.map(button)}</div>
-      <span className="mx-1 h-9 w-px bg-border/60" />
-      <div className="flex items-center gap-2.5">{ai.map(button)}</div>
+    <div className="rounded-2xl border border-border/40 bg-background/30 px-4 py-3 backdrop-blur-2xl">
+      <div className="mb-2 flex items-center justify-center gap-4 font-mono text-[10px] uppercase tracking-[0.24em]">
+        {readiness && (
+          <span
+            className={
+              ready === 0
+                ? "text-amber-400"
+                : ready < total
+                  ? "text-[hsl(var(--neon-cyan))]"
+                  : "text-emerald-400"
+            }
+          >
+            {ready === 0
+              ? "No destination ready — link an account or add a key"
+              : `${ready} of ${total} destination${total === 1 ? "" : "s"} ready`}
+          </span>
+        )}
+        {pttHint && (
+          <span className={micActive ? "text-[hsl(var(--neon-cyan))]" : "text-muted-foreground/70"}>
+            Hold {pttHint} to talk{micActive ? " · mic hot" : ""}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center gap-2.5">{control.map(button)}</div>
+        <span className="mx-1 h-9 w-px bg-border/60" />
+        <div className="flex items-center gap-2.5">{ai.map(button)}</div>
+      </div>
     </div>
   );
 }
+
