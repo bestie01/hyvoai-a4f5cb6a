@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShieldCheck, Cpu } from "lucide-react";
+import { ShieldCheck, Cpu, Settings2, Radio, Volume2, VolumeX, Activity, ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import cockpitBackdrop from "@/assets/cockpit-command-center.jpg";
 import { Seo } from "@/components/Seo";
 import { HudFrame } from "@/components/cockpit/HudFrame";
 import { CoreOrb } from "@/components/cockpit/CoreOrb";
@@ -15,6 +17,7 @@ import { DestinationsDialog } from "@/components/cockpit/DestinationsDialog";
 import { BootSequence } from "@/components/cockpit/BootSequence";
 import { ActivityFeed } from "@/components/cockpit/ActivityFeed";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
+import { useHyvoBackground } from "@/hooks/useHyvoBackground";
 import { useLiveChat } from "@/hooks/useLiveChat";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
@@ -47,17 +50,17 @@ export default function Cockpit() {
   const [error, setError] = useState<string | null>(null);
   const [destOpen, setDestOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [parallax, setParallax] = useState({ x: 0, y: 0 });
-
   const {
     status, micActive, toggleListening, supported,
-    transcript, lastReply, ask, settings,
+    transcript, lastReply, ask, settings, update, speak, stopVoice,
   } = useHyvoAgent();
   const { messages: chatMessages } = useLiveChat();
   const { twitchStats, youtubeStats, startPolling, stopPolling } = useRealPlatformStats();
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
   const { destinations } = useStreamDestinations();
   const { currentVersion, isDesktop } = useVersionCheck();
+
+  useHyvoBackground({ enabled: liveSession && settings.autonomy !== "off", speak, settings });
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -71,22 +74,6 @@ export default function Cockpit() {
     return () => stopPolling();
   }, [twitchConnection?.isConnected, youtubeConnection?.isConnected, startPolling, stopPolling]);
 
-  // Subtle parallax — paused while the mic is hot so the HUD stays readable.
-  useEffect(() => {
-    if (micActive) {
-      setParallax({ x: 0, y: 0 });
-      return;
-    }
-    const onMove = (e: MouseEvent) => {
-      setParallax({
-        x: (e.clientX / window.innerWidth - 0.5) * 10,
-        y: (e.clientY / window.innerHeight - 0.5) * 10,
-      });
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, [micActive]);
-
   const live = useMemo(() => {
     const t = twitchStats;
     const y = youtubeStats;
@@ -98,6 +85,7 @@ export default function Cockpit() {
       game: (t as { game?: string } | null)?.game || "",
     };
   }, [twitchStats, youtubeStats]);
+  const liveSession = live.isLive;
 
   /** Pre-flight: how many destinations can actually receive the broadcast. */
   const readiness = useMemo(() => {
@@ -119,8 +107,22 @@ export default function Cockpit() {
         setError("Sign in required to control your broadcast.");
         return;
       }
+      if (action === "go_live" || action === "end_stream") {
+        if (action === "go_live" && readiness.ready === 0) {
+          setDestOpen(true);
+          setError("Connect Twitch or YouTube before starting a broadcast.");
+          return;
+        }
+        navigate("/studio");
+        setResult({ title: "Broadcast control", items: [{ text: "Open the studio to review your camera and start or end your broadcast." }] });
+        return;
+      }
+      if (!live.isLive) {
+        setError("Start a broadcast before saving a live highlight.");
+        return;
+      }
       const res = await executeHyvoAction(
-        { action, parameters: action === "clip" ? { label: "Cockpit clip" } : {}, speak: "" } as never,
+        { action, parameters: { label: "Cockpit highlight" }, speak: "", confident: true },
         { userId, streamId: null },
       );
       toast({ title: res.speak, variant: res.ok ? "default" : "destructive" });
@@ -130,7 +132,7 @@ export default function Cockpit() {
       }
       setResult({ title: LABELS[id] ?? "Done", items: [{ text: res.speak || "Done." }] });
     },
-    [userId, toast],
+    [userId, toast, readiness.ready, navigate, live.isLive],
   );
 
   const runCopilot = useCallback(
@@ -264,65 +266,49 @@ export default function Cockpit() {
   const pttHint = `Ctrl+Shift+${(settings?.push_to_talk_key || "V").toUpperCase()}`;
 
   return (
-    <div className="relative h-screen overflow-hidden bg-background">
+    <div className="relative isolate flex h-[calc(100dvh-2.25rem)] min-h-[590px] flex-col overflow-hidden bg-background text-foreground">
       <Seo title="Hyvo Command Center" description="The Hyvo desktop cockpit — live stream telemetry, platform links and voice control in one screen." path="/cockpit" />
-
       <AnimatePresence>{booting && <BootSequence onDone={finishBoot} />}</AnimatePresence>
-
+      <img src={cockpitBackdrop} width={1792} height={1024} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-90" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/75 via-background/10 to-background/95" />
       <HudFrame />
-
-      <div className="relative flex h-full flex-col gap-4 px-5 py-4">
-        <header className="flex shrink-0 items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          <span className="inline-flex items-center gap-2 text-[hsl(var(--neon-cyan))]">
-            <ShieldCheck className="h-3.5 w-3.5" /> Status: Secure
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-background/40 px-2.5 py-1">
-            <Cpu className="h-3 w-3 text-[hsl(var(--neon-cyan))]" />
-            Build <span className="text-foreground">v{currentVersion}</span>
-            <span className="hidden text-muted-foreground/70 sm:inline">· {isDesktop ? "Desktop" : "Web"}</span>
-          </span>
-          <span>Hyvo-AI protocol active</span>
+      <div className="relative flex min-h-0 flex-1 flex-col px-3 pb-3 pt-3 sm:px-5 xl:px-8">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-accent/20 pb-3">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2"><span className="font-display text-xl font-bold text-foreground sm:text-2xl">HYVO<span className="text-accent">.AI</span></span><span className="hidden font-mono text-[10px] uppercase text-accent/80 sm:inline">/ Broadcast intelligence</span></div>
+            <p className="font-mono text-[10px] uppercase text-muted-foreground">Your live streaming command center</p>
+          </div>
+          <div className="hidden items-center gap-5 font-mono text-[10px] uppercase text-muted-foreground md:flex">
+            <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-success" /> Encrypted session</span>
+            <span className="flex items-center gap-1.5"><Cpu className="h-3.5 w-3.5 text-accent" /> v{currentVersion} · {isDesktop ? "Desktop" : "Web preview"}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent" title={settings.voice_enabled ? "Mute Hyvo" : "Unmute Hyvo"} aria-label={settings.voice_enabled ? "Mute Hyvo" : "Unmute Hyvo"} onClick={() => { stopVoice(); void update({ voice_enabled: !settings.voice_enabled }); }}>{settings.voice_enabled ? <Volume2 /> : <VolumeX />}</Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent" title="Settings" aria-label="Settings" onClick={() => navigate("/settings")}><Settings2 /></Button>
+          </div>
         </header>
-
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[320px_1fr_320px]">
-          {/* Left — diagnostics + activity */}
-          <motion.div
-            style={{ x: parallax.x * -0.3, y: parallax.y * -0.3 }}
-            className="flex min-h-0 flex-col gap-4 overflow-hidden"
-          >
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto py-4 lg:grid-cols-[minmax(215px,270px)_minmax(0,1fr)_minmax(215px,270px)] lg:overflow-hidden xl:gap-6">
+          <aside className="order-2 flex min-h-[270px] flex-col gap-3 lg:order-1 lg:min-h-0">
+            <div className="flex items-center gap-2 border-b border-accent/30 pb-2 font-mono text-[10px] uppercase text-accent"><Activity className="h-3.5 w-3.5" /> System diagnostics <span className="ml-auto h-1.5 w-1.5 animate-pulse rounded-full bg-success" /></div>
             <SystemRail />
-            <div className="min-h-0 flex-1">
-              <ActivityFeed />
+            <div className="min-h-[150px] flex-1"><ActivityFeed /></div>
+          </aside>
+          <section className="order-1 flex min-h-[410px] flex-col items-center justify-between gap-3 lg:order-2 lg:min-h-0" aria-label="Hyvo voice co-pilot">
+            <div className="flex items-center gap-2 border border-accent/30 bg-background/65 px-3 py-1 font-mono text-[10px] uppercase text-accent backdrop-blur-xl"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" /> HYVO co-pilot / {live.isLive ? "On air" : "Ready"}</div>
+            <div className="min-h-[170px] flex-1"><CoreOrb status={status} micActive={micActive} onToggle={toggleListening} disabled={!supported} /></div>
+            <div className="w-full max-w-xl space-y-3">
+              <VoiceStrip status={status} transcript={transcript} lastReply={lastReply} onAsk={(t) => void ask(t)} />
+              {!supported && <p className="text-center text-xs text-muted-foreground">Voice control is unavailable. Type a command instead.</p>}
+              <PlatformNodes twitchConnected={Boolean(twitchConnection?.isConnected)} youtubeConnected={Boolean(youtubeConnection?.isConnected)} onOpenDestinations={() => setDestOpen(true)} />
             </div>
-          </motion.div>
-
-          {/* Center — core, voice, destinations ring */}
-          <motion.div
-            style={{ x: parallax.x, y: parallax.y }}
-            className="flex min-h-0 flex-col items-center justify-center gap-5 overflow-y-auto py-2"
-          >
-            <CoreOrb status={status} micActive={micActive} onToggle={toggleListening} disabled={!supported} />
-            <VoiceStrip status={status} transcript={transcript} lastReply={lastReply} onAsk={(t) => void ask(t)} />
-            {!supported && (
-              <p className="text-xs text-muted-foreground">Voice control needs a Chromium-based desktop build.</p>
-            )}
-            <PlatformNodes
-              twitchConnected={Boolean(twitchConnection?.isConnected)}
-              youtubeConnected={Boolean(youtubeConnection?.isConnected)}
-              onOpenDestinations={() => setDestOpen(true)}
-            />
-          </motion.div>
-
-          {/* Right — live telemetry */}
-          <motion.div
-            style={{ x: parallax.x * -0.3, y: parallax.y * -0.3 }}
-            className="min-h-0 overflow-y-auto"
-          >
+          </section>
+          <aside className="order-3 flex min-h-[270px] flex-col gap-3 lg:min-h-0">
+            <div className="flex items-center gap-2 border-b border-accent/30 pb-2 font-mono text-[10px] uppercase text-accent"><Radio className="h-3.5 w-3.5" /> Live broadcast <span className="ml-auto text-muted-foreground">{live.isLive ? "Transmitting" : "Standby"}</span></div>
             <LiveRail isLive={live.isLive} viewers={live.viewers} followers={live.followers} title={live.title} />
-          </motion.div>
+            <Button variant="outline" className="w-full border-accent/40 bg-background/60 text-accent hover:bg-accent/10" onClick={() => navigate("/studio")}>Open studio <ArrowUpRight className="ml-auto" /></Button>
+          </aside>
         </div>
-
-        <div className="shrink-0 space-y-3">
+        <div className="shrink-0 space-y-2">
           <CommandRow
             isLive={live.isLive}
             micActive={micActive}
@@ -332,15 +318,7 @@ export default function Cockpit() {
             readiness={readiness}
           />
 
-          <CommandConsole
-            running={busy ? LABELS[busy] ?? null : null}
-            result={result}
-            error={error}
-            onClear={() => {
-              setResult(null);
-              setError(null);
-            }}
-          />
+          {(busy || result || error) && <div className="max-h-44 overflow-y-auto"><CommandConsole running={busy ? LABELS[busy] ?? null : null} result={result} error={error} onClear={() => { setResult(null); setError(null); }} /></div>}
         </div>
       </div>
 
