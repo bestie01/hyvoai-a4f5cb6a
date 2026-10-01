@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { ShieldCheck, Cpu, Settings2, Radio, Volume2, VolumeX, Activity, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cockpitBackdrop from "@/assets/cockpit-command-center.jpg";
@@ -60,8 +60,6 @@ export default function Cockpit() {
   const { destinations } = useStreamDestinations();
   const { currentVersion, isDesktop } = useVersionCheck();
 
-  useHyvoBackground({ enabled: liveSession && settings.autonomy !== "off", speak, settings });
-
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
@@ -86,6 +84,7 @@ export default function Cockpit() {
     };
   }, [twitchStats, youtubeStats]);
   const liveSession = live.isLive;
+  useHyvoBackground({ enabled: liveSession && settings.autonomy !== "off", speak, settings });
 
   /** Pre-flight: how many destinations can actually receive the broadcast. */
   const readiness = useMemo(() => {

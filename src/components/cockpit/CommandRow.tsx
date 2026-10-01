@@ -4,6 +4,7 @@ import {
   MessageSquareQuote, Terminal, Megaphone, Plug, HeartPulse, TrendingUp,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 export type CommandId =
   | "live" | "talk" | "clip" | "studio" | "dash" | "destinations"
@@ -49,21 +50,20 @@ export function CommandRow({ isLive, micActive, busy, onRun, pttHint, readiness 
     return (
       <Tooltip key={it.id}>
         <TooltipTrigger asChild>
-          <motion.button
+          <Button
+            variant="ghost"
             type="button"
             disabled={Boolean(busy)}
             onClick={() => onRun(it.id)}
             aria-label={it.label}
-            whileHover={{ y: -3 }}
-            whileTap={{ scale: 0.94 }}
-            className={`relative grid h-12 w-12 place-items-center rounded-xl border backdrop-blur-xl transition-colors disabled:opacity-40 ${
+            className={`relative grid h-11 w-11 shrink-0 place-items-center rounded border backdrop-blur-xl transition-colors disabled:opacity-40 ${
               active
                 ? "border-[hsl(var(--neon-cyan)/0.7)] bg-[hsl(var(--neon-cyan)/0.14)] text-[hsl(var(--neon-cyan))] shadow-[0_0_24px_hsl(var(--neon-cyan)/0.35)]"
                 : "border-border/50 bg-background/40 text-muted-foreground hover:border-[hsl(var(--neon-cyan)/0.6)] hover:text-foreground"
             }`}
           >
             {busy === it.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <it.icon className="h-5 w-5" />}
-          </motion.button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="top" className="font-mono text-[10px] uppercase tracking-[0.2em]">
           {it.label}
@@ -76,16 +76,16 @@ export function CommandRow({ isLive, micActive, busy, onRun, pttHint, readiness 
   const total = readiness?.total ?? 0;
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-background/30 px-4 py-3 backdrop-blur-2xl">
-      <div className="mb-2 flex items-center justify-center gap-4 font-mono text-[10px] uppercase tracking-[0.24em]">
+    <div className="border border-accent/30 bg-background/85 px-3 py-2 backdrop-blur-2xl">
+      <div className="mb-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 font-mono text-[10px] uppercase">
         {readiness && (
           <span
             className={
               ready === 0
-                ? "text-amber-400"
+                ? "text-warning"
                 : ready < total
-                  ? "text-[hsl(var(--neon-cyan))]"
-                  : "text-emerald-400"
+                  ? "text-accent"
+                  : "text-success"
             }
           >
             {ready === 0
@@ -100,10 +100,10 @@ export function CommandRow({ isLive, micActive, busy, onRun, pttHint, readiness 
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-3">
-        <div className="flex items-center gap-2.5">{control.map(button)}</div>
-        <span className="mx-1 h-9 w-px bg-border/60" />
-        <div className="flex items-center gap-2.5">{ai.map(button)}</div>
+      <div className="flex max-w-full items-center justify-center gap-2 overflow-x-auto">
+        <div className="flex shrink-0 items-center gap-1.5">{control.map(button)}</div>
+        <span className="mx-1 h-8 w-px shrink-0 bg-border/60" />
+        <div className="flex shrink-0 items-center gap-1.5">{ai.map(button)}</div>
       </div>
     </div>
   );
