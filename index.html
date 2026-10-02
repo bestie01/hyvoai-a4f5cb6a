@@ -58,6 +58,19 @@
 
     <!-- Prevent flash of unstyled content with theme -->
     <script>
+      // Desktop sign-in handoff: the browser has the auth code but the PKCE
+      // verifier lives in the Hyvo desktop app, so forward the code to it.
+      (function() {
+        try {
+          var p = new URLSearchParams(location.search);
+          if (p.get('hyvo_desktop') === '1' && (p.get('code') || p.get('error'))) {
+            p.delete('hyvo_desktop');
+            location.replace('http://127.0.0.1:47829/auth/callback?' + p.toString());
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script>
       (function() {
         const theme = localStorage.getItem('hyvo-ui-theme') || 'dark';
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

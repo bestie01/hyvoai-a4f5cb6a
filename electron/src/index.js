@@ -100,7 +100,7 @@ const CSP = [
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://ai.gateway.lovable.dev https://api.github.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://ai.gateway.lovable.dev https://*.lovable.app https://api.github.com https://*.githubusercontent.com",
   "frame-src https://js.stripe.com https://checkout.stripe.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -390,35 +390,49 @@ secureHandle('open-external', async (_event, url) => {
   return true;
 });
 
-// In-app OAuth window: sign-in happens inside Hyvo, then the auth code is
-// handed back to the renderer (which holds the PKCE verifier) to finish login.
-let authWindow = null;
+// System-browser OAuth (RFC 8252): sign-in opens in the user's default browser
+// (Chrome, Edge, Safari…). The hyvoai.lovable.app callback page forwards the
+// auth code to this short-lived loopback server; the renderer (which holds the
+// PKCE verifier) then finishes login.
+const http = require('http');
+const OAUTH_PORT = 47829;
+let oauthServer = null;
+let oauthTimer = null;
+function stopOAuthServer() {
+  if (oauthTimer) { clearTimeout(oauthTimer); oauthTimer = null; }
+  if (oauthServer) { try { oauthServer.close(); } catch {} oauthServer = null; }
+}
+const DONE_HTML = (ok) => `<!doctype html><html><head><meta charset="utf-8"><title>Hyvo</title></head>
+<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#0A0A0F;color:#fff;font-family:system-ui,sans-serif;text-align:center">
+<div><h1 style="color:#22d3ee;margin:0 0 8px">${ok ? 'You are signed in' : 'Sign in failed'}</h1>
+<p style="opacity:.7">${ok ? 'You can close this tab and return to Hyvo.' : 'Close this tab and try again in Hyvo.'}</p></div></body></html>`;
+function startOAuthServer() {
+  stopOAuthServer();
+  return new Promise((resolve) => {
+    oauthServer = http.createServer((req, res) => {
+      try {
+        const u = new URL(req.url, `http://127.0.0.1:${OAUTH_PORT}`);
+        if (u.pathname !== '/auth/callback') { res.writeHead(404); res.end(); return; }
+        const code = u.searchParams.get('code');
+        const err = u.searchParams.get('error_description') || u.searchParams.get('error');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(DONE_HTML(!!code && !err));
+        if (code || err) {
+          mainWindow?.webContents.send('oauth-result', { code, error: err });
+          if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); }
+          setTimeout(stopOAuthServer, 500);
+        }
+      } catch { res.writeHead(400); res.end(); }
+    });
+    oauthServer.on('error', () => resolve(false));
+    oauthServer.listen(OAUTH_PORT, '127.0.0.1', () => resolve(true));
+    oauthTimer = setTimeout(stopOAuthServer, 10 * 60 * 1000);
+  });
+}
 secureHandle('oauth-start', async (_event, url) => {
   if (typeof url !== 'string' || !isAllowedExternalUrl(url)) return false;
-  if (authWindow && !authWindow.isDestroyed()) authWindow.close();
-  authWindow = new BrowserWindow({
-    width: 520, height: 720, parent: mainWindow, modal: false,
-    backgroundColor: '#0a0a0f', autoHideMenuBar: true, title: 'Sign in to Hyvo',
-    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, partition: 'persist:hyvo-auth' },
-  });
-  const finish = (e, target) => {
-    try {
-      const u = new URL(target);
-      if (u.hostname !== 'hyvoai.lovable.app') return;
-      const code = u.searchParams.get('code');
-      const err = u.searchParams.get('error_description') || u.searchParams.get('error');
-      if (!code && !err) return;
-      e.preventDefault();
-      mainWindow?.webContents.send('oauth-result', { code, error: err });
-      mainWindow?.focus();
-      authWindow?.close();
-    } catch { /* ignore */ }
-  };
-  authWindow.webContents.on('will-redirect', finish);
-  authWindow.webContents.on('will-navigate', finish);
-  authWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  authWindow.on('closed', () => { authWindow = null; });
-  await authWindow.loadURL(url);
+  await startOAuthServer();
+  await shell.openExternal(url);
   return true;
 });
 
