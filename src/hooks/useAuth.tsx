@@ -64,35 +64,26 @@ export const useAuth = (): UseAuthReturn => {
     return { error };
   }, [toast]);
 
-  const signInWithTwitch = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'twitch',
-      options: {
-        redirectTo: getRedirectUrl(POST_AUTH_PATH),
-        queryParams: { access_type: 'offline', prompt: 'consent' }
-      }
+  const oauth = useCallback(async (
+    provider: 'twitch' | 'google' | 'discord',
+    label: string,
+    queryParams?: Record<string, string>,
+  ) => {
+    const api = (window as any).electronAPI;
+    const desktop = typeof api?.startOAuth === 'function';
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: getRedirectUrl(POST_AUTH_PATH), queryParams, skipBrowserRedirect: desktop },
     });
-    if (error) toast({ title: "Twitch Sign In Failed", description: error.message, variant: "destructive" });
+    if (!error && desktop && data?.url) await api.startOAuth(data.url);
+    if (error) toast({ title: `${label} Sign In Failed`, description: error.message, variant: "destructive" });
     return { error };
   }, [toast]);
 
-  const signInWithGoogle = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: getRedirectUrl(POST_AUTH_PATH) }
-    });
-    if (error) toast({ title: "Google Sign In Failed", description: error.message, variant: "destructive" });
-    return { error };
-  }, [toast]);
-
-  const signInWithDiscord = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: { redirectTo: getRedirectUrl(POST_AUTH_PATH) }
-    });
-    if (error) toast({ title: "Discord Sign In Failed", description: error.message, variant: "destructive" });
-    return { error };
-  }, [toast]);
+  const signInWithTwitch = useCallback(
+    () => oauth('twitch', 'Twitch', { access_type: 'offline', prompt: 'consent' }), [oauth]);
+  const signInWithGoogle = useCallback(() => oauth('google', 'Google'), [oauth]);
+  const signInWithDiscord = useCallback(() => oauth('discord', 'Discord'), [oauth]);
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();

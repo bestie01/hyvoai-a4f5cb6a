@@ -14,6 +14,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { GlobalHotkeysProvider } from "@/components/GlobalHotkeysProvider";
+import { DesktopOAuthBridge } from "@/components/auth/DesktopOAuthBridge";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RequirePro } from "@/components/auth/RequirePro";
 import { PageTransition } from "@/components/animations/PageTransition";
@@ -184,6 +185,7 @@ const App = () => (
           <Sonner />
           <Router>
             <GlobalHotkeysProvider />
+            <DesktopOAuthBridge />
             <KeyboardShortcutsModal />
             <AppRoutes />
           </Router>

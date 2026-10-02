@@ -390,4 +390,36 @@ secureHandle('open-external', async (_event, url) => {
   return true;
 });
 
+// In-app OAuth window: sign-in happens inside Hyvo, then the auth code is
+// handed back to the renderer (which holds the PKCE verifier) to finish login.
+let authWindow = null;
+secureHandle('oauth-start', async (_event, url) => {
+  if (typeof url !== 'string' || !isAllowedExternalUrl(url)) return false;
+  if (authWindow && !authWindow.isDestroyed()) authWindow.close();
+  authWindow = new BrowserWindow({
+    width: 520, height: 720, parent: mainWindow, modal: false,
+    backgroundColor: '#0a0a0f', autoHideMenuBar: true, title: 'Sign in to Hyvo',
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, partition: 'persist:hyvo-auth' },
+  });
+  const finish = (e, target) => {
+    try {
+      const u = new URL(target);
+      if (u.hostname !== 'hyvoai.lovable.app') return;
+      const code = u.searchParams.get('code');
+      const err = u.searchParams.get('error_description') || u.searchParams.get('error');
+      if (!code && !err) return;
+      e.preventDefault();
+      mainWindow?.webContents.send('oauth-result', { code, error: err });
+      mainWindow?.focus();
+      authWindow?.close();
+    } catch { /* ignore */ }
+  };
+  authWindow.webContents.on('will-redirect', finish);
+  authWindow.webContents.on('will-navigate', finish);
+  authWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  authWindow.on('closed', () => { authWindow = null; });
+  await authWindow.loadURL(url);
+  return true;
+});
+
 app.on('will-quit', () => globalShortcut.unregisterAll());
