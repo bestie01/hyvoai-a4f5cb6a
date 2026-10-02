@@ -75,4 +75,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // External browser
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  // In-app OAuth sign-in
+  startOAuth: (url) => ipcRenderer.invoke('oauth-start', url),
+  onOAuthResult: (callback) => {
+    const handler = (_e, data) => callback(data);
+    ipcRenderer.on('oauth-result', handler);
+    return () => ipcRenderer.removeListener('oauth-result', handler);
+  },
 });
