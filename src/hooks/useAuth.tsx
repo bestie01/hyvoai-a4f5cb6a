@@ -71,9 +71,15 @@ export const useAuth = (): UseAuthReturn => {
   ) => {
     const api = (window as any).electronAPI;
     const desktop = typeof api?.startOAuth === 'function';
+    // Desktop: sign in via the user's preferred browser. Supabase redirects to
+    // /auth/desktop-callback, which forwards the code to the app's loopback
+    // receiver so the renderer can finish the PKCE exchange.
+    const redirectTo = desktop
+      ? getRedirectUrl('/auth/desktop-callback')
+      : getRedirectUrl(POST_AUTH_PATH);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: getRedirectUrl(POST_AUTH_PATH), queryParams, skipBrowserRedirect: desktop },
+      options: { redirectTo, queryParams, skipBrowserRedirect: desktop },
     });
     if (!error && desktop && data?.url) await api.startOAuth(data.url);
     if (error) toast({ title: `${label} Sign In Failed`, description: error.message, variant: "destructive" });
