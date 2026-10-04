@@ -50,6 +50,7 @@ const DeviceFeatures = React.lazy(() => import("./pages/native/DeviceFeatures"))
 const Changelog = React.lazy(() => import("./pages/Changelog"));
 const OAuthConsent = React.lazy(() => import("./pages/OAuthConsent"));
 const Cockpit = React.lazy(() => import("./pages/Cockpit"));
+const DesktopAuthCallback = React.lazy(() => import("./pages/DesktopAuthCallback"));
 
 // Smarter React Query defaults: avoid refetch storms on focus, reasonable retries
 const queryClient = new QueryClient({
@@ -136,7 +137,8 @@ const AppRoutes = () => (
 
             <Route path="/download" element={<Page><Download /></Page>} />
             <Route path="/pricing" element={<Page><Pricing /></Page>} />
-            <Route path="/auth" element={<Page><Auth /></Page>} />
+<Route path="/auth" element={<Page><Auth /></Page>} />
+            <Route path="/auth/desktop-callback" element={<DesktopAuthCallback />} />
             <Route path="/changelog" element={<Page><Changelog /></Page>} />
             <Route path="/.lovable/oauth/consent" element={<Page><OAuthConsent /></Page>} />
             <Route path="/native" element={<Page><NativeHub /></Page>} />
