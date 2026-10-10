@@ -53,6 +53,7 @@
       "icon": "app/icons/appIcon.ico"
     },
     "nsis": {
+      "artifactName": "Hyvo-Stream-Studio-Setup-${version}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "app/icons/appIcon.ico",
@@ -60,6 +61,7 @@
       "installerHeaderIcon": "app/icons/appIcon.ico"
     },
     "mac": {
+      "artifactName": "Hyvo-Stream-Studio-${version}-${arch}.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -75,6 +77,7 @@
       "identity": null
     },
     "linux": {
+      "artifactName": "Hyvo-Stream-Studio-${version}.${ext}",
       "target": [
         "AppImage",
         "deb"
