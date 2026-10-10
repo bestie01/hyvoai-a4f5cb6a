@@ -17,12 +17,32 @@ const KIND_TONE: Record<string, string> = {
   moderation: "text-rose-400",
 };
 
+type Filter = "all" | "commands" | "ai" | "alerts";
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "commands", label: "Commands" },
+  { id: "ai", label: "AI" },
+  { id: "alerts", label: "Alerts" },
+];
+const groupOf = (kind: string): Exclude<Filter, "all"> => {
+  const k = kind.toLowerCase();
+  if (/(command|action|clip|poll|chat)/.test(k)) return "commands";
+  if (/(ai|reply|answer|insight|copilot|suggest)/.test(k)) return "ai";
+  return "alerts";
+};
+const FILTER_KEY = "hyvo-activity-filter";
+
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 /** Timestamped log of what Hyvo did and saw, live-updated from the agent event stream. */
 export function ActivityFeed() {
   const [rows, setRows] = useState<FeedRow[]>([]);
+  const [filter, setFilter] = useState<Filter>(() => (localStorage.getItem(FILTER_KEY) as Filter) || "all");
+  useEffect(() => { localStorage.setItem(FILTER_KEY, filter); }, [filter]);
+  const counts = { all: rows.length, commands: 0, ai: 0, alerts: 0 } as Record<Filter, number>;
+  rows.forEach((r) => { counts[groupOf(r.kind)]++; });
+  const shown = filter === "all" ? rows : rows.filter((r) => groupOf(r.kind) === filter);
 
   useEffect(() => {
     let active = true;
@@ -55,15 +75,28 @@ export function ActivityFeed() {
       <header className="flex items-center gap-2 border-b border-border/40 pb-2.5 font-mono text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--neon-cyan))]">
         <History className="h-3 w-3" /> Activity log
       </header>
+      <div role="tablist" className="mt-2 flex gap-1">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            role="tab"
+            aria-selected={filter === f.id}
+            onClick={() => setFilter(f.id)}
+            className={`rounded-md px-2 py-0.5 font-mono text-[10px] uppercase transition-colors ${filter === f.id ? "bg-accent/20 text-accent" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {f.label} <span className="opacity-60">{counts[f.id]}</span>
+          </button>
+        ))}
+      </div>
 
-      {rows.length === 0 ? (
+      {shown.length === 0 ? (
         <p className="mt-3 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           Nothing logged yet
         </p>
       ) : (
         <ul className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
           <AnimatePresence initial={false}>
-            {rows.map((r) => (
+            {shown.map((r) => (
               <motion.li
                 key={r.id}
                 initial={{ opacity: 0, y: -6 }}

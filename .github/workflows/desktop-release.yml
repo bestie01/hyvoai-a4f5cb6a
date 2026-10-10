@@ -78,6 +78,15 @@ jobs:
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify update manifest matches installer
+        working-directory: ./electron/dist
+        shell: bash
+        run: |
+          f=$(grep -m1 '^path:' latest.yml | sed 's/path: *//')
+          echo "latest.yml points to: $f"
+          ls -la
+          test -f "$f" || { echo "::error::Installer '$f' named in latest.yml is missing"; exit 1; }
           
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
