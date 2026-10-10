@@ -16,6 +16,7 @@ import { CommandConsole, type ConsoleResult } from "@/components/cockpit/Command
 import { DestinationsDialog } from "@/components/cockpit/DestinationsDialog";
 import { BootSequence } from "@/components/cockpit/BootSequence";
 import { ActivityFeed } from "@/components/cockpit/ActivityFeed";
+import { QuickPresets } from "@/components/cockpit/QuickPresets";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useHyvoBackground } from "@/hooks/useHyvoBackground";
 import { useLiveChat } from "@/hooks/useLiveChat";
@@ -296,6 +297,13 @@ export default function Cockpit() {
             <div className="flex items-center gap-2 border border-accent/30 bg-background/65 px-3 py-1 font-mono text-[10px] uppercase text-accent backdrop-blur-xl"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" /> HYVO co-pilot / {live.isLive ? "On air" : "Ready"}</div>
             <div className="min-h-[170px] flex-1"><CoreOrb status={status} micActive={micActive} onToggle={toggleListening} disabled={!supported} /></div>
             <div className="w-full max-w-xl space-y-3">
+              <QuickPresets
+                isLive={live.isLive}
+                busy={Boolean(busy)}
+                onTitles={() => onRun("titles" as CommandId)}
+                onClip={() => onRun("clip" as CommandId)}
+                onShoutout={(n) => void ask(`Give a shoutout to ${n} in chat: twitch.tv/${n}`)}
+              />
               <VoiceStrip status={status} transcript={transcript} lastReply={lastReply} onAsk={(t) => void ask(t)} />
               {!supported && <p className="text-center text-xs text-muted-foreground">Voice control is unavailable. Type a command instead.</p>}
               <PlatformNodes twitchConnected={Boolean(twitchConnection?.isConnected)} youtubeConnected={Boolean(youtubeConnection?.isConnected)} onOpenDestinations={() => setDestOpen(true)} />

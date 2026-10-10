@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { TrendingUp } from "lucide-react";
 import { Eye, MessageSquare, Radio, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,6 +15,25 @@ interface ChatPing { id: string; user: string; text: string }
 /** Live broadcast readouts + a realtime chat pulse from connected platforms. */
 export function LiveRail({ isLive, viewers, followers, title }: LiveRailProps) {
   const [pings, setPings] = useState<ChatPing[]>([]);
+  const [chatTimes, setChatTimes] = useState<number[]>([]);
+  const [now, setNow] = useState(Date.now());
+  const baseFollowers = useRef<{ t: number; v: number }[]>([]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!followers) return;
+    const t = Date.now();
+    baseFollowers.current = [...baseFollowers.current.filter((x) => t - x.t < 10 * 60_000), { t, v: followers }];
+  }, [followers]);
+
+  const recent = baseFollowers.current;
+  const followerDelta = recent.length > 1 ? followers - recent[0].v : 0;
+  const spike = followerDelta >= 5;
+  const chatPerMin = chatTimes.filter((t) => now - t < 60_000).length;
 
   useEffect(() => {
     const channel = supabase
@@ -24,6 +44,7 @@ export function LiveRail({ isLive, viewers, followers, title }: LiveRailProps) {
           { id: String(row.id ?? Date.now()), user: String(row.username ?? "viewer"), text: String(row.message ?? "") },
           ...prev,
         ].slice(0, 6));
+        setChatTimes((prev) => [...prev.filter((t) => Date.now() - t < 60_000), Date.now()]);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -54,6 +75,17 @@ export function LiveRail({ isLive, viewers, followers, title }: LiveRailProps) {
             <Users className="h-3 w-3" /> Followers
           </p>
           <p className="font-mono text-lg tabular-nums">{followers ? followers.toLocaleString() : "—"}</p>
+          {followerDelta > 0 && (
+            <p className={`flex items-center gap-1 text-[10px] ${spike ? "text-success font-semibold" : "text-muted-foreground"}`}>
+              <TrendingUp className="h-3 w-3" /> +{followerDelta} in 10m{spike ? " · spike" : ""}
+            </p>
+          )}
+        </div>
+        <div className="col-span-2 rounded-xl border border-border/40 bg-background/30 p-3">
+          <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <MessageSquare className="h-3 w-3" /> Chat activity
+          </p>
+          <p className="font-mono text-lg tabular-nums">{chatPerMin} <span className="text-xs text-muted-foreground">msgs / min</span></p>
         </div>
       </div>
 
