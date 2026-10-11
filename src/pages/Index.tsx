@@ -1,10 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
-import ProblemSection from "@/components/ProblemSection";
-import SolutionSection from "@/components/SolutionSection";
 import Features from "@/components/Features";
 import HowItWorksSection from "@/components/HowItWorksSection";
-import WhoItsForSection from "@/components/WhoItsForSection";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import { ParticleSystem } from "@/components/animations/ParticleSystem";
@@ -15,6 +12,7 @@ import { ScrollProgress } from "@/components/effects/ScrollProgress";
 import { FloatingActions } from "@/components/ui/floating-actions";
 import { PlatformLogos } from "@/components/PlatformLogos";
 import { Seo } from "@/components/Seo";
+import { ProductShowcase } from "@/components/ProductShowcase";
 
 const Index = () => {
   return (
@@ -35,41 +33,13 @@ const Index = () => {
           <Hero />
         </div>
 
-        {/* Platform Logos Section */}
-        <section className="py-12 bg-background relative overflow-hidden border-t border-border/20">
-          <div className="container mx-auto px-6">
-            <PlatformLogos />
-          </div>
-        </section>
-
-        {/* Problem Section */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background pointer-events-none" />
-          <ProblemSection />
-        </div>
-
-        {/* Solution Section */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.03] to-background pointer-events-none" />
-          <SolutionSection />
-        </div>
-
-        {/* Features Section */}
+        <ProductShowcase />
         <Features />
-
-        {/* How It Works Section */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background pointer-events-none" />
-          <HowItWorksSection />
-        </div>
-
-        {/* Who It's For Section */}
-        <WhoItsForSection />
-
-        {/* CTA Section */}
+        <section className="relative overflow-hidden border-b border-border/30 bg-background">
+          <div className="container mx-auto px-6"><PlatformLogos /></div>
+        </section>
+        <HowItWorksSection />
         <CTA />
-
-        {/* Footer */}
         <Footer />
         <ScrollToTop />
       </div>
