@@ -1023,3 +1023,17 @@ code, pre, .font-mono {
   );
   animation: shimmer 2s infinite;
 }
+
+/* OBS / Streamlabs browser-source overlay: fully transparent, no chrome */
+html.overlay-mode,
+html.overlay-mode body {
+  background: transparent !important;
+  overflow: hidden;
+  height: 100%;
+}
+html.overlay-mode::-webkit-scrollbar {
+  display: none;
+}
+html.overlay-mode .keyboard-fab {
+  display: none !important;
+}
