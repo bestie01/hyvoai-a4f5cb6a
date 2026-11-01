@@ -17,6 +17,7 @@ import { DestinationsDialog } from "@/components/cockpit/DestinationsDialog";
 import { BootSequence } from "@/components/cockpit/BootSequence";
 import { ActivityFeed } from "@/components/cockpit/ActivityFeed";
 import { QuickPresets } from "@/components/cockpit/QuickPresets";
+import { OverlayRelay } from "@/components/cockpit/OverlayRelay";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useHyvoBackground } from "@/hooks/useHyvoBackground";
 import { useLiveChat } from "@/hooks/useLiveChat";
@@ -283,6 +284,7 @@ export default function Cockpit() {
             <span className="flex items-center gap-1.5"><Cpu className="h-3.5 w-3.5 text-accent" /> v{currentVersion} · {isDesktop ? "Desktop" : "Web preview"}</span>
           </div>
           <div className="flex items-center gap-1">
+            <OverlayRelay lastReply={lastReply} />
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent" title={settings.voice_enabled ? "Mute Hyvo" : "Unmute Hyvo"} aria-label={settings.voice_enabled ? "Mute Hyvo" : "Unmute Hyvo"} onClick={() => { stopVoice(); void update({ voice_enabled: !settings.voice_enabled }); }}>{settings.voice_enabled ? <Volume2 /> : <VolumeX />}</Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent" title="Settings" aria-label="Settings" onClick={() => navigate("/settings")}><Settings2 /></Button>
           </div>
