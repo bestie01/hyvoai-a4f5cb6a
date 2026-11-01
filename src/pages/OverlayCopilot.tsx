@@ -93,6 +93,7 @@ export default function OverlayCopilot() {
           );
         })}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body
   );
 }

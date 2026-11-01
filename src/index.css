@@ -1034,3 +1034,6 @@ html.overlay-mode body {
 html.overlay-mode::-webkit-scrollbar {
   display: none;
 }
+html.overlay-mode .keyboard-fab {
+  display: none !important;
+}
