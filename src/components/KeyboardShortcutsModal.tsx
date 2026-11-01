@@ -64,7 +64,7 @@ export function KeyboardShortcutsModal() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 p-3 rounded-full bg-card border border-border shadow-lg hover:shadow-xl transition-shadow"
+        className="keyboard-fab fixed bottom-6 left-6 z-50 p-3 rounded-full bg-card border border-border shadow-lg hover:shadow-xl transition-shadow"
         title="Keyboard Shortcuts (?)"
       >
         <Keyboard className="w-5 h-5 text-muted-foreground" />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Zap, MessageCircle, Radio } from "lucide-react";
@@ -65,8 +66,11 @@ export default function OverlayCopilot() {
     return <p className="p-6 font-mono text-sm text-muted-foreground">Missing overlay key. Copy the link from the Hyvo cockpit.</p>;
   }
 
-  return (
-    <div className="pointer-events-none fixed bottom-10 left-10 flex w-[520px] flex-col gap-3">
+  // Portal to <body>: the page-transition wrapper animates with transforms,
+  // which would otherwise become the containing block for position:fixed
+  // and push the cards off-screen.
+  return createPortal(
+    <div className="pointer-events-none fixed bottom-10 left-10 z-[9999] flex w-[520px] flex-col gap-3">
       <AnimatePresence initial={false}>
         {items.map((m) => {
           const Icon = ICONS[m.kind] ?? Radio;
