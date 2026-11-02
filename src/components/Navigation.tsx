@@ -31,7 +31,7 @@ const Navigation = () => {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <span className="bg-gradient-primary bg-clip-text text-transparent">Hyvo</span>
+              <span className="text-foreground">Hyvo</span>
               <span className="text-foreground">.ai</span>
             </motion.span>
             <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] bg-primary/10 text-primary border-0">AI-Powered</Badge>
