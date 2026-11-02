@@ -9,4 +9,4 @@
 - [x] Add a silent looping desktop product preview (9s seamless loop, status bar above the frame).
 - [x] Add an accessible interactive capability explorer.
 - [x] Replace unverified usage claims with factual platform and product signals.
-- [x] Verify desktop rendering of the redesigned landing page (video plays, no console errors; mobile spot-check pending).
+- [x] Verify desktop and mobile rendering of the redesigned landing page (video plays, no console errors, no horizontal overflow on phone).
