@@ -20,7 +20,6 @@ const softwareApp = {
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Windows, macOS, Web",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", ratingCount: "284" },
 } as const;
 
 export const ROUTE_SEO: Record<string, RouteSeoEntry> = {
