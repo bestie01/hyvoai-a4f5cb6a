@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHyvoSettings } from "@/hooks/useHyvoSettings";
 import { useHyvoVoice } from "@/hooks/useHyvoVoice";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { executeHyvoAction, logHyvoEvent } from "@/lib/hyvo/actions";
 import { HyvoIntent, HyvoStatus } from "@/lib/hyvo/types";
 
@@ -26,6 +27,7 @@ function getRecognition(): Recognition | null {
 export function useHyvoAgent() {
   const { settings, update, loading } = useHyvoSettings();
   const { speak, stop: stopVoice, speaking } = useHyvoVoice(settings.voice_id, settings.voice_enabled);
+  const { canUseAI, consumeAi, unlimited } = usePlanLimits();
 
   const [status, setStatus] = useState<HyvoStatus>("off");
   const [transcript, setTranscript] = useState("");
@@ -33,6 +35,12 @@ export function useHyvoAgent() {
   const [note, setNote] = useState("");
   const [supported, setSupported] = useState(true);
   const [micActive, setMicActive] = useState(false);
+
+  // Refs keep the voice-loop callbacks stable while plan limits refresh.
+  const quotaRef = useRef({ canUseAI: true, unlimited: true });
+  const consumeRef = useRef(consumeAi);
+  useEffect(() => { quotaRef.current = { canUseAI, unlimited }; }, [canUseAI, unlimited]);
+  useEffect(() => { consumeRef.current = consumeAi; }, [consumeAi]);
 
   const recRef = useRef<Recognition | null>(null);
   const wantListeningRef = useRef(false);
@@ -73,6 +81,15 @@ export function useHyvoAgent() {
         setLastReply("Sign in first.");
         speak("Sign in first.");
         return;
+      }
+
+      if (!quotaRef.current.unlimited) {
+        if (!quotaRef.current.canUseAI) {
+          setLastReply("Out of AI actions today — Pro unlocks unlimited.");
+          speak("Out of AI actions today. Upgrade to Pro for unlimited.");
+          return;
+        }
+        consumeRef.current();
       }
 
       if (intent.action === "answer" || intent.action === "unknown") {

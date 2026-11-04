@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { ShieldCheck, Cpu, Settings2, Radio, Volume2, VolumeX, Activity, ArrowUpRight } from "lucide-react";
+import { ShieldCheck, Cpu, Settings2, Radio, Volume2, VolumeX, Activity, ArrowUpRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cockpitBackdrop from "@/assets/cockpit-command-center.jpg";
 import { Seo } from "@/components/Seo";
@@ -18,12 +18,15 @@ import { BootSequence } from "@/components/cockpit/BootSequence";
 import { ActivityFeed } from "@/components/cockpit/ActivityFeed";
 import { QuickPresets } from "@/components/cockpit/QuickPresets";
 import { OverlayRelay } from "@/components/cockpit/OverlayRelay";
+import { SharkCompanion } from "@/components/mascot/SharkCompanion";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useHyvoBackground } from "@/hooks/useHyvoBackground";
 import { useLiveChat } from "@/hooks/useLiveChat";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { useStreamDestinations } from "@/hooks/useStreamDestinations";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { useStreamEventsWatcher } from "@/hooks/useStreamEventsWatcher";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { executeHyvoAction, logHyvoEvent } from "@/lib/hyvo/actions";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +44,9 @@ const LABELS: Record<string, string> = {
   sentiment: "Chat mood",
   growth: "What should I do next",
 };
+
+/** Commands that spend one AI action from the plan's daily budget. */
+const AI_COMMANDS: CommandId[] = ["titles", "sentiment", "growth", "icebreakers", "commands", "social"];
 
 /** Desktop-only JARVIS command center. Every readout is wired to real data. */
 export default function Cockpit() {
@@ -61,6 +67,7 @@ export default function Cockpit() {
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
   const { destinations } = useStreamDestinations();
   const { currentVersion, isDesktop } = useVersionCheck();
+  const { limits, remaining, unlimited, consumeAi } = usePlanLimits();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -87,6 +94,7 @@ export default function Cockpit() {
   }, [twitchStats, youtubeStats]);
   const liveSession = live.isLive;
   useHyvoBackground({ enabled: liveSession && settings.autonomy !== "off", speak, settings });
+  useStreamEventsWatcher({ messages: chatMessages, viewers: live.viewers, isLive: live.isLive, userId });
 
   /** Pre-flight: how many destinations can actually receive the broadcast. */
   const readiness = useMemo(() => {
@@ -231,6 +239,15 @@ export default function Cockpit() {
       setBusy(id);
       setError(null);
       setResult(null);
+      if (AI_COMMANDS.includes(id) && !unlimited) {
+        const spend = consumeAi();
+        if (!spend.ok) {
+          toast({ title: spend.message ?? "AI limit reached", variant: "destructive" });
+          setError(spend.message ?? "AI limit reached for today — upgrade to Pro for unlimited AI.");
+          setBusy(null);
+          return;
+        }
+      }
       try {
         if (id === "live") {
           await runAction(live.isLive ? "end_stream" : "go_live", id);
@@ -256,7 +273,7 @@ export default function Cockpit() {
         setBusy(null);
       }
     },
-    [busy, live.isLive, navigate, runAction, runCopilot, runGrowth, runSentiment, runTitles, toggleListening, toast, userId],
+    [busy, live.isLive, navigate, runAction, runCopilot, runGrowth, runSentiment, runTitles, toggleListening, toast, userId, unlimited, consumeAi],
   );
 
   const finishBoot = useCallback(() => {
@@ -282,6 +299,14 @@ export default function Cockpit() {
           <div className="hidden items-center gap-5 font-mono text-[10px] uppercase text-muted-foreground md:flex">
             <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-success" /> Encrypted session</span>
             <span className="flex items-center gap-1.5"><Cpu className="h-3.5 w-3.5 text-accent" /> v{currentVersion} · {isDesktop ? "Desktop" : "Web preview"}</span>
+            <button
+              type="button"
+              onClick={() => navigate("/pricing")}
+              title={unlimited ? "Unlimited AI on your plan" : "Your plan's daily AI budget — click to upgrade"}
+              className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-accent" /> AI {unlimited ? "Unlimited" : `${remaining}/${limits.aiDaily}`} · {limits.label}
+            </button>
           </div>
           <div className="flex items-center gap-1">
             <OverlayRelay lastReply={lastReply} />
@@ -332,6 +357,7 @@ export default function Cockpit() {
       </div>
 
       <DestinationsDialog open={destOpen} onOpenChange={setDestOpen} />
+      <SharkCompanion />
     </div>
   );
 }
