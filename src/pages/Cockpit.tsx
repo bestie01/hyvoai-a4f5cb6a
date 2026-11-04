@@ -45,6 +45,9 @@ const LABELS: Record<string, string> = {
   growth: "What should I do next",
 };
 
+/** Commands that spend one AI action from the plan's daily budget. */
+const AI_COMMANDS: CommandId[] = ["titles", "sentiment", "growth", "icebreakers", "commands", "social"];
+
 /** Desktop-only JARVIS command center. Every readout is wired to real data. */
 export default function Cockpit() {
   const navigate = useNavigate();
@@ -93,6 +96,7 @@ export default function Cockpit() {
   }, [twitchStats, youtubeStats]);
   const liveSession = live.isLive;
   useHyvoBackground({ enabled: liveSession && settings.autonomy !== "off", speak, settings });
+  useStreamEventsWatcher({ messages: chatMessages, viewers: live.viewers, isLive: live.isLive, userId });
 
   /** Pre-flight: how many destinations can actually receive the broadcast. */
   const readiness = useMemo(() => {
@@ -237,6 +241,15 @@ export default function Cockpit() {
       setBusy(id);
       setError(null);
       setResult(null);
+      if (AI_COMMANDS.includes(id) && !unlimited) {
+        const spend = consumeAi();
+        if (!spend.ok) {
+          toast({ title: spend.message ?? "AI limit reached", variant: "destructive" });
+          setError(spend.message ?? "AI limit reached for today — upgrade to Pro for unlimited AI.");
+          setBusy(null);
+          return;
+        }
+      }
       try {
         if (id === "live") {
           await runAction(live.isLive ? "end_stream" : "go_live", id);
@@ -288,6 +301,14 @@ export default function Cockpit() {
           <div className="hidden items-center gap-5 font-mono text-[10px] uppercase text-muted-foreground md:flex">
             <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-success" /> Encrypted session</span>
             <span className="flex items-center gap-1.5"><Cpu className="h-3.5 w-3.5 text-accent" /> v{currentVersion} · {isDesktop ? "Desktop" : "Web preview"}</span>
+            <button
+              type="button"
+              onClick={() => navigate("/pricing")}
+              title={unlimited ? "Unlimited AI on your plan" : "Your plan's daily AI budget — click to upgrade"}
+              className="flex items-center gap-1.5 rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-accent" /> AI {unlimited ? "Unlimited" : `${remaining}/${limits.aiDaily}`} · {limits.label}
+            </button>
           </div>
           <div className="flex items-center gap-1">
             <OverlayRelay lastReply={lastReply} />
@@ -338,6 +359,7 @@ export default function Cockpit() {
       </div>
 
       <DestinationsDialog open={destOpen} onOpenChange={setDestOpen} />
+      <SharkCompanion />
     </div>
   );
 }
