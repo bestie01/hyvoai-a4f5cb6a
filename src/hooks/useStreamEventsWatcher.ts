@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { useEffect, useRef, RefObject } from "react";
 import { emitMascotEvent } from "@/lib/mascot-events";
 import { logHyvoEvent } from "@/lib/hyvo/actions";
 
@@ -7,17 +7,17 @@ interface ChatMessage {
   message: string;
 }
 
-interface WatcherOptions {
+export interface WatcherOptions {
   messages: ChatMessage[];
   viewers: number;
   isLive: boolean;
   userId: string | null;
   /** Ref holding today's AI budget snapshot for the mascot popover. */
-  quotaRef?: RefObject<{ remaining: number | typeof Infinity; limit: number }>;
+  quotaRef?: RefObject<{ remaining: number; limit: number }>;
 }
 
 const KILL_PATTERN =
-  /\b(kills?|killed|killing|double\s*kill|triple\s*kill|quad\s*kill|clutch(ed)?|no\s*scope|1v[1-5]\s*(win|clutch|clutch)?|penta\s*kill|ace[d]?|got\s*him|took\s*(him|them)\s*out|headshot|ace)\b/i;
+  /\b(kills?|killed|killing|double\s*kill|triple\s*kill|quad\s*kill|penta\s*kill|clutch(ed)?|no\s*scope|1v[1-5]|headshot|ace)\b/i;
 
 /**
  * Watches live chat and viewer counts for stream moments (kills, spikes) and
@@ -25,13 +25,6 @@ const KILL_PATTERN =
  * OBS overlay relay forwards, so these moments also animate on the overlay.
  */
 export function useStreamEventsWatcher({ messages, viewers, isLive, userId }: WatcherOptions) {
-  // Hooks are not used directly — this module is wired by its consumer.
-  return useWatcher({ messages, viewers, isLive, userId });
-}
-
-import { useEffect, useRef } from "react";
-
-function useWatcher({ messages, viewers, isLive, userId }: WatcherOptions) {
   const seenRef = useRef<Set<string>>(new Set());
   const lastKillRef = useRef(0);
   const lastSpikeRef = useRef(0);
@@ -40,7 +33,6 @@ function useWatcher({ messages, viewers, isLive, userId }: WatcherOptions) {
   useEffect(() => {
     if (!isLive) return;
     const now = Date.now();
-    // Scan the newest chat messages for hype moments.
     for (let i = Math.max(0, messages.length - 40); i < messages.length; i++) {
       const m = messages[i];
       const key = `${m.username}:${m.message}`;
