@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { HyvoSidebar } from "./HyvoSidebar";
 import { HyvoDock } from "@/components/hyvo/HyvoDock";
+import { SharkCompanion } from "@/components/mascot/SharkCompanion";
 
 interface AppShellProps {
   children: ReactNode;
@@ -20,6 +21,7 @@ export function AppShell({ children, bleed = false }: AppShellProps) {
         {children}
       </main>
       <HyvoDock />
+      <SharkCompanion />
     </div>
   );
 }

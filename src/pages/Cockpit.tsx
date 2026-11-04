@@ -68,8 +68,6 @@ export default function Cockpit() {
   const { destinations } = useStreamDestinations();
   const { currentVersion, isDesktop } = useVersionCheck();
   const { limits, remaining, unlimited, consumeAi } = usePlanLimits();
-  const quotaRef = useRef({ remaining, limit: limits.aiDaily });
-  useEffect(() => { quotaRef.current = { remaining, limit: limits.aiDaily }; }, [remaining, limits.aiDaily]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -275,7 +273,7 @@ export default function Cockpit() {
         setBusy(null);
       }
     },
-    [busy, live.isLive, navigate, runAction, runCopilot, runGrowth, runSentiment, runTitles, toggleListening, toast, userId],
+    [busy, live.isLive, navigate, runAction, runCopilot, runGrowth, runSentiment, runTitles, toggleListening, toast, userId, unlimited, consumeAi],
   );
 
   const finishBoot = useCallback(() => {
