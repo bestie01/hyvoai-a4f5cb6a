@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { ShieldCheck, Cpu, Settings2, Radio, Volume2, VolumeX, Activity, ArrowUpRight } from "lucide-react";
+import { ShieldCheck, Cpu, Settings2, Radio, Volume2, VolumeX, Activity, ArrowUpRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cockpitBackdrop from "@/assets/cockpit-command-center.jpg";
 import { Seo } from "@/components/Seo";
@@ -18,12 +18,15 @@ import { BootSequence } from "@/components/cockpit/BootSequence";
 import { ActivityFeed } from "@/components/cockpit/ActivityFeed";
 import { QuickPresets } from "@/components/cockpit/QuickPresets";
 import { OverlayRelay } from "@/components/cockpit/OverlayRelay";
+import { SharkCompanion } from "@/components/mascot/SharkCompanion";
 import { useHyvoAgent } from "@/hooks/useHyvoAgent";
 import { useHyvoBackground } from "@/hooks/useHyvoBackground";
 import { useLiveChat } from "@/hooks/useLiveChat";
 import { useRealPlatformStats } from "@/hooks/useRealPlatformStats";
 import { usePlatformOAuth } from "@/hooks/usePlatformOAuth";
 import { useStreamDestinations } from "@/hooks/useStreamDestinations";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { useStreamEventsWatcher } from "@/hooks/useStreamEventsWatcher";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { executeHyvoAction, logHyvoEvent } from "@/lib/hyvo/actions";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +64,9 @@ export default function Cockpit() {
   const { twitchConnection, youtubeConnection } = usePlatformOAuth();
   const { destinations } = useStreamDestinations();
   const { currentVersion, isDesktop } = useVersionCheck();
+  const { limits, remaining, unlimited, consumeAi } = usePlanLimits();
+  const quotaRef = useRef({ remaining, limit: limits.aiDaily });
+  useEffect(() => { quotaRef.current = { remaining, limit: limits.aiDaily }; }, [remaining, limits.aiDaily]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
