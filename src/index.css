@@ -1037,3 +1037,6 @@ html.overlay-mode::-webkit-scrollbar {
 html.overlay-mode .keyboard-fab {
   display: none !important;
 }
+html.overlay-mode .hyvo-shark {
+  display: none !important;
+}

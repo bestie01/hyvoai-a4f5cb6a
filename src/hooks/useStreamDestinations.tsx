@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { canAddDestination, canEnableDestination } from "@/lib/plan-limits";
 
 export interface StreamDestination {
   id: string;
@@ -14,6 +16,7 @@ export interface StreamDestination {
 /** CRUD for multistream destinations stored in `platform_streaming_configs`. */
 export function useStreamDestinations() {
   const { toast } = useToast();
+  const { limits } = usePlanLimits();
   const [destinations, setDestinations] = useState<StreamDestination[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +48,14 @@ export function useStreamDestinations() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return false; }
       const existing = destinations.find((d) => d.platform === platform);
+      if (!existing && !canAddDestination(destinations.length, limits)) {
+        toast({
+          title: `${limits.label} destination limit reached`,
+          description: `This plan supports up to ${limits.maxDestinations} saved destination${limits.maxDestinations === 1 ? "" : "s"}. Upgrade to add another.`,
+          variant: "destructive",
+        });
+        return false;
+      }
       const payload = {
         user_id: user.id,
         platform,
@@ -64,11 +75,26 @@ export function useStreamDestinations() {
       await refresh();
       return true;
     },
-    [destinations, refresh, toast],
+    [destinations, limits, refresh, toast],
   );
 
   const toggle = useCallback(
     async (id: string, enabled: boolean) => {
+      if (enabled) {
+        const activeCount = destinations.filter((d) => d.is_enabled).length;
+        const alreadyEnabled = destinations.some((d) => d.id === id && d.is_enabled);
+        if (!alreadyEnabled && !canEnableDestination(activeCount, limits)) {
+          const available = limits.multiPlatform
+            ? `up to ${limits.maxDestinations} destinations at once`
+            : "one destination at a time";
+          toast({
+            title: "Upgrade to stream to more destinations",
+            description: `Your ${limits.label} plan supports ${available}.`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
       const { error } = await supabase
         .from("platform_streaming_configs")
         .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
@@ -76,7 +102,7 @@ export function useStreamDestinations() {
       if (error) { toast({ title: "Update failed", variant: "destructive" }); return; }
       setDestinations((prev) => prev.map((d) => (d.id === id ? { ...d, is_enabled: enabled } : d)));
     },
-    [toast],
+    [destinations, limits, toast],
   );
 
   const remove = useCallback(
@@ -95,6 +121,20 @@ export function useStreamDestinations() {
       toast({ title: "All destinations already live" });
       return;
     }
+    const activeCount = destinations.filter((d) => d.is_enabled).length;
+    const availableCount = limits.multiPlatform
+      ? limits.maxDestinations - activeCount
+      : 1 - activeCount;
+    if (targets.length > Math.max(0, availableCount)) {
+      toast({
+        title: "Your plan can't enable all destinations",
+        description: limits.multiPlatform
+          ? `Your ${limits.label} plan supports up to ${limits.maxDestinations} destinations at once.`
+          : `Your ${limits.label} plan supports one destination at a time. Upgrade for multistreaming.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const { error } = await supabase
       .from("platform_streaming_configs")
       .update({ is_enabled: true, updated_at: new Date().toISOString() })
@@ -105,7 +145,7 @@ export function useStreamDestinations() {
     }
     setDestinations((prev) => prev.map((d) => (d.stream_key ? { ...d, is_enabled: true } : d)));
     toast({ title: `${targets.length} destination${targets.length > 1 ? "s" : ""} enabled` });
-  }, [destinations, toast]);
+  }, [destinations, limits, toast]);
 
   return { destinations, loading, refresh, save, toggle, remove, enableAll };
 }

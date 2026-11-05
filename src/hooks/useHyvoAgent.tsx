@@ -27,7 +27,7 @@ function getRecognition(): Recognition | null {
 export function useHyvoAgent() {
   const { settings, update, loading } = useHyvoSettings();
   const { speak, stop: stopVoice, speaking } = useHyvoVoice(settings.voice_id, settings.voice_enabled);
-  const { canUseAI, consumeAi, unlimited } = usePlanLimits();
+  const { consumeAi, unlimited } = usePlanLimits();
 
   const [status, setStatus] = useState<HyvoStatus>("off");
   const [transcript, setTranscript] = useState("");
@@ -37,9 +37,9 @@ export function useHyvoAgent() {
   const [micActive, setMicActive] = useState(false);
 
   // Refs keep the voice-loop callbacks stable while plan limits refresh.
-  const quotaRef = useRef({ canUseAI: true, unlimited: true });
+  const quotaRef = useRef({ unlimited: true });
   const consumeRef = useRef(consumeAi);
-  useEffect(() => { quotaRef.current = { canUseAI, unlimited }; }, [canUseAI, unlimited]);
+  useEffect(() => { quotaRef.current = { unlimited }; }, [unlimited]);
   useEffect(() => { consumeRef.current = consumeAi; }, [consumeAi]);
 
   const recRef = useRef<Recognition | null>(null);
@@ -63,6 +63,21 @@ export function useHyvoAgent() {
     setTranscript(text);
 
     try {
+      const userId = userIdRef.current;
+      if (!userId) {
+        setLastReply("Sign in first.");
+        speak("Sign in first.");
+        return;
+      }
+      if (!quotaRef.current.unlimited) {
+        const spend = consumeRef.current();
+        if (!spend.ok) {
+          const message = spend.message ?? "Out of AI actions today — upgrade your plan.";
+          setLastReply(message);
+          speak(message);
+          return;
+        }
+      }
       const { data, error } = await supabase.functions.invoke("hyvo-agent", {
         body: { mode: "command", transcript: text },
       });
@@ -74,22 +89,6 @@ export function useHyvoAgent() {
         setLastReply("Quiet.");
         setStatus("idle");
         return;
-      }
-
-      const userId = userIdRef.current;
-      if (!userId) {
-        setLastReply("Sign in first.");
-        speak("Sign in first.");
-        return;
-      }
-
-      if (!quotaRef.current.unlimited) {
-        if (!quotaRef.current.canUseAI) {
-          setLastReply("Out of AI actions today — Pro unlocks unlimited.");
-          speak("Out of AI actions today. Upgrade to Pro for unlimited.");
-          return;
-        }
-        consumeRef.current();
       }
 
       if (intent.action === "answer" || intent.action === "unknown") {

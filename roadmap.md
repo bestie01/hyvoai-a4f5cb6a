@@ -10,3 +10,9 @@
 - [x] Add an accessible interactive capability explorer.
 - [x] Replace unverified usage claims with factual platform and product signals.
 - [x] Verify desktop and mobile rendering of the redesigned landing page (video plays, no console errors, no horizontal overflow on phone).
+
+# Plan limits and shark companion
+- [ ] Display AI and destination limits clearly on pricing.
+- [ ] Enforce daily AI usage and plan destination caps in the app.
+- [ ] Keep the shark companion out of the transparent OBS overlay.
+- [ ] Verify project checks and preview behavior.
