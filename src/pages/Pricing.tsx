@@ -54,7 +54,7 @@ const Pricing = () => {
     price: "$5",
     period: "per month",
     description: "Perfect for new streamers getting started",
-    features: ["Basic Stream Analytics", "Single Platform Streaming", "Standard Audio Controls", "Community Support", "Basic Overlay Templates", "720p Streaming Quality"],
+    features: ["15 AI actions each day", "1 saved streaming destination", "Basic Stream Analytics", "Standard Audio Controls", "Community Support", "Basic Overlay Templates", "720p Streaming Quality"],
     buttonText: "Get Started",
     variant: "outline" as const,
     popular: false,
@@ -65,7 +65,7 @@ const Pricing = () => {
     price: "$15",
     period: "per month",
     description: "For professionals and growing streamers",
-    features: ["14-day free trial", "Advanced Stream Analytics", "Multi-platform Streaming", "Stream Recording & Highlights", "Custom Overlay Templates", "Premium Audio Controls", "Priority Support", "API Access", "Custom Branding Options"],
+    features: ["60 AI actions each day", "Save up to 3 destinations · stream to 1 at a time", "Advanced Stream Analytics", "Stream Recording & Highlights", "Custom Overlay Templates", "Premium Audio Controls", "Priority Support", "API Access", "Custom Branding Options"],
     buttonText: "Start 14-Day Free Trial",
     variant: "hero" as const,
     popular: true,
@@ -77,7 +77,7 @@ const Pricing = () => {
     price: "$30",
     period: "per year",
     description: "Save 83% with annual billing + exclusive perks",
-    features: ["14-day free trial", "Everything in Pro", "10 months free (83% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
+    features: ["14-day free trial", "Everything in Pro · unlimited AI and up to 16 destinations", "10 months free (83% savings)", "Priority onboarding call", "Advanced viewer analytics", "Custom workflow automation", "Dedicated account manager", "Early access to new features", "Premium community access"],
     buttonText: "Start 14-Day Free Trial",
     variant: "secondary" as const,
     popular: false,
@@ -302,7 +302,7 @@ const Pricing = () => {
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {[{
                 title: "Basic Streaming",
-                desc: "Stream to one platform at a time with standard quality",
+                desc: "15 AI actions each day and one saved destination",
                 icon: Zap
               }, {
                 title: "Basic Analytics",

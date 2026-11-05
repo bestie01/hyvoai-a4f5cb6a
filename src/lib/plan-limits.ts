@@ -64,6 +64,19 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   },
 };
 
+/** Non-multistream plans may save several destinations, but only enable one at a time. */
+export function maxEnabledDestinations(limits: PlanLimits): number {
+  return limits.multiPlatform ? limits.maxDestinations : 1;
+}
+
+export function canAddDestination(configuredCount: number, limits: PlanLimits): boolean {
+  return configuredCount < limits.maxDestinations;
+}
+
+export function canEnableDestination(enabledCount: number, limits: PlanLimits): boolean {
+  return enabledCount < maxEnabledDestinations(limits);
+}
+
 export function resolveTier(tier: string | null | undefined, subscribed: boolean): PlanTier {
   if (!subscribed) return "free";
   switch ((tier || "").toLowerCase()) {
@@ -94,7 +107,7 @@ const storageKey = (userKey: string) => `hyvo-ai-quota-${userKey}`;
 function readUsed(userKey: string): number {
   try {
     const raw = JSON.parse(localStorage.getItem(storageKey(userKey)) || "null");
-    return raw && raw.date === dayKey() ? raw.used || 0 : 0;
+    return raw && raw.date === dayKey() && Number.isInteger(raw.used) && raw.used >= 0 ? raw.used : 0;
   } catch {
     return 0;
   }
@@ -139,7 +152,13 @@ export function consumeAi(userKey: string | null, limits: PlanLimits): QuotaResu
   try {
     localStorage.setItem(storageKey(userKey), JSON.stringify({ date: dayKey(), used: nextUsed }));
   } catch {
-    /* storage unavailable — allow the action */
+    return {
+      ok: false,
+      remaining: Math.max(0, limits.aiDaily - used),
+      limit: limits.aiDaily,
+      used,
+      message: "Hyvo couldn't save today's AI usage. Check browser storage and try again.",
+    };
   }
   return {
     ok: true,
